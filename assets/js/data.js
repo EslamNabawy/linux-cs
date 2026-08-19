@@ -334,7 +334,607 @@ const DATA = {
       { number: 6, title: "Networking & SSH", concepts: ["IP Addressing", "Ports", "SSH Keys"], skills: ["ip, ping, curl", "netstat / ss", "ssh-keygen, ssh-copy-id"], project: "Generate an SSH key pair and set up passwordless SSH login between two Linux machines." },
       { number: 7, title: "Shell Scripting Basics", concepts: ["Automation", "Variables", "Conditionals", "Loops"], skills: ["Writing .sh files", "if statements", "for loops", "cron for scheduling"], project: "Write a bash script that checks if Nginx is running. If not, start it and log the event. Schedule via cron every 5 minutes." }
     ]
-  }
+  },
+  notes: {
+    rahma: {
+      author: "Rahma",
+      day: 1,
+      subtitle: "Linux Administration & Fundamentals",
+      avatar: "R",
+      sections: [
+        {
+          id: "arch",
+          title: "System Architecture & Concepts",
+          icon: "cpu",
+          blocks: [
+            { t:"text", html:"<p>Before touching the command line, it helps to understand how Linux fits into modern infrastructure and how it relates to the systems around it.</p>" },
+            { t:"text", html:"<h6>Monolithic vs Microservices</h6><p><strong>Monolithic:</strong> the whole application is built as a single, tightly coupled unit. If one part fails, the entire service can go down.</p><p><strong>Microservices:</strong> the application is split into small, independent services that talk over a network. If one service fails, only that piece is affected and the rest keep running.</p>" },
+            { t:"table", head:["Approach","If one part fails","Example"], rows:[
+              ["Monolithic","The entire application goes down","A single Java WAR file running everything"],
+              ["Microservices","Only that service goes down","Separate auth, billing, and catalog services"]
+            ]},
+            { t:"callout", kind:"info", html:"<strong>Why it matters:</strong> Microservices scale independently and recover faster, which is why they dominate cloud-native Linux deployments." },
+            { t:"text", html:"<h6>Load Balancer</h6><p>A load balancer spreads incoming network traffic across multiple servers so no single server is overwhelmed. It improves performance and availability.</p>" },
+            { t:"text", html:"<h6>RabbitMQ</h6><p>RabbitMQ is a message broker: it lets applications exchange messages asynchronously (a producer sends, a consumer processes later) instead of calling each other directly. This decouples services.</p>" },
+            { t:"text", html:"<h6>Virtual Memory &amp; Swap</h6><p>Virtual memory lets a system use disk space as an extension of RAM. <strong>Swap</strong> is a dedicated disk partition or file used when physical RAM is full, so the system does not immediately crash. It is slower than RAM.</p>" },
+            { t:"callout", kind:"info", html:"<strong>Swap:</strong> when RAM is exhausted, inactive memory pages move to swap space. This prevents out-of-memory crashes but cannot replace real RAM." },
+            { t:"text", html:"<h6>Linux vs Unix</h6><p>Linux is a Unix-like operating system created by Linus Torvalds in 1991. Unlike classic Unix, Linux is free and open source. Unix originated in the 1970s at Bell Labs.</p>" },
+            { t:"table", head:["Distribution","Family","Notes"], rows:[
+              ["RHEL","Fedora family","Enterprise, paid support; used in this course"],
+              ["CentOS","RHEL rebuild","Free, community rebuild of RHEL"],
+              ["Ubuntu","Debian family","Popular for servers and desktops"],
+              ["Debian","Debian","Very stable, community driven"],
+              ["Fedora","Fedora","Cutting-edge, upstream for RHEL"]
+            ]},
+            { t:"text", html:"<h6>GPL &amp; Richard Stallman</h6><p>Richard Stallman launched the free software movement and the GPL (General Public License). The GPL is a copyleft license: anyone can use, modify, and share the software, but derivative works must also stay free and open source.</p>" }
+          ]
+        },
+        {
+          id: "vmnet",
+          title: "VM & Network Setup",
+          icon: "network",
+          blocks: [
+            { t:"text", html:"<p>To practice Linux safely you usually run it inside a <strong>Virtual Machine (VM)</strong> using software such as VMware Workstation, VirtualBox, or KVM.</p>" },
+            { t:"steps", items:[
+              "Open your hypervisor and choose File → New Virtual Machine.",
+              "Select Typical (recommended) configuration.",
+              "Choose the installer (ISO image of RHEL / Ubuntu).",
+              "Select the guest operating system type (Linux).",
+              "Name the VM and choose where to store its disk files.",
+              "Set the disk size and finish the wizard.",
+              "Start the VM and complete the first-boot setup."
+            ]},
+            { t:"text", html:"<h6>Network Types</h6><p>The VM can be connected to the network in different ways, which changes whether it can reach your machine, the internet, or other VMs.</p>" },
+            { t:"table", head:["Type","Behaviour","When to use"], rows:[
+              ["Bridged","VM gets its own IP on your physical network","VM must act like a real machine on the LAN"],
+              ["NAT","VM shares the host's IP to reach the internet","Default; VM is hidden behind the host"],
+              ["Host-only","VM only talks to the host and other host-only VMs","Isolated lab network, no internet"]
+            ]},
+            { t:"text", html:"<h6>Red&nbsp;Hat Developer Account</h6><p>Register a free Red&nbsp;Hat Developer account to download RHEL and obtain a subscription for personal use and learning.</p>" },
+            { t:"text", html:"<h6>Finding the IP &amp; Connecting</h6><p>Check the assigned IP with <code>ip a</code> (or <code>ip addr show</code>), then connect remotely with SSH:</p>" },
+            { t:"code", code:"ip a\nssh username@192.168.1.50" }
+          ]
+        },
+        {
+          id: "cli",
+          title: "Shell Prompt & CLI Syntax",
+          icon: "eye",
+          blocks: [
+            { t:"text", html:"<p>The default shell on most Linux systems is <strong>bash</strong>. After login you see a <strong>prompt</strong> where you type commands. A prompt often looks like <code>user@host:~$</code>.</p>" },
+            { t:"text", html:"<h6>Command Syntax</h6><p>Commands follow the pattern <code>command [options] [arguments]</code>. Items are separated by spaces. <strong>Options</strong> modify behaviour (usually starting with <code>-</code> or <code>--</code>); <strong>arguments</strong> are the targets such as file or directory names. Separate multiple commands with <code>;</code>.</p>" },
+            { t:"code", code:"ls -l /etc\nls -la --human-readable /var" },
+            { t:"text", html:"<p>Short options can be combined: <code>-l -a</code> becomes <code>-la</code>. Long options use two dashes, e.g. <code>--help</code>.</p>" },
+            { t:"table", head:["Shortcut","Action"], rows:[
+              ["Ctrl+U","Clear from cursor to the start of the line"],
+              ["Ctrl+K","Clear from cursor to the end of the line"],
+              ["Tab","Auto-complete command or path"],
+              ["Up / Down arrows","Browse command history"],
+              ["Ctrl+R","Search the command history"],
+              ["Ctrl+L","Clear the screen (like clear)"],
+              ["Ctrl+C","Cancel the current running command"]
+            ]},
+            { t:"callout", kind:"info", html:"<strong>Switching to root:</strong> use <code>su -</code> to start a login shell as the superuser. Be careful — as root you can damage the system." }
+          ]
+        },
+        {
+          id: "fhs",
+          title: "File System Hierarchy",
+          icon: "folder",
+          blocks: [
+            { t:"text", html:"<p>Everything in Linux is a file, and they are organised under a single root directory <code>/</code>. Understanding the standard layout helps you find configuration, logs, and binaries.</p>" },
+            { t:"table", head:["Path","Purpose"], rows:[
+              ["/","The root of the filesystem (top of the tree)"],
+              ["/bin","Essential user command binaries (ls, cp, mv)"],
+              ["/sbin","System binaries, mostly for administration"],
+              ["/boot","Boot loader files and the kernel"],
+              ["/etc","System-wide configuration files"],
+              ["/dev","Device files (disks, terminals)"],
+              ["/home","Personal directories for normal users"],
+              ["/root","Home directory of the root (admin) user"],
+              ["/run","Runtime data since last boot"],
+              ["/tmp","Temporary files (cleared on reboot)"],
+              ["/usr","User programs, libraries, documentation"],
+              ["/var","Variable data such as logs and caches"]
+            ]},
+            { t:"callout", kind:"info", html:"<strong>/root vs /home:</strong> <code>/root</code> is the administrator's home; regular users live under <code>/home/username</code>." }
+          ]
+        },
+        {
+          id: "fmgmt",
+          title: "File & Directory Management",
+          icon: "file",
+          blocks: [
+            { t:"text", html:"<p>Move around and manage files with a small set of core commands.</p>" },
+            { t:"table", head:["Command","Meaning"], rows:[
+              ["pwd","Print the current working directory"],
+              ["cd","Change directory (cd ~ home, cd / root, cd .. up, cd - previous)"],
+              ["ls","List directory contents"],
+              ["tree","Show the directory tree visually"],
+              ["mkdir","Create a directory (mkdir -p makes parents)"],
+              ["touch","Create an empty file or update its timestamp"],
+              ["cp","Copy files or directories (cp -r recursive)"],
+              ["mv","Move or rename files/directories"],
+              ["rm","Remove files (rm -r recursive, rm -f force)"]
+            ]},
+            { t:"code", code:"cd /var/log\nls -lh\nmkdir -p ~/project/data\ntouch ~/project/readme.txt" },
+            { t:"callout", kind:"warn", html:"<strong>Danger:</strong> <code>rm -rf /</code> or <code>rm -rf *</code> deletes irreversibly and can wipe the system. Always double-check the path before pressing Enter." },
+            { t:"text", html:"<h6>Viewing File Content</h6><p>Use <code>cat</code> (whole file), <code>less</code> (scrollable), <code>head</code> (first lines), and <code>tail</code> (last lines, useful for logs with <code>-f</code>).</p>" }
+          ]
+        },
+        {
+          id: "links",
+          title: "Links",
+          icon: "folder",
+          blocks: [
+            { t:"text", html:"<p>Linux supports two ways to reference the same data: <strong>soft (symbolic)</strong> links and <strong>hard</strong> links. They behave very differently when the original file is deleted.</p>" },
+            { t:"diagram", kind:"links" },
+            { t:"table", head:["Feature","Soft Link (ln -s)","Hard Link (ln)"], rows:[
+              ["Points to","A file path (name)","The inode (physical disk data)"],
+              ["If original deleted","Link breaks (dangling)","Link still works"],
+              ["Can link directories?","Yes","No"],
+              ["Cross file system?","Yes","No"],
+              ["Command","ln -s target link","ln target link"]
+            ]},
+            { t:"callout", kind:"info", html:"<strong>When to use:</strong> use a soft link to point across file systems or to a directory; use a hard link when you need the data to survive deletion of the original name." }
+          ]
+        },
+        {
+          id: "search",
+          title: "Search & Pattern Matching",
+          icon: "search",
+          blocks: [
+            { t:"text", html:"<p>Wildcards (glob patterns) let one command act on many files at once.</p>" },
+            { t:"table", head:["Pattern","Matches"], rows:[
+              ["*","Zero or more characters (all files)"],
+              ["?","Exactly one character"],
+              ["[abc]","Any one of the listed characters"],
+              ["[a-z]","Any character in the range"]
+            ]},
+            { t:"code", code:"ls *.txt\nrm log?.log\ncp file[1-3].dat /backup/" },
+            { t:"text", html:"<p><strong>grep</strong> searches inside files for lines matching a pattern.</p>" },
+            { t:"table", head:["Option","Meaning"], rows:[
+              ["-i","Ignore case"],
+              ["-n","Show line numbers"],
+              ["-r","Search recursively through directories"],
+              ["-v","Invert: show non-matching lines"],
+              ["-l","Show only file names that match"]
+            ]},
+            { t:"code", code:"grep -i root /etc/passwd\ngrep -rn 'TODO' ./src" },
+            { t:"callout", kind:"info", html:"<strong>Pipelines:</strong> combine commands with <code>|</code>, e.g. <code>dmesg | grep -i error</code> to filter the kernel log." }
+          ]
+        }
+      ]
+    },
+    michael: {
+      author: "Michael",
+      day: 1,
+      subtitle: "Comprehensive Linux Commands & File System",
+      avatar: "M",
+      sections: [
+        {
+          id: "nav",
+          title: "Directory Navigation & Paths",
+          icon: "folder",
+          blocks: [
+            { t:"text", html:"<p><strong>pwd</strong> (print working directory) shows where you are. Paths are either <strong>absolute</strong> (starting from <code>/</code>) or <strong>relative</strong> (starting from the current directory).</p>" },
+            { t:"table", head:["Command","Meaning"], rows:[
+              ["cd","Change to your home directory"],
+              ["cd ~","Same as home (the ~ means your home)"],
+              ["cd /","Go to the filesystem root"],
+              ["cd ..","Move up one level"],
+              ["cd -","Return to the previous directory"],
+              ["cd .","Stay in the current directory"]
+            ]},
+            { t:"arabic", text:"cd - : ترجعك لآخر مكان كنت فيه (takes you back to the last place you were)" },
+            { t:"text", html:"<p><code>~</code> is a shortcut for <code>/home/username</code>. For example, <code>cd ~/Documents</code> goes to <code>/home/username/Documents</code>.</p>" },
+            { t:"code", code:"pwd\ncd /var/www\ncd ~/Downloads\ncd -" }
+          ]
+        },
+        {
+          id: "listing",
+          title: "Listing & File Inspection",
+          icon: "eye",
+          blocks: [
+            { t:"text", html:"<p><strong>ls</strong> lists directory contents. <strong>dir</strong> is nearly identical to <code>ls</code>; <strong>tree</strong> draws the hierarchy.</p>" },
+            { t:"table", head:["Option","Meaning"], rows:[
+              ["-l","Long listing (permissions, size, owner, date)"],
+              ["-a","Show all, including hidden files (starting with .)"],
+              ["-h","Human-readable sizes (K, M, G)"],
+              ["-t","Sort by modification time"],
+              ["-r","Reverse the sort order"],
+              ["-R","List recursively (sub-directories too)"]
+            ]},
+            { t:"code", code:"ls -la /etc\nls -lhtr\nls -R ~/project" },
+            { t:"text", html:"<p>Combine <code>ls</code> with wildcards to filter what is shown.</p>" },
+            { t:"arabic", text:"ls -a : بيوريك كل الملفات حتى اللي مخفية (shows all files, even hidden ones)" },
+            { t:"callout", kind:"info", html:"<strong>Hidden files:</strong> any file or directory whose name starts with a dot (<code>.bashrc</code>) is hidden and only appears with <code>-a</code>." }
+          ]
+        },
+        {
+          id: "fmgmt",
+          title: "File & Directory Management",
+          icon: "file",
+          blocks: [
+            { t:"table", head:["Command","Meaning"], rows:[
+              ["touch file","Create an empty file / update timestamp"],
+              ["mkdir -p a/b","Create nested directories in one go"],
+              ["cp src dest","Copy a file"],
+              ["cp -r dir dest","Copy a directory recursively"],
+              ["mv src dest","Move or rename"],
+              ["rm file","Remove a file"],
+              ["rm -r dir","Remove a directory recursively"]
+            ]},
+            { t:"code", code:"touch notes.txt\nmkdir -p project/data\ncp notes.txt project/data/\nmv notes.txt project/notes_v2.txt" },
+            { t:"callout", kind:"warn", html:"<strong>Never run:</strong> <code>rm -rf /</code> or <code>rm -rf *</code> as root — it deletes everything under that path with no confirmation." },
+            { t:"text", html:"<p>Some systems add safety: <code>rm</code> may be aliased to <code>rm -i</code> (asks before each delete), and <code>--preserve-root</code> protects <code>/</code> from being removed.</p>" },
+            { t:"arabic", text:"rm -rf * : يمسح كل الملفات في المكان الحالي نهائيًا (deletes all files in the current place permanently)" }
+          ]
+        },
+        {
+          id: "inodes",
+          title: "Inodes & Links",
+          icon: "folder",
+          blocks: [
+            { t:"text", html:"<p>Every file is described by an <strong>inode</strong> — a data structure holding metadata (permissions, owner, disk location). A file's name is just a link to its inode.</p>" },
+            { t:"table", head:["Feature","Soft Link","Hard Link"], rows:[
+              ["What it points to","The file name / path","The inode (data)"],
+              ["If original is deleted","Breaks (invalid)","Keeps working"],
+              ["Can cross file systems?","Yes","No"],
+              ["Can link directories?","Yes","No (files only)"]
+            ]},
+            { t:"code", code:"ln -s /var/log/app.log ~/app_link   # soft\nln /var/log/app.log ~/app_hard   # hard\nls -li ~/app_link ~/app_hard" },
+            { t:"arabic", text:"الـ inode هو رقم يعرّف الملف نفسه على القرص (the inode is the number that identifies the file itself on disk)" },
+            { t:"callout", kind:"info", html:"<strong>Restriction:</strong> you cannot create a hard link to a directory, and hard links cannot span different file systems." }
+          ]
+        },
+        {
+          id: "grep",
+          title: "Text Searching (grep & regex)",
+          icon: "search",
+          blocks: [
+            { t:"text", html:"<p><strong>grep</strong> prints lines that match a pattern. With regular expressions you can match flexible patterns.</p>" },
+            { t:"table", head:["Option","Meaning"], rows:[
+              ["-i","Ignore case"],
+              ["-v","Invert match (show non-matching lines)"],
+              ["-n","Show line numbers"],
+              ["-r","Recursive through directories"],
+              ["-l","Only file names that match"],
+              ["-c","Count of matching lines"],
+              ["-w","Match whole words only"]
+            ]},
+            { t:"text", html:"<h6>Common Regex Symbols</h6><p><code>.</code> any character, <code>^</code> start of line, <code>$</code> end of line, <code>[]</code> a set, <code>*</code> zero or more of the previous.</p>" },
+            { t:"code", code:"grep -in 'error' /var/log/syslog\ngrep -rn 'function' ./src\ngrep -E '^#?[a-z]+:' config.yml" },
+            { t:"arabic", text:"grep -i : يدور وبتجاهل حالة الأحرف (search while ignoring upper/lower case)" }
+          ]
+        },
+        {
+          id: "cut",
+          title: "Text Processing (cut)",
+          icon: "file",
+          blocks: [
+            { t:"text", html:"<p><strong>cut</strong> extracts sections from each line of a file — by character position or by field using a delimiter.</p>" },
+            { t:"table", head:["Option","Meaning"], rows:[
+              ["-c 1-5","Characters from position 1 to 5"],
+              ["-f 2","Field number 2"],
+              ["-d ':'","Use : as the field delimiter"],
+              ["-f 1,3","Fields 1 and 3"]
+            ]},
+            { t:"code", code:"cut -d ':' -f 1 /etc/passwd\ncut -c 1-10 file.txt\ncut -d ',' -f 2,4 data.csv" },
+            { t:"callout", kind:"info", html:"<strong>Tip:</strong> <code>cut</code> is often combined with <code>grep</code> and <code>|</code> to extract just the column you need from command output." }
+          ]
+        }
+      ]
+    },
+    hager: {
+      author: "Hager",
+      day: 1,
+      subtitle: "Linux Session — Revision Sheet (18 Aug 2026)",
+      avatar: "H",
+      sections: [
+        {
+          id: "basics",
+          title: "Linux Basics",
+          icon: "cpu",
+          blocks: [
+            { t:"text", html:"<p>Linux is a free, open-source, Unix-like operating system known for stability and security.</p>" },
+            { t:"table", head:["Linux","Windows"], rows:[
+              ["Open source & free","Mostly proprietary & paid"],
+              ["Highly customizable","Limited customization"],
+              ["Strong security model","Different permission model"],
+              ["Excellent for servers","Common on desktops"],
+              ["Runs on many architectures","Mostly x86 PCs"]
+            ]},
+            { t:"diagram", kind:"architecture" },
+            { t:"text", html:"<p>When you type a command, it flows: <strong>CLI → Shell → Applications → Kernel → Hardware</strong>.</p>" },
+            { t:"text", html:"<h6>Swap</h6><p>Swap is disk space used as extra memory when RAM is full, preventing the system from crashing. It is much slower than real RAM.</p>" },
+            { t:"callout", kind:"info", html:"<strong>Why swap:</strong> it gives the kernel breathing room under memory pressure, though heavy swap use (thrashing) slows the machine down." }
+          ]
+        },
+        {
+          id: "users",
+          title: "Users & Privileges",
+          icon: "folder",
+          blocks: [
+            { t:"table", head:["Prompt","Meaning"], rows:[
+              ["$","Normal user (limited privileges)"],
+              ["#","Root / superuser (full control)"]
+            ]},
+            { t:"text", html:"<p>Use <code>su</code> to switch user and <code>sudo</code> to run a single command as root. The <code>#</code> prompt means you can damage the system, so be careful.</p>" },
+            { t:"code", code:"whoami\nsu -\nsudo systemctl restart sshd" }
+          ]
+        },
+        {
+          id: "syntax",
+          title: "Command Syntax",
+          icon: "eye",
+          blocks: [
+            { t:"text", html:"<p>Every command follows: <code>command [option] [argument]</code>. Options change behaviour; arguments tell it what to act on.</p>" },
+            { t:"diagram", kind:"syntax" }
+          ]
+        },
+        {
+          id: "nav",
+          title: "Navigation",
+          icon: "folder",
+          blocks: [
+            { t:"table", head:["Command","Description"], rows:[
+              ["pwd","Print working directory"],
+              ["cd","Change directory"],
+              ["cd ~","Go to home directory"],
+              ["cd /","Go to root"],
+              ["cd ..","Go up one level"],
+              ["cd -","Go to previous directory"]
+            ]}
+          ]
+        },
+        {
+          id: "listing",
+          title: "Listing Files",
+          icon: "eye",
+          blocks: [
+            { t:"table", head:["Command","Description"], rows:[
+              ["ls","List files"],
+              ["ls -l","Long format"],
+              ["ls -a","Include hidden files"],
+              ["ls -lh","Human-readable sizes"],
+              ["ls -R","Recursive"]
+            ]},
+            { t:"table", head:["Wildcard","Matches"], rows:[
+              ["*","Any characters"],
+              ["?","Single character"],
+              ["[abc]","One of a, b, or c"],
+              ["[a-z]","A range of characters"]
+            ]}
+          ]
+        },
+        {
+          id: "content",
+          title: "File Content",
+          icon: "file",
+          blocks: [
+            { t:"table", head:["Command","Description"], rows:[
+              ["cat","Show entire file"],
+              ["less","Scrollable view"],
+              ["head","First 10 lines"],
+              ["tail","Last 10 lines"],
+              ["more","Page through file"],
+              ["nl","Show with line numbers"],
+              ["od","Octal/low-level dump"]
+            ]}
+          ]
+        },
+        {
+          id: "fmgmt",
+          title: "File & Directory Management",
+          icon: "file",
+          blocks: [
+            { t:"table", head:["Command","Description"], rows:[
+              ["touch","Create empty file"],
+              ["mkdir","Create directory"],
+              ["cp","Copy files/dirs"],
+              ["mv","Move or rename"],
+              ["rm","Remove files"],
+              ["file","Detect file type"],
+              ["nano","Simple text editor"],
+              ["vi","Powerful modal editor"]
+            ]},
+            { t:"callout", kind:"warn", html:"<strong>Warning:</strong> <code>rm -rf</code> removes directories and contents permanently — verify the target first." }
+          ]
+        },
+        {
+          id: "grep",
+          title: "Searching with grep",
+          icon: "search",
+          blocks: [
+            { t:"table", head:["Option","Description"], rows:[
+              ["-i","Ignore case"],
+              ["-n","Show line numbers"],
+              ["-r","Search recursively"],
+              ["-v","Invert match"],
+              ["-l","Only file names"],
+              ["-c","Count matches"]
+            ]},
+            { t:"code", code:"grep -i 'error' /var/log/syslog\ngrep -rn 'main' ./src" }
+          ]
+        },
+        {
+          id: "links",
+          title: "Links (Hard & Soft)",
+          icon: "folder",
+          blocks: [
+            { t:"text", html:"<p>A <strong>soft link</strong> points to a file's name/path; a <strong>hard link</strong> points to the same inode. Deleting the original breaks a soft link but not a hard link.</p>" },
+            { t:"diagram", kind:"links" },
+            { t:"table", head:["Feature","Soft Link","Hard Link"], rows:[
+              ["Points to","File name/path","Inode"],
+              ["If original deleted","Breaks","Still works"],
+              ["Directories?","Yes","No"],
+              ["Cross file system?","Yes","No"]
+            ]}
+          ]
+        },
+        {
+          id: "dirs",
+          title: "Important Filesystem Directories",
+          icon: "folder",
+          blocks: [
+            { t:"table", head:["Directory","Purpose"], rows:[
+              ["/bin","Essential commands"],
+              ["/boot","Boot files & kernel"],
+              ["/etc","Configuration"],
+              ["/home","User home dirs"],
+              ["/root","Admin home"],
+              ["/tmp","Temporary files"],
+              ["/usr","User programs"],
+              ["/var","Variable data / logs"],
+              ["/dev","Device files"],
+              ["/proc","Kernel & process info"],
+              ["/mnt","Mount point"],
+              ["/opt","Optional software"]
+            ]}
+          ]
+        },
+        {
+          id: "shortcuts",
+          title: "Terminal Keyboard Shortcuts",
+          icon: "network",
+          blocks: [
+            { t:"table", head:["Shortcut","Action"], rows:[
+              ["Ctrl+A","Start of line"],
+              ["Ctrl+E","End of line"],
+              ["Ctrl+U","Clear to start"],
+              ["Ctrl+K","Clear to end"],
+              ["Ctrl+R","Search history"],
+              ["Ctrl+L","Clear screen"],
+              ["Ctrl+C","Cancel command"],
+              ["Ctrl+Z","Pause (background)"]
+            ]}
+          ]
+        },
+        {
+          id: "quickref",
+          title: "Quick Command Reference",
+          icon: "file",
+          blocks: [
+            { t:"text", html:"<p>A compact cheat sheet drawn from the session. Combine with the Cheat Sheet view for the full list.</p>" },
+            { t:"code", code:"pwd            # where am I\ncd ~          # go home\nls -la         # list all, long\nmkdir -p a/b   # nested dirs\ntouch f.txt    # new file\ncp f.txt b/    # copy\nmv f.txt g.txt # rename\nrm -r old/     # delete\ngrep -rin 'x' . # search" }
+          ]
+        }
+      ]
+    }
+  },
+  lab: {
+    day: 1,
+    title: "Lab 1 · Practice Tasks",
+    intro: "These hands-on tasks are built from the Day 1 notes of Rahma, Michael, and Hager. Complete them on a real or virtual Linux machine (WSL, VirtualBox, or a cloud VM). Tick a task when you have done it.",
+    tasks: [
+      { id:"l1-arch", tag:"Concepts", title:"Explore the Architecture", objective:"See the CLI → Shell → Kernel → Hardware flow with your own eyes.", steps:[
+        "Open a terminal.",
+        "Run echo $SHELL to confirm your shell (likely /bin/bash).",
+        "Run uname -r to see the kernel version.",
+        "Run lscpu to inspect the CPU/Hardware.",
+        "Sketch the flow: CLI → Shell → Applications → Kernel → Hardware."
+      ]},
+      { id:"l1-nav", tag:"Navigation", title:"Navigate the Filesystem", objective:"Get comfortable moving around with cd and pwd.", steps:[
+        "Run pwd to see your starting location.",
+        "Run cd / then pwd — you are now at the root.",
+        "Run cd ~ then pwd — back to your home.",
+        "Run cd - to jump to the previous directory.",
+        "Run cd .. a couple of times and watch pwd change."
+      ]},
+      { id:"l1-files", tag:"File Mgmt", title:"Manage Files & Directories", objective:"Create, copy, move, and remove files safely.", steps:[
+        "Create a project tree: mkdir -p project/data.",
+        "Add a file: touch project/readme.txt.",
+        "Copy it: cp project/readme.txt project/data/.",
+        "Rename: mv project/readme.txt project/README.md.",
+        "Remove the data folder: rm -r project/data (verify first!)."
+      ]},
+      { id:"l1-links", tag:"Links", title:"Hard vs Soft Links Lab", objective:"Observe how each link behaves when the original is deleted.", steps:[
+        "Create a file: echo 'hello' > original.txt.",
+        "Make a soft link: ln -s original.txt soft.txt.",
+        "Make a hard link: ln original.txt hard.txt.",
+        "Compare inodes with ls -li.",
+        "Delete the original: rm original.txt, then cat soft.txt (breaks) and cat hard.txt (works)."
+      ]},
+      { id:"l1-grep", tag:"grep", title:"Search with grep & Wildcards", objective:"Filter files and file contents.", steps:[
+        "List only text files: ls *.txt.",
+        "Search a file for a word: grep -in 'root' /etc/passwd.",
+        "Recursively search code: grep -rn 'main' ./src.",
+        "Invert a match: grep -v '^#' config.file to hide comments."
+      ]},
+      { id:"l1-users", tag:"Users", title:"Users & Privileges", objective:"Understand the $ vs # prompt.", steps:[
+        "Run whoami to see your current user.",
+        "Run id to see your user/group IDs.",
+        "Note your prompt symbol ($ = normal user).",
+        "Run sudo -i (or su -) and observe the prompt change to #.",
+        "Type exit to return to your normal user."
+      ]}
+    ]
+  },
+  topicIndex: [
+    { title:"Architecture & Concepts", desc:"How Linux is structured and how it compares to Unix/Windows and monolithic vs microservices.", links:[
+      { label:"Rahma · Concepts", view:"notes-rahma" },
+      { label:"Hager · Basics", view:"notes-hager" },
+      { label:"RH124 Notes", view:"rh124" }
+    ]},
+    { title:"Users & Privileges", desc:"The $ vs # prompt, su, and sudo.", links:[
+      { label:"Hager · Users", view:"notes-hager" }
+    ]},
+    { title:"CLI Syntax", desc:"The command [options] [arguments] pattern.", links:[
+      { label:"Rahma · CLI", view:"notes-rahma" },
+      { label:"Hager · Syntax", view:"notes-hager" },
+      { label:"RH124 Notes", view:"rh124" }
+    ]},
+    { title:"Navigation", desc:"pwd, cd, ~, /, .., - and absolute vs relative paths.", links:[
+      { label:"Rahma · Files", view:"notes-rahma" },
+      { label:"Michael · Nav", view:"notes-michael" },
+      { label:"Hager · Nav", view:"notes-hager" },
+      { label:"Cheat Sheet", view:"cheatsheet" }
+    ]},
+    { title:"Listing Files", desc:"ls / dir / tree flags and wildcards.", links:[
+      { label:"Rahma · Files", view:"notes-rahma" },
+      { label:"Michael · Listing", view:"notes-michael" },
+      { label:"Hager · Listing", view:"notes-hager" },
+      { label:"Cheat Sheet", view:"cheatsheet" }
+    ]},
+    { title:"File Management", desc:"touch, mkdir, cp, mv, rm and safety.", links:[
+      { label:"Rahma · Files", view:"notes-rahma" },
+      { label:"Michael · Mgmt", view:"notes-michael" },
+      { label:"Hager · Mgmt", view:"notes-hager" },
+      { label:"Exercises", view:"exercises" }
+    ]},
+    { title:"Links & Inodes", desc:"Soft vs hard links and what an inode is.", links:[
+      { label:"Rahma · Links", view:"notes-rahma" },
+      { label:"Michael · Inodes", view:"notes-michael" },
+      { label:"Hager · Links", view:"notes-hager" },
+      { label:"Links Guide", view:"links" }
+    ]},
+    { title:"grep & Search", desc:"grep options, regex, and piped filtering.", links:[
+      { label:"Rahma · Search", view:"notes-rahma" },
+      { label:"Michael · grep", view:"notes-michael" },
+      { label:"Hager · grep", view:"notes-hager" }
+    ]},
+    { title:"Wildcards", desc:"* ? [ ] glob patterns.", links:[
+      { label:"Rahma · Search", view:"notes-rahma" },
+      { label:"Michael · Listing", view:"notes-michael" },
+      { label:"Hager · Listing", view:"notes-hager" }
+    ]},
+    { title:"Terminal Shortcuts", desc:"Ctrl+A/E/U/K, history, and more.", links:[
+      { label:"Rahma · CLI", view:"notes-rahma" },
+      { label:"Hager · Shortcuts", view:"notes-hager" },
+      { label:"RH124 Notes", view:"rh124" }
+    ]},
+    { title:"Filesystem Hierarchy", desc:"What lives in /bin, /etc, /var, /home, …", links:[
+      { label:"Rahma · Hierarchy", view:"notes-rahma" },
+      { label:"Hager · Dirs", view:"notes-hager" },
+      { label:"RH124 Notes", view:"rh124" }
+    ]},
+    { title:"Text Processing", desc:"cut and other text tools.", links:[
+      { label:"Michael · cut", view:"notes-michael" }
+    ]},
+    { title:"Lab Tasks", desc:"Hands-on practice for Day 1.", links:[
+      { label:"Lab 1 · Tasks", view:"lab" }
+    ]}
+  ]
 };
 
 // ===== ICONS =====

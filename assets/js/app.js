@@ -20,6 +20,8 @@ const state = {
   collapsedDeepDives: savedState.collapsedDeepDives || {},
   collapsedRH124: savedState.collapsedRH124 || {},
   collapsedBank: savedState.collapsedBank || {},
+  collapsedNotes: savedState.collapsedNotes || {},
+  completedLab: savedState.completedLab || {},
   completedModules: savedState.completedModules || {},
   expandedModules: savedState.expandedModules || {},
   quizScores: savedState.quizScores || {}
@@ -34,6 +36,8 @@ function saveState() {
     collapsedDeepDives: state.collapsedDeepDives,
     collapsedRH124: state.collapsedRH124,
     collapsedBank: state.collapsedBank,
+    collapsedNotes: state.collapsedNotes,
+    completedLab: state.completedLab,
     completedModules: state.completedModules,
     expandedModules: state.expandedModules,
     quizScores: state.quizScores
@@ -552,6 +556,189 @@ function renderLinksGuide() {
   return html;
 }
 
+// ===== DIAGRAMS =====
+function linkDiagramSVG() {
+  return `<svg width="560" height="280" viewBox="0 0 560 280" xmlns="http://www.w3.org/2000/svg">
+    <rect x="20" y="20" width="220" height="240" rx="8" fill="var(--bg-tertiary)" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="6,4"/>
+    <text x="130" y="45" text-anchor="middle" fill="var(--accent)" font-family="var(--font-mono)" font-size="13" font-weight="600">Soft Link (symlink)</text>
+    <rect x="50" y="70" width="160" height="40" rx="6" fill="var(--bg-secondary)" stroke="var(--border)"/>
+    <text x="130" y="88" text-anchor="middle" fill="var(--text)" font-family="var(--font-mono)" font-size="12">config_link</text>
+    <text x="130" y="103" text-anchor="middle" fill="var(--text-dim)" font-family="var(--font-mono)" font-size="10">→ /var/www/.../config.yaml</text>
+    <path d="M 130 115 L 130 155" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrowSoft)"/>
+    <text x="145" y="140" fill="var(--text-dim)" font-family="var(--font-mono)" font-size="10">path</text>
+    <rect x="50" y="165" width="160" height="50" rx="6" fill="var(--bg-secondary)" stroke="var(--border)"/>
+    <text x="130" y="185" text-anchor="middle" fill="var(--text)" font-family="var(--font-mono)" font-size="12">config.yaml</text>
+    <text x="130" y="202" text-anchor="middle" fill="var(--text-dim)" font-family="var(--font-mono)" font-size="10">inode: 98765</text>
+    <text x="130" y="245" text-anchor="middle" fill="var(--danger)" font-family="var(--font-sans)" font-size="11">If deleted → link breaks ✗</text>
+    <rect x="320" y="20" width="220" height="240" rx="8" fill="var(--bg-tertiary)" stroke="var(--accent)" stroke-width="1.5"/>
+    <text x="430" y="45" text-anchor="middle" fill="var(--accent)" font-family="var(--font-mono)" font-size="13" font-weight="600">Hard Link</text>
+    <rect x="350" y="70" width="160" height="40" rx="6" fill="var(--bg-secondary)" stroke="var(--border)"/>
+    <text x="430" y="88" text-anchor="middle" fill="var(--text)" font-family="var(--font-mono)" font-size="12">app_log_backup</text>
+    <text x="430" y="103" text-anchor="middle" fill="var(--text-dim)" font-family="var(--font-mono)" font-size="10">inode: 12345</text>
+    <path d="M 400 115 L 400 155" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrowHard)"/>
+    <path d="M 460 115 L 460 155" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrowHard)"/>
+    <text x="490" y="140" fill="var(--text-dim)" font-family="var(--font-mono)" font-size="10">inode</text>
+    <rect x="350" y="165" width="160" height="50" rx="6" fill="var(--accent-dim)" stroke="var(--accent)"/>
+    <text x="430" y="185" text-anchor="middle" fill="var(--accent)" font-family="var(--font-mono)" font-size="12">inode: 12345</text>
+    <text x="430" y="202" text-anchor="middle" fill="var(--text-dim)" font-family="var(--font-mono)" font-size="10">disk data</text>
+    <text x="430" y="245" text-anchor="middle" fill="var(--accent)" font-family="var(--font-sans)" font-size="11">If deleted → link works ✓</text>
+    <defs>
+      <marker id="arrowSoft" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent)"/></marker>
+      <marker id="arrowHard" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent)"/></marker>
+    </defs>
+  </svg>`;
+}
+
+function architectureSVG() {
+  return `<svg viewBox="0 0 760 130" xmlns="http://www.w3.org/2000/svg">
+    <defs><marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/></marker></defs>
+    <rect x="10" y="35" width="120" height="50" rx="6" fill="var(--bg-tertiary)" stroke="var(--border)"/><text x="70" y="65" text-anchor="middle" fill="var(--text)" font-family="var(--font-mono)" font-size="12">CLI / Terminal</text>
+    <line x1="130" y1="60" x2="170" y2="60" stroke="var(--accent)" stroke-width="2" marker-end="url(#ar)"/>
+    <rect x="175" y="35" width="120" height="50" rx="6" fill="var(--bg-tertiary)" stroke="var(--border)"/><text x="235" y="65" text-anchor="middle" fill="var(--text)" font-family="var(--font-mono)" font-size="12">Shell (bash)</text>
+    <line x1="295" y1="60" x2="335" y2="60" stroke="var(--accent)" stroke-width="2" marker-end="url(#ar)"/>
+    <rect x="340" y="35" width="120" height="50" rx="6" fill="var(--bg-tertiary)" stroke="var(--border)"/><text x="400" y="65" text-anchor="middle" fill="var(--text)" font-family="var(--font-mono)" font-size="12">Applications</text>
+    <line x1="460" y1="60" x2="500" y2="60" stroke="var(--accent)" stroke-width="2" marker-end="url(#ar)"/>
+    <rect x="505" y="35" width="120" height="50" rx="6" fill="var(--bg-tertiary)" stroke="var(--border)"/><text x="565" y="65" text-anchor="middle" fill="var(--text)" font-family="var(--font-mono)" font-size="12">Kernel</text>
+    <line x1="625" y1="60" x2="665" y2="60" stroke="var(--accent)" stroke-width="2" marker-end="url(#ar)"/>
+    <rect x="670" y="35" width="80" height="50" rx="6" fill="var(--accent-dim)" stroke="var(--accent)"/><text x="710" y="65" text-anchor="middle" fill="var(--accent)" font-family="var(--font-mono)" font-size="12">Hardware</text>
+    <text x="390" y="112" text-anchor="middle" fill="var(--text-dim)" font-family="var(--font-sans)" font-size="11">User types a command → Shell interprets → Kernel talks to Hardware</text>
+  </svg>`;
+}
+
+function syntaxSVG() {
+  return `<svg viewBox="0 0 600 100" xmlns="http://www.w3.org/2000/svg">
+    <rect x="20" y="30" width="140" height="40" rx="6" fill="var(--accent-dim)" stroke="var(--accent)"/><text x="90" y="55" text-anchor="middle" fill="var(--accent)" font-family="var(--font-mono)" font-size="13">command</text>
+    <text x="172" y="55" fill="var(--text-dim)" font-family="var(--font-mono)" font-size="16">[</text>
+    <rect x="186" y="30" width="150" height="40" rx="6" fill="var(--bg-tertiary)" stroke="var(--border)"/><text x="261" y="55" text-anchor="middle" fill="var(--text)" font-family="var(--font-mono)" font-size="12">options -l -a</text>
+    <text x="340" y="55" fill="var(--text-dim)" font-family="var(--font-mono)" font-size="16">]</text>
+    <text x="362" y="55" fill="var(--text-dim)" font-family="var(--font-mono)" font-size="16">[</text>
+    <rect x="376" y="30" width="160" height="40" rx="6" fill="var(--bg-tertiary)" stroke="var(--border)"/><text x="456" y="55" text-anchor="middle" fill="var(--text)" font-family="var(--font-mono)" font-size="12">arguments /path</text>
+    <text x="540" y="55" fill="var(--text-dim)" font-family="var(--font-mono)" font-size="16">]</text>
+  </svg>`;
+}
+
+function diagramSVG(kind) {
+  if (kind === 'links') return linkDiagramSVG();
+  if (kind === 'architecture') return architectureSVG();
+  if (kind === 'syntax') return syntaxSVG();
+  return '';
+}
+
+// ===== RENDER NOTE BLOCKS =====
+function renderBlock(b) {
+  switch (b.t) {
+    case 'text':
+      return `<div class="note-intro">${b.html}</div>`;
+    case 'list':
+      return `<ul class="note-list">${b.items.map(i => `<li>${i}</li>`).join('')}</ul>`;
+    case 'steps':
+      return `<ul class="note-list">${b.items.map(i => `<li>${i}</li>`).join('')}</ul>`;
+    case 'table':
+      return `<table class="comparison-table"><thead><tr>${b.head.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>${b.rows.map(r => `<tr>${r.map(c => `<td>${escapeHtml(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+    case 'code': {
+      const code = b.code;
+      return `<div class="cmd-example"><code>${highlightCode(escapeHtml(code))}</code><button class="copy-btn" onclick="copyText('${escapeAttr(code)}', this)" title="Copy">${ICONS.copy}</button></div>`;
+    }
+    case 'callout':
+      return b.kind === 'warn'
+        ? `<div class="warning-callout">${ICONS.alert}<p>${b.html}</p></div>`
+        : `<div class="cmd-note">${ICONS.alert}<span>${b.html}</span></div>`;
+    case 'arabic':
+      return `<div class="arabic-note">${escapeHtml(b.text)}</div>`;
+    case 'diagram':
+      return `<div class="note-diagram">${diagramSVG(b.kind)}</div>`;
+    default:
+      return '';
+  }
+}
+
+// ===== RENDER MULTI-AUTHOR NOTES =====
+function renderNotes(authorKey) {
+  const note = DATA.notes[authorKey];
+  let html = `<h1 class="view-title">${note.author}'s Notes <span class="day-pill">Day ${note.day}</span></h1>`;
+  html += `<p class="view-subtitle">${note.subtitle}.</p>`;
+  html += `
+    <div class="source-banner">
+      <div class="source-avatar">${note.avatar}</div>
+      <div class="source-meta"><strong>${note.author}</strong><span>${note.subtitle} · contributed for Day ${note.day}</span></div>
+      <span class="source-badge">${ICONS.file} Source: ${note.author}</span>
+    </div>`;
+  note.sections.forEach(sec => {
+    const key = authorKey + ':' + sec.id;
+    const isCollapsed = state.collapsedNotes[key] !== false;
+    const body = sec.blocks.map(renderBlock).join('');
+    html += `
+      <div class="category ${isCollapsed ? 'collapsed' : ''}" data-note-id="${key}">
+        <div class="category-header" onclick="toggleNoteSection('${authorKey}','${sec.id}')">
+          <div class="category-icon">${ICONS[sec.icon] || ICONS.file}</div>
+          <div class="category-title">${sec.title}</div>
+          <div class="category-count">${sec.blocks.length}</div>
+          <div class="chevron">${ICONS.chevron}</div>
+        </div>
+        <div class="category-body">${body}</div>
+      </div>`;
+  });
+  return html;
+}
+
+// ===== RENDER LAB =====
+function renderLab() {
+  const lab = DATA.lab;
+  let html = `<h1 class="view-title">${lab.title} <span class="day-pill">Day ${lab.day}</span></h1>`;
+  html += `<p class="lab-intro">${lab.intro}</p>`;
+  lab.tasks.forEach(task => {
+    const done = state.completedLab[task.id];
+    html += `
+      <div class="task-card ${done ? 'done' : ''}" id="task-${task.id}">
+        <div class="task-header"><span class="source-badge">${task.tag}</span><span class="task-title">${task.title}</span></div>
+        <p class="task-objective">${task.objective}</p>
+        <ol class="task-steps">${task.steps.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ol>
+        <label class="task-checkbox"><input type="checkbox" ${done ? 'checked' : ''} onchange="toggleLabTask('${task.id}', this)"> Mark this task complete</label>
+      </div>`;
+  });
+  return html;
+}
+
+// ===== RENDER TOPIC INDEX =====
+function renderTopicIndex() {
+  let html = `<h1 class="view-title">Topic Index</h1>`;
+  html += `<p class="view-subtitle">Overlapping topics across all Day 1 contributors, linking to each author's notes and the existing site sections.</p>`;
+  html += `<div class="topic-grid">`;
+  DATA.topicIndex.forEach(t => {
+    html += `
+      <div class="topic-card">
+        <h4>${escapeHtml(t.title)}</h4>
+        <div class="topic-desc">${escapeHtml(t.desc)}</div>
+        <div class="topic-links">${t.links.map(l => `<button class="topic-link" onclick="goToView('${l.view}')">${escapeHtml(l.label)}</button>`).join('')}</div>
+      </div>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
+// ===== TOGGLES & NAV HELPERS =====
+function toggleNoteSection(author, id) {
+  const key = author + ':' + id;
+  state.collapsedNotes[key] = state.collapsedNotes[key] === false ? true : false;
+  render(); saveState();
+}
+
+function toggleLabTask(id, el) {
+  state.completedLab[id] = el.checked;
+  const card = document.getElementById('task-' + id);
+  if (card) card.classList.toggle('done', el.checked);
+  saveState();
+}
+
+function goToView(view) {
+  state.view = view;
+  state.searchTerm = '';
+  const input = document.getElementById('searchInput');
+  if (input) input.value = '';
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  render(); saveState(); closeSidebar();
+}
+
 // ===== RENDER COURSE =====
 function renderCourse() {
   const modules = DATA.course.modules;
@@ -651,6 +838,22 @@ function renderSearchResults() {
     const hay = `${mod.title} ${mod.concepts.join(' ')} ${mod.skills.join(' ')} ${mod.project}`.toLowerCase();
     if (hay.includes(term)) results.push({ section: 'Course', title: `M${mod.number}: ${mod.title}`, desc: mod.project });
   });
+
+  if (DATA.notes) {
+    Object.keys(DATA.notes).forEach(authorKey => {
+      const note = DATA.notes[authorKey];
+      note.sections.forEach(sec => {
+        const hay = `${note.author} ${note.subtitle} ${sec.title} ${getNoteText(sec.blocks)}`.toLowerCase();
+        if (hay.includes(term)) results.push({ section: `${note.author}'s Notes`, title: sec.title, desc: 'See the ' + note.author + ' Notes section for details.' });
+      });
+    });
+  }
+  if (DATA.lab) {
+    DATA.lab.tasks.forEach(task => {
+      const hay = `${task.tag} ${task.title} ${task.objective} ${task.steps.join(' ')}`.toLowerCase();
+      if (hay.includes(term)) results.push({ section: 'Lab 1', title: task.title, desc: task.objective });
+    });
+  }
 
   (typeof RH124_SECTIONS !== 'undefined' ? RH124_SECTIONS : []).forEach(sec => {
     const hay = `${sec.title} ${sec.content}`.toLowerCase();
@@ -820,7 +1023,24 @@ function answerQuiz(oi, btn) {
 
 // ===== HELPERS =====
 function escapeHtml(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-function escapeAttr(s) { return s.replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+function escapeAttr(s) {
+  return s.replace(/\\/g, '\\\\')
+          .replace(/'/g, "\\'")
+          .replace(/"/g, '&quot;')
+          .replace(/\r/g, '')
+          .replace(/\n/g, '\\n');
+}
+function stripHtml(s) { return s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(); }
+function getNoteText(blocks) {
+  return blocks.map(b => {
+    if (b.t === 'text' || b.t === 'callout') return stripHtml(b.html || '');
+    if (b.t === 'arabic') return b.text || '';
+    if (b.t === 'code') return b.code || '';
+    if (b.t === 'table') return (b.head || []).concat(...(b.rows || [])).join(' ');
+    if (b.t === 'list' || b.t === 'steps') return (b.items || []).join(' ');
+    return '';
+  }).join(' ').toLowerCase();
+}
 
 function copyText(text, btn) {
   navigator.clipboard.writeText(text).then(() => {
@@ -872,6 +1092,11 @@ function render() {
   else if (state.view === 'exercises') html = renderExercises();
   else if (state.view === 'rh124') html = renderRH124();
   else if (state.view === 'links') html = renderLinksGuide();
+  else if (state.view === 'notes-rahma') html = renderNotes('rahma');
+  else if (state.view === 'notes-michael') html = renderNotes('michael');
+  else if (state.view === 'notes-hager') html = renderNotes('hager');
+  else if (state.view === 'lab') html = renderLab();
+  else if (state.view === 'topicindex') html = renderTopicIndex();
   else if (state.view === 'course') html = renderCourse();
   else if (state.view === 'quiz') html = renderQuiz();
 
