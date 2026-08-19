@@ -770,10 +770,27 @@ mark {
   .sidebar.open { left: 0; }
   .mobile-header { display: flex; }
   .main { padding: 20px 16px 60px; }
+  /* Search bar must sit below the sticky mobile header, not under it */
+  .search-wrapper { top: 53px; padding-bottom: 12px; }
   .cmd-grid { grid-template-columns: 1fr; gap: 6px; }
   .cmd-name { padding-top: 0; }
-  .comparison-table { font-size: 12px; }
-  .comparison-table th, .comparison-table td { padding: 8px 10px; }
+  /* Let wide tables scroll horizontally instead of breaking layout */
+  .comparison-table { display: block; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; font-size: 12px; }
+  .comparison-table th, .comparison-table td { padding: 8px 10px; white-space: nowrap; }
+  .flashcard-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .view-title { font-size: 20px; }
+  /* Prevent long tokens from forcing horizontal page scroll */
+  .cmd-desc, .exercise-text, .rh124-content p, .link-card p, .link-card li { overflow-wrap: anywhere; }
+  .nav-item, .theme-toggle, .toggle-complete, .quiz-option { min-height: 44px; }
+}
+
+@media (max-width: 480px) {
+  .main { padding: 16px 12px 48px; }
+  .search-wrapper { top: 50px; }
+  .flashcard-grid { grid-template-columns: 1fr; }
+  .view-title { font-size: 18px; }
+  .mobile-header { padding: 10px 12px; }
+  .category-title, .exercise-title, .rh124-title { font-size: 13px; }
 }
 
 /* Scrollbar */
