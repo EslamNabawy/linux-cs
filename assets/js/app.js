@@ -21,6 +21,8 @@ const state = {
   collapsedRH124: savedState.collapsedRH124 || {},
   collapsedBank: savedState.collapsedBank || {},
   collapsedNotes: savedState.collapsedNotes || {},
+  collapsedGroups: savedState.collapsedGroups || {},
+  recentViews: savedState.recentViews || [],
   completedLab: savedState.completedLab || {},
   completedModules: savedState.completedModules || {},
   expandedModules: savedState.expandedModules || {},
@@ -637,48 +639,57 @@ function renderBlock(b) {
       return `<table class="comparison-table"><thead><tr>${b.head.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>${b.rows.map(r => `<tr>${r.map(c => `<td>${escapeHtml(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
     case 'code': {
       const code = b.code;
-      return `<div class="cmd-example"><code>${highlightCode(escapeHtml(code))}</code><button class="copy-btn" onclick="copyText('${escapeAttr(code)}', this)" title="Copy">${ICONS.copy}</button></div>`;
+      const lang = b.lang || 'bash';
+      return `<div class="cmd-example"><span class="code-label">${escapeHtml(lang)}</span><code>${highlightCode(escapeHtml(code))}</code><button class="copy-btn" onclick="copyText('${escapeAttr(code)}', this)" title="Copy">${ICONS.copy}</button></div>`;
     }
-    case 'callout':
-      return b.kind === 'warn'
-        ? `<div class="warning-callout">${ICONS.alert}<p>${b.html}</p></div>`
-        : `<div class="cmd-note">${ICONS.alert}<span>${b.html}</span></div>`;
+    case 'callout': {
+      const kind = b.kind || 'info';
+      const klass = kind === 'warn' ? 'warning' : (kind === 'danger' ? 'danger' : (kind === 'tip' ? 'tip' : 'info'));
+      const label = { info: 'INFO', tip: 'TIP', warning: 'WARNING', danger: 'DANGER' }[klass] || 'NOTE';
+      return `<div class="callout callout--${klass}" data-label="${label}">${ICONS.alert}<p>${b.html}</p></div>`;
+    }
     case 'arabic':
       return `<div class="arabic-note">${escapeHtml(b.text)}</div>`;
-    case 'diagram':
-      return `<div class="note-diagram">${diagramSVG(b.kind)}</div>`;
+    case 'diagram': {
+      const CAP = { links: 'Symbolic vs hard links', architecture: 'Linux / RHEL system architecture', syntax: 'Command-line syntax and shell parsing' };
+      return `<div class="note-diagram"><div class="diagram-card">${diagramSVG(b.kind)}</div><div class="diagram-caption">${CAP[b.kind] || ''}</div></div>`;
+    }
     default:
       return '';
   }
 }
 
-// ===== RENDER MULTI-AUTHOR NOTES =====
+// ===== RENDER MULTI-AUTHOR NOTES (flat long-form) =====
 function renderNotes(authorKey) {
   const note = DATA.notes[authorKey];
+  const secId = (s) => `note-sec-${authorKey}-${s}`;
   let html = `<h1 class="view-title">${note.author}'s Notes <span class="day-pill">Day ${note.day}</span></h1>`;
-  html += `<p class="view-subtitle">${note.subtitle}.</p>`;
+  html += `<div class="note-page">`;
   html += `
-    <div class="source-banner">
-      <div class="source-avatar">${note.avatar}</div>
-      <div class="source-meta"><strong>${note.author}</strong><span>${note.subtitle} · contributed for Day ${note.day}</span></div>
-      <span class="source-badge">${ICONS.file} Source: ${note.author}</span>
+    <div class="note-miniheader">
+      <div class="mini-avatar">${note.avatar}</div>
+      <div class="mini-name">${note.author}</div>
+      <select onchange="if(this.value) goToNoteSection('${authorKey}', this.value)">
+        <option value="">Jump to section…</option>
+        ${note.sections.map(s => `<option value="${s.id}">${escapeHtml(s.title)}</option>`).join('')}
+      </select>
     </div>`;
-  note.sections.forEach(sec => {
-    const key = authorKey + ':' + sec.id;
-    const isCollapsed = state.collapsedNotes[key] !== false;
-    const body = sec.blocks.map(renderBlock).join('');
-    html += `
-      <div class="category ${isCollapsed ? 'collapsed' : ''}" data-note-id="${key}">
-        <div class="category-header" onclick="toggleNoteSection('${authorKey}','${sec.id}')">
-          <div class="category-icon">${ICONS[sec.icon] || ICONS.file}</div>
-          <div class="category-title">${sec.title}</div>
-          <div class="category-count">${sec.blocks.length}</div>
-          <div class="chevron">${ICONS.chevron}</div>
-        </div>
-        <div class="category-body">${body}</div>
-      </div>`;
+  html += `<div class="note-layout"><aside class="note-toc">`;
+  note.sections.forEach(s => {
+    html += `<a href="#${secId(s.id)}" onclick="event.preventDefault(); goToNoteSection('${authorKey}','${s.id}')">${escapeHtml(s.title)}</a>`;
   });
+  html += `</aside><div class="note-content">`;
+  note.sections.forEach(s => {
+    const body = s.blocks.map(renderBlock).join('');
+    html += `<section class="note-section" id="${secId(s.id)}"><h2>${escapeHtml(s.title)} <span class="note-source">Source: ${note.author}</span></h2>${body}</section>`;
+  });
+  html += `</div></div></div>`;
   return html;
+}
+
+function goToNoteSection(authorKey, secId) {
+  const el = document.getElementById(`note-sec-${authorKey}-${secId}`);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ===== RENDER LAB =====
@@ -686,6 +697,10 @@ function renderLab() {
   const lab = DATA.lab;
   let html = `<h1 class="view-title">${lab.title} <span class="day-pill">Day ${lab.day}</span></h1>`;
   html += `<p class="lab-intro">${lab.intro}</p>`;
+  const total = lab.tasks.length;
+  const doneCount = lab.tasks.filter(t => state.completedLab[t.id]).length;
+  const pct = total ? Math.round((doneCount / total) * 100) : 0;
+  html += `<div class="lab-progress"><span class="lab-count">${doneCount} / ${total} tasks complete</span><div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div></div>`;
   lab.tasks.forEach(task => {
     const done = state.completedLab[task.id];
     html += `
@@ -699,21 +714,33 @@ function renderLab() {
   return html;
 }
 
-// ===== RENDER TOPIC INDEX =====
+// ===== RENDER TOPIC INDEX (pill cloud + popover) =====
 function renderTopicIndex() {
   let html = `<h1 class="view-title">Topic Index</h1>`;
-  html += `<p class="view-subtitle">Overlapping topics across all Day 1 contributors, linking to each author's notes and the existing site sections.</p>`;
-  html += `<div class="topic-grid">`;
-  DATA.topicIndex.forEach(t => {
-    html += `
-      <div class="topic-card">
-        <h4>${escapeHtml(t.title)}</h4>
-        <div class="topic-desc">${escapeHtml(t.desc)}</div>
-        <div class="topic-links">${t.links.map(l => `<button class="topic-link" onclick="goToView('${l.view}')">${escapeHtml(l.label)}</button>`).join('')}</div>
-      </div>`;
+  html += `<p class="view-subtitle">Overlapping topics across all Day 1 contributors. Click a topic to see where it lives.</p>`;
+  html += `<div class="topic-cloud">`;
+  DATA.topicIndex.forEach((t, i) => {
+    const size = t.links.length >= 4 ? 'lg' : (t.links.length <= 1 ? 'sm' : '');
+    html += `<button class="topic-pill" data-size="${size}" onclick="toggleTopicPopover(${i}, this)">${escapeHtml(t.title)}</button>`;
   });
-  html += `</div>`;
+  html += `</div><div id="topicPopover"></div>`;
   return html;
+}
+
+function toggleTopicPopover(i, btn) {
+  const box = document.getElementById('topicPopover');
+  if (!box) return;
+  if (box.dataset.open === String(i)) {
+    box.innerHTML = '';
+    box.dataset.open = '';
+    btn.classList.remove('active');
+    return;
+  }
+  const t = DATA.topicIndex[i];
+  btn.parentElement.querySelectorAll('.topic-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  box.dataset.open = String(i);
+  box.innerHTML = `<div class="topic-popover"><h4>${escapeHtml(t.title)}</h4><div class="topic-desc" style="font-size:12.5px;color:var(--text-dim);margin-bottom:8px">${escapeHtml(t.desc)}</div><div class="topic-links">${t.links.map(l => `<button class="topic-link" onclick="goToView('${l.view}')">${escapeHtml(l.label)}</button>`).join('')}</div></div>`;
 }
 
 // ===== TOGGLES & NAV HELPERS =====
@@ -733,10 +760,35 @@ function toggleLabTask(id, el) {
 function goToView(view) {
   state.view = view;
   state.searchTerm = '';
+  pushRecent(view);
   const input = document.getElementById('searchInput');
   if (input) input.value = '';
   document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  ensureGroupOpen(view);
   render(); saveState(); closeSidebar();
+}
+
+const VIEW_GROUP = {
+  cheatsheet: 'cheatsheet',
+  commandsBank: 'course', exercises: 'course', rh124: 'course', links: 'course',
+  course: 'practice', quiz: 'practice',
+  'notes-rahma': 'day1', 'notes-michael': 'day1', 'notes-hager': 'day1', lab: 'day1', topicindex: 'day1'
+};
+function groupForView(view) { return VIEW_GROUP[view] || 'cheatsheet'; }
+function ensureGroupOpen(view) {
+  const el = document.querySelector(`.nav-group[data-group="${groupForView(view)}"]`);
+  if (el) el.classList.remove('collapsed');
+}
+function toggleNavGroup(group) {
+  const el = document.querySelector(`.nav-group[data-group="${group}"]`);
+  if (!el) return;
+  const collapsed = el.classList.toggle('collapsed');
+  state.collapsedGroups[group] = collapsed;
+  saveState();
+}
+function pushRecent(view) {
+  if (!view) return;
+  state.recentViews = [view, ...state.recentViews.filter(v => v !== view)].slice(0, 10);
 }
 
 // ===== RENDER COURSE =====
@@ -861,38 +913,51 @@ function renderSearchResults() {
   });
 
   if (results.length === 0) {
-    return html + `<div class="no-results">${ICONS.search}<h3>No matches found</h3><p>Try a different search term or synonym.</p></div>`;
+    const popular = ['ls', 'cd', 'grep', 'chmod', 'rm'];
+    const pops = popular.map(p => {
+      const c = DATA.commandsBank.find(x => x.command === p);
+      if (!c) return '';
+      return `<div class="cmd-row"><div class="cmd-grid"><div class="cmd-name">${escapeHtml(c.command)}</div><div><div class="cmd-desc">${escapeHtml(c.briefDescription)}</div><div class="cmd-example"><code>${highlightCode(escapeHtml(c.command))}</code><button class="copy-btn" onclick="copyText('${escapeAttr(c.command)}', this)">${ICONS.copy}</button></div></div></div></div>`;
+    }).join('');
+    const recent = state.recentViews.length
+      ? `<div class="links-section"><h3>Recently viewed</h3><div class="topic-links">${state.recentViews.slice(0, 5).map(v => `<button class="topic-link" onclick="goToView('${v}')">${escapeHtml(v.replace('notes-', ''))}</button>`).join('')}</div></div>`
+      : '';
+    return html + `<div class="no-results">${ICONS.search}<h3>No matches found</h3><p>Try a different search term or synonym.</p></div><div class="links-section"><h3>Popular commands</h3>${pops}</div>${recent}`;
   }
 
   const grouped = {};
   results.forEach(r => { (grouped[r.section] = grouped[r.section] || []).push(r); });
 
   Object.keys(grouped).forEach(sec => {
-    let rows = '';
-    grouped[sec].forEach(r => {
-      rows += `
-        <div class="cmd-row">
-          <div class="cmd-grid">
-            <div class="cmd-name">${highlightMatch(escapeHtml(r.title), t)}</div>
-            <div>
-              ${r.desc ? `<div class="cmd-desc">${highlightMatch(escapeHtml(r.desc), t)}</div>` : ''}
-              ${r.example ? `<div class="cmd-example"><code>${highlightCode(highlightMatch(escapeHtml(r.example), t))}</code><button class="copy-btn" onclick="copyText('${escapeAttr(r.example)}', this)">${ICONS.copy}</button></div>` : ''}
-            </div>
-          </div>
-        </div>`;
-    });
+    const items = grouped[sec];
+    const shown = items.slice(0, 4);
+    const extra = items.slice(4);
+    const extraHtml = extra.length
+      ? `<div class="search-group-extra" id="sgex-${escId(sec)}" style="display:none">${extra.map(r => searchRow(r, t)).join('')}</div><button class="topic-link" style="margin-top:8px" onclick="toggleSearchGroup('${escId(sec)}')">See all ${items.length} results</button>`
+      : '';
     html += `
       <div class="category">
         <div class="category-header" style="cursor:default">
           <div class="category-icon">${ICONS.search}</div>
           <div class="category-title">${sec}</div>
-          <div class="category-count">${grouped[sec].length}</div>
+          <div class="category-count">${items.length}</div>
         </div>
-        <div class="category-body">${rows}</div>
+        <div class="category-body">${shown.map(r => searchRow(r, t)).join('')}${extraHtml}</div>
       </div>`;
   });
 
   return html;
+}
+
+function searchRow(r, t) {
+  return `<div class="cmd-row"><div class="cmd-grid"><div class="cmd-name">${highlightMatch(escapeHtml(r.title), t)}</div><div>${r.desc ? `<div class="cmd-desc">${highlightMatch(escapeHtml(r.desc), t)}</div>` : ''}${r.example ? `<div class="cmd-example"><code>${highlightCode(highlightMatch(escapeHtml(r.example), t))}</code><button class="copy-btn" onclick="copyText('${escapeAttr(r.example)}', this)">${ICONS.copy}</button></div>` : ''}</div></div><span class="source-badge search-badge">${escapeHtml(r.section)}</span></div>`;
+}
+
+function escId(s) { return String(s).replace(/[^a-zA-Z0-9_-]/g, '_'); }
+
+function toggleSearchGroup(sec) {
+  const el = document.getElementById('sgex-' + sec);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
 // ===== QUIZ & FLASHCARDS =====
@@ -955,20 +1020,29 @@ function renderQuiz() {
 }
 
 let quizState = null;
+let quizMissed = [];
 
-function startQuiz() {
+function startQuiz(questionsOverride) {
   const deck = buildQuizDeck();
-  const total = deck.length;
-  const qCount = Math.min(10, total);
-  const pool = deck.slice().sort(() => Math.random() - 0.5);
-  const questions = [];
-  for (let i = 0; i < qCount; i++) {
-    const q = pool[i];
-    const others = deck.filter(d => d.back !== q.back).sort(() => Math.random() - 0.5).slice(0, 3).map(d => d.back);
-    const options = [q.back, ...others].sort(() => Math.random() - 0.5);
-    questions.push({ command: q.front, answer: q.back, options });
+  let questions;
+  if (questionsOverride && questionsOverride.length) {
+    questions = questionsOverride.map(q => {
+      const others = deck.filter(d => d.back !== q.back).sort(() => Math.random() - 0.5).slice(0, 3).map(d => d.back);
+      return { command: q.front, answer: q.back, options: [q.back, ...others].sort(() => Math.random() - 0.5) };
+    });
+  } else {
+    const total = deck.length;
+    const qCount = Math.min(10, total);
+    const pool = deck.slice().sort(() => Math.random() - 0.5);
+    questions = [];
+    for (let i = 0; i < qCount; i++) {
+      const q = pool[i];
+      const others = deck.filter(d => d.back !== q.back).sort(() => Math.random() - 0.5).slice(0, 3).map(d => d.back);
+      const options = [q.back, ...others].sort(() => Math.random() - 0.5);
+      questions.push({ command: q.front, answer: q.back, options });
+    }
   }
-  quizState = { questions, current: 0, score: 0 };
+  quizState = { questions, current: 0, score: 0, wrong: [] };
   showQuizQuestion();
 }
 
@@ -976,18 +1050,26 @@ function showQuizQuestion() {
   const box = document.getElementById('quizBox');
   if (!quizState) return;
   if (quizState.current >= quizState.questions.length) {
-    if (quizState.score > (state.quizScores.best || 0)) { state.quizScores.best = quizState.score; saveState(); render(); }
+    const isBest = quizState.score > (state.quizScores.best || 0);
+    if (isBest) { state.quizScores.best = quizState.score; saveState(); }
+    const missed = quizState.wrong.length;
+    quizMissed = quizState.wrong;
     box.innerHTML = `
       <div class="no-results">
         ${ICONS.check}
         <h3>Quiz complete!</h3>
         <p>You scored <strong>${quizState.score} / ${quizState.questions.length}</strong>.</p>
+        ${isBest ? '<p class="quiz-correct">New best score!</p>' : ''}
+        ${missed ? `<button class="toggle-complete" onclick="startQuiz(quizMissed)">${ICONS.check} Retry ${missed} missed</button>` : ''}
         <button class="toggle-complete" onclick="startQuiz()">${ICONS.check} Try Again</button>
       </div>`;
+    render();
     return;
   }
   const q = quizState.questions[quizState.current];
+  const dots = quizState.questions.map((_, i) => `<span class="quiz-dot ${i < quizState.current ? 'done' : ''} ${i === quizState.current ? 'current' : ''}"></span>`).join('');
   box.innerHTML = `
+    <div class="quiz-dots">${dots}</div>
     <div class="quiz-progress">Question ${quizState.current + 1} of ${quizState.questions.length} &middot; Score: ${quizState.score}</div>
     <div class="quiz-question">What does <code>${escapeHtml(q.command)}</code> do?</div>
     <div class="quiz-options">
@@ -1009,6 +1091,7 @@ function answerQuiz(oi, btn) {
     btn.classList.add('correct');
     feedback.innerHTML = '<span class="quiz-correct">Correct!</span>';
   } else {
+    quizState.wrong.push({ front: q.command, back: q.answer });
     btn.classList.add('wrong');
     feedback.innerHTML = `<span class="quiz-wrong">Incorrect.</span> Correct answer: ${escapeHtml(correct)}`;
     document.querySelectorAll('.quiz-option').forEach(b => { if (b.textContent.trim() === correct) b.classList.add('correct'); });
@@ -1105,17 +1188,40 @@ function render() {
   void content.offsetWidth;
   content.classList.add('fade-in');
 
+  const appEl = document.querySelector('.app');
+  if (appEl) appEl.classList.toggle('searching', !!state.searchTerm.trim());
+
+  postRender();
+
   const sw = document.getElementById('searchWrapper');
   // Search bar is always visible (it drives global search).
   sw.style.display = 'block';
+}
+
+function postRender() {
+  const toc = document.querySelector('.note-toc');
+  if (!toc || !('IntersectionObserver' in window)) return;
+  const links = Array.from(toc.querySelectorAll('a'));
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const a = toc.querySelector('a[href="#' + e.target.id + '"]');
+        if (a) a.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  document.querySelectorAll('.note-section').forEach(s => obs.observe(s));
 }
 
 // ===== EVENT LISTENERS =====
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
     state.view = btn.dataset.view;
+    pushRecent(btn.dataset.view);
     document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+    ensureGroupOpen(btn.dataset.view);
     render();
     saveState();
     closeSidebar();
@@ -1180,5 +1286,12 @@ function closeSidebar() {
     document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
     active.classList.add('active');
   }
+  Object.keys(state.collapsedGroups).forEach(g => {
+    if (state.collapsedGroups[g]) {
+      const el = document.querySelector(`.nav-group[data-group="${g}"]`);
+      if (el) el.classList.add('collapsed');
+    }
+  });
+  ensureGroupOpen(state.view);
   render();
 })();
