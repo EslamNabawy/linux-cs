@@ -1018,7 +1018,27 @@ function renderQuiz() {
     </div>
   `;
 
-  // Multiple-choice quiz — the primary action, kept above the fold
+  // Flashcards
+  html += `<div class="links-section"><h3>Flashcards <span class="badge">${total} cards</span></h3><div class="flashcard-grid">`;
+  deck.forEach((card, i) => {
+    html += `
+      <div class="flashcard" onclick="this.classList.toggle('flipped')" title="Click to flip">
+        <div class="flashcard-inner">
+          <div class="flashcard-front">
+            <span class="flashcard-cat">${escapeHtml(card.category)}</span>
+            <code>${escapeHtml(card.front)}</code>
+            <span class="flashcard-hint">click to reveal</span>
+          </div>
+          <div class="flashcard-back">
+            <span class="flashcard-cat">${escapeHtml(card.category)}</span>
+            <p>${escapeHtml(card.back)}</p>
+          </div>
+        </div>
+      </div>`;
+  });
+  html += `</div></div>`;
+
+  // Multiple-choice quiz
   html += `
     <div class="links-section">
       <h3>Multiple Choice Quiz</h3>
@@ -1028,40 +1048,7 @@ function renderQuiz() {
     </div>
   `;
 
-  // Flashcards (capped so the deck doesn't push the page into endless scrolling)
-  const LIMIT = 24;
-  const showMore = deck.length > LIMIT;
-  html += `<div class="links-section"><h3>Flashcards <span class="badge">${total} cards</span></h3><div id="flashcardGrid" class="flashcard-grid">${flashcardCells(deck.slice(0, LIMIT))}</div>${showMore ? `<button class="toggle-complete" id="showAllCards" style="margin-top:14px" onclick="showAllFlashcards()">${ICONS.chevron} Show all ${total} cards</button>` : ''}</div>`;
-
   return html;
-}
-
-function flashcardCells(cards) {
-  return cards.map(card => `
-    <div class="flashcard" onclick="this.classList.toggle('flipped')" title="Click to flip">
-      <div class="flashcard-inner">
-        <div class="flashcard-front">
-          <span class="flashcard-cat">${escapeHtml(card.category)}</span>
-          <code>${escapeHtml(card.front)}</code>
-          <span class="flashcard-hint">click to reveal</span>
-        </div>
-        <div class="flashcard-back">
-          <span class="flashcard-cat">${escapeHtml(card.category)}</span>
-          <p>${escapeHtml(card.back)}</p>
-        </div>
-      </div>
-    </div>`).join('');
-}
-
-function showAllFlashcards() {
-  const grid = document.getElementById('flashcardGrid');
-  const btn = document.getElementById('showAllCards');
-  if (!grid) return;
-  const deck = buildQuizDeck();
-  const all = grid.dataset.all === '1';
-  grid.innerHTML = flashcardCells(all ? deck.slice(0, 24) : deck);
-  grid.dataset.all = all ? '' : '1';
-  if (btn) btn.innerHTML = all ? `${ICONS.chevron} Show all ${deck.length} cards` : `${ICONS.chevron} Show fewer`;
 }
 
 let quizState = null;
@@ -1270,6 +1257,8 @@ function renderMergedCheatSheet() {
     ? `<div id="cmdResults" class="cmd-grid">${cmds.map(cmdCard).join('')}</div>`
     : `<div class="no-results">${ICONS.search}<h3>No commands match</h3><p>Try clearing the filters or search term.</p></div>`;
   return `
+    <h1 class="view-title">Linux Cheat Sheet &amp; Command Bank</h1>
+    <p class="view-subtitle">${all.length} commands across ${cats.length} categories — the cheat sheet and command bank, merged.</p>
     <div class="cmd-filterbar">
       <div class="cmd-search-box">
         <span class="cmd-search-icon">${ICONS.search}</span>
@@ -1279,8 +1268,6 @@ function renderMergedCheatSheet() {
         ${cats.map(cat => `<button class="chip ${state.cmdCats.includes(cat) ? 'active' : ''}" data-cat="${escapeAttr(cat)}" onclick="toggleCmdCat('${escapeAttr(cat)}')">${escapeHtml(cat)}</button>`).join('')}
       </div>
     </div>
-    <h1 class="view-title">Linux Cheat Sheet &amp; Command Bank</h1>
-    <p class="view-subtitle">${all.length} commands across ${cats.length} categories — the cheat sheet and command bank, merged.</p>
     <div class="cmd-results-meta">${cmds.length} command${cmds.length !== 1 ? 's' : ''} shown${term ? ` for “${escapeHtml(term)}”` : ''}</div>
     ${grid}
   `;
@@ -1432,15 +1419,12 @@ function render() {
   postRender();
 
   const sw = document.getElementById('searchWrapper');
-  // The cheatsheet has its own search+filter cluster (cmd-filterbar);
-  // the standalone global bar would duplicate it, so hide it there.
-  const isCheatsheet = state.tab === 'general' && state.view === 'cheatsheet';
-  sw.style.display = isCheatsheet ? 'none' : 'block';
+  // Search bar is always visible (it drives global search).
+  sw.style.display = 'block';
 }
 
 function postRender() {
   setupCmdSearch();
-  setupStickyShadows();
   const toc = document.querySelector('.note-toc');
   if (!toc || !('IntersectionObserver' in window)) return;
   const links = Array.from(toc.querySelectorAll('a'));
@@ -1454,28 +1438,6 @@ function postRender() {
     });
   }, { rootMargin: '-20% 0px -70% 0px' });
   document.querySelectorAll('.note-section').forEach(s => obs.observe(s));
-}
-
-// ===== STICKY SHADOW =====
-let stickyShadowBound = false;
-
-function setupStickyShadows() {
-  const bars = document.querySelectorAll('.cmd-filterbar, .search-wrapper');
-  if (!bars.length) return;
-  if (!stickyShadowBound) {
-    stickyShadowBound = true;
-    window.addEventListener('scroll', updateStickyShadows, { passive: true });
-    window.addEventListener('resize', updateStickyShadows);
-  }
-  updateStickyShadows();
-}
-
-function updateStickyShadows() {
-  document.querySelectorAll('.cmd-filterbar, .search-wrapper').forEach(b => {
-    if (b.offsetParent === null) { b.classList.remove('stuck'); return; } // hidden (display:none)
-    const offset = parseFloat(getComputedStyle(b).top) || 0;
-    b.classList.toggle('stuck', b.getBoundingClientRect().top <= offset + 1);
-  });
 }
 
 // ===== EVENT LISTENERS =====
@@ -1507,9 +1469,7 @@ document.getElementById('searchInput').addEventListener('input', (e) => {
 document.addEventListener('keydown', (e) => {
   if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
     e.preventDefault();
-    const isCheatsheet = state.tab === 'general' && state.view === 'cheatsheet';
-    const target = isCheatsheet ? document.getElementById('cmdSearch') : document.getElementById('searchInput');
-    if (target) target.focus();
+    document.getElementById('searchInput').focus();
   }
   if (e.key === 'Escape') {
     const input = document.getElementById('searchInput');

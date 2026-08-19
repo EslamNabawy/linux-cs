@@ -262,7 +262,7 @@ body {
 .view-subtitle {
   color: var(--text-muted);
   font-size: 13px;
-  margin-bottom: 16px;
+  margin-bottom: 28px;
 }
 
 /* ===== Accordion Cards (Shared) ===== */
@@ -785,7 +785,7 @@ mark {
   .mobile-header { display: flex; }
   .main { padding: 20px 16px 60px; }
   /* Search bar must sit below the sticky mobile header, not under it */
-  .search-wrapper { top: 106px; padding-bottom: 12px; }
+  .search-wrapper { top: 53px; padding-bottom: 12px; }
   .cmd-grid { grid-template-columns: 1fr; gap: 6px; }
   .cmd-name { padding-top: 0; }
   /* Let wide tables scroll horizontally instead of breaking layout */
@@ -800,7 +800,7 @@ mark {
 
 @media (max-width: 480px) {
   .main { padding: 16px 12px 48px; }
-  .search-wrapper { top: 106px; }
+  .search-wrapper { top: 50px; }
   .flashcard-grid { grid-template-columns: 1fr; }
   .view-title { font-size: 18px; }
   .mobile-header { padding: 10px 12px; }
@@ -1048,17 +1048,8 @@ mark {
 .subnav-item:hover { background: var(--bg-hover); color: var(--text); }
 .subnav-item.active { background: var(--accent-dim); color: var(--accent); }
 
-.content-col { min-width: 0; padding: 20px 32px 80px; }
-.search-wrapper {
-  position: sticky; top: 54px; z-index: 50; background: var(--bg);
-  padding: 0 0 20px; margin-bottom: 8px;
-  border-bottom: 1px solid transparent;
-  transition: box-shadow var(--transition), border-color var(--transition);
-}
-.search-wrapper.stuck, .cmd-filterbar.stuck {
-  border-bottom-color: var(--border);
-  box-shadow: 0 8px 20px -10px rgba(0, 0, 0, 0.45);
-}
+.content-col { min-width: 0; padding: 24px 32px 80px; }
+.search-wrapper { position: sticky; top: 54px; z-index: 50; background: var(--bg); padding: 0 0 20px; margin-bottom: 8px; }
 
 /* Day parts (NTI tab sections) */
 .day-part { margin-top: 32px; }
@@ -1069,28 +1060,26 @@ mark {
 
 /* Merged cheat sheet */
 .cmd-filterbar {
-  position: sticky; top: 54px; z-index: 50; background: var(--bg);
-  padding: 10px 0 12px; display: flex; flex-direction: column; gap: 10px;
-  border-bottom: 1px solid transparent;
-  transition: box-shadow var(--transition), border-color var(--transition);
+  position: sticky; top: 116px; z-index: 40; background: var(--bg);
+  padding: 10px 0; display: flex; flex-direction: column; gap: 10px;
 }
 .cmd-search-box { display: flex; align-items: center; position: relative; }
 .cmd-search-icon { position: absolute; left: 14px; width: 16px; height: 16px; color: var(--text-dim); pointer-events: none; }
 .cmd-search-input {
-  width: 100%; padding: 8px 14px 8px 42px; background: var(--bg-secondary);
+  width: 100%; padding: 10px 14px 10px 42px; background: var(--bg-secondary);
   border: 1px solid var(--border); border-radius: var(--radius); color: var(--text);
   font-family: var(--font-sans); font-size: 13px;
 }
 .cmd-search-input:focus { outline: none; border-color: var(--accent); }
-.cmd-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.cmd-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip {
-  padding: 5px 10px; border-radius: 999px; border: 1px solid var(--border);
+  padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border);
   background: var(--bg-secondary); color: var(--text-muted); font-size: 12px;
   cursor: pointer; font-family: var(--font-sans); transition: all var(--transition);
 }
 .chip:hover { border-color: var(--accent); color: var(--text); }
 .chip.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
-.cmd-results-meta { font-size: 12px; color: var(--text-dim); margin: 6px 0; }
+.cmd-results-meta { font-size: 12px; color: var(--text-dim); margin: 8px 0; }
 .cmd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
 .cmd-card { padding: 14px 16px; border-radius: var(--radius); background: var(--bg-secondary); border: 1px solid var(--border); }
 .cmd-card-name { font-family: var(--font-mono); font-weight: 700; color: var(--accent); font-size: 14px; }
@@ -1179,10 +1168,10 @@ mark {
   .sidebar.open { transform: translateX(0); }
   .content-col { padding: 16px; }
   .topbar { flex-wrap: wrap; }
-  .tabs { order: 3; width: 100%; flex: 0 0 100%; }
+  .tabs { order: 3; width: 100%; }
   #menuBtn { display: grid; }
-  .search-wrapper { top: 106px; }
-  .cmd-filterbar { top: 106px; }
+  .search-wrapper { top: 0; }
+  .cmd-filterbar { top: 70px; }
 }
 @media (min-width: 861px) {
   #menuBtn { display: none; }
@@ -1329,7 +1318,7 @@ mark {
 .note-page { position: relative; }
 .note-miniheader {
   position: sticky;
-  top: 114px;
+  top: 0;
   z-index: 20;
   display: flex;
   align-items: center;
@@ -1362,7 +1351,7 @@ mark {
   max-width: 180px;
 }
 .note-layout { display: grid; grid-template-columns: 200px 1fr; gap: 24px; }
-.note-toc { position: sticky; top: 114px; align-self: start; }
+.note-toc { position: sticky; top: 84px; align-self: start; }
 .note-toc a {
   display: block;
   padding: 5px 0 5px 10px;
@@ -1378,7 +1367,7 @@ mark {
   padding-left: 24px;
   background: linear-gradient(90deg, rgba(210,153,34,0.025), transparent 40%);
 }
-.note-section { margin-bottom: 30px; scroll-margin-top: 114px; }
+.note-section { margin-bottom: 30px; scroll-margin-top: 84px; }
 .note-section > h2 {
   font-size: 18px;
   font-weight: 600;
@@ -1553,11 +1542,4 @@ html { scroll-behavior: smooth; }
 
 body, .sidebar, .main, .note-page, .category, .task-card, .topic-pill, .callout, .flashcard, .quiz-box, .exercise-card, .note-diagram .diagram-card, .note-miniheader, .note-toc, .note-section, .source-banner, .lab-progress .progress-track, .nav-item {
   transition: background-color var(--transition), border-color var(--transition), color var(--transition);
-}
-
-/* ===== Mobile: note sticky elements below the topbar + search stack ===== */
-@media (max-width: 860px) {
-  .note-miniheader { top: 158px; }
-  .note-toc { top: 158px; }
-  .note-section { scroll-margin-top: 158px; }
 }
