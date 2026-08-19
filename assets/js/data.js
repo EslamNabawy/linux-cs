@@ -324,6 +324,18 @@ const DATA = {
       { feature: "Command", soft: "ln -s target link_name", hard: "ln target link_name" }
     ]
   },
+  helpfulLinks: [
+    {
+      title: "RH124 Full Course Walkthrough (YouTube)",
+      desc: "A comprehensive video walkthrough following the Red Hat RH124 curriculum used in this NTI course.",
+      url: "https://www.youtube.com/watch?v=gojeTqXdBH0&t=1s"
+    },
+    {
+      title: "Red Hat Academy",
+      desc: "Official Red Hat training and certification portal for the RH124/RH134 curriculum.",
+      url: "https://www.redhat.com/en/services/training/red-hat-academy"
+    }
+  ],
   course: {
     modules: [
       { number: 1, title: "The Basics", concepts: ["What is Linux?", "Open Source", "Distributions (Ubuntu, CentOS, Debian)"], skills: ["Navigating the terminal (cd, ls, pwd)"], project: "Install Linux (via WSL or VirtualBox) and navigate the file system without a GUI." },

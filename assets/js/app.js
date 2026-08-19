@@ -12,7 +12,11 @@ function loadState() {
 const savedState = loadState();
 
 const state = {
+  tab: savedState.tab || 'general',
   view: savedState.view || 'cheatsheet',
+  searchTerm: '',
+  cmdTerm: savedState.cmdTerm || '',
+  cmdCats: savedState.cmdCats || [],
   theme: savedState.theme || 'dark',
   searchTerm: '',
   collapsedCategories: savedState.collapsedCategories || {},
@@ -31,7 +35,10 @@ const state = {
 
 function saveState() {
   const persist = {
+    tab: state.tab,
     view: state.view,
+    cmdTerm: state.cmdTerm,
+    cmdCats: state.cmdCats,
     theme: state.theme,
     collapsedCategories: state.collapsedCategories,
     collapsedExercises: state.collapsedExercises,
@@ -435,12 +442,9 @@ const RH124_SECTIONS = [
     }
   ];
 
-// ===== RENDER RH124 NOTES =====
-function renderRH124() {
-  let html = `
-    <h1 class="view-title">RH124 - Day 1 Notes</h1>
-    <p class="view-subtitle">Red Hat Enterprise Linux basics, command line, and file management.</p>
-  `;
+// ===== RENDER RH124 NOTES (body) =====
+function renderRH124Body() {
+  let html = '';
 
   const sections = RH124_SECTIONS;
 
@@ -463,14 +467,11 @@ function renderRH124() {
   return html;
 }
 
-// ===== RENDER LINKS GUIDE =====
-function renderLinksGuide() {
+// ===== RENDER LINKS GUIDE (body) =====
+function renderLinksBody() {
   const soft = DATA.links.soft;
   const hard = DATA.links.hard;
-  let html = `
-    <h1 class="view-title">Links Guide</h1>
-    <p class="view-subtitle">Deep dive into soft (symbolic) vs. hard links in Linux.</p>
-  `;
+  let html = '';
 
   html += `
     <div class="links-diagram">
@@ -659,12 +660,11 @@ function renderBlock(b) {
   }
 }
 
-// ===== RENDER MULTI-AUTHOR NOTES (flat long-form) =====
-function renderNotes(authorKey) {
+// ===== RENDER MULTI-AUTHOR NOTES (body, flat long-form) =====
+function renderNotesBody(authorKey) {
   const note = DATA.notes[authorKey];
   const secId = (s) => `note-sec-${authorKey}-${s}`;
-  let html = `<h1 class="view-title">${note.author}'s Notes <span class="day-pill">Day ${note.day}</span></h1>`;
-  html += `<div class="note-page">`;
+  let html = `<div class="note-page">`;
   html += `
     <div class="note-miniheader">
       <div class="mini-avatar">${note.avatar}</div>
@@ -692,11 +692,10 @@ function goToNoteSection(authorKey, secId) {
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// ===== RENDER LAB =====
-function renderLab() {
+// ===== RENDER LAB (body) =====
+function renderLabBody() {
   const lab = DATA.lab;
-  let html = `<h1 class="view-title">${lab.title} <span class="day-pill">Day ${lab.day}</span></h1>`;
-  html += `<p class="lab-intro">${lab.intro}</p>`;
+  let html = '';
   const total = lab.tasks.length;
   const doneCount = lab.tasks.filter(t => state.completedLab[t.id]).length;
   const pct = total ? Math.round((doneCount / total) * 100) : 0;
@@ -757,35 +756,68 @@ function toggleLabTask(id, el) {
   saveState();
 }
 
+const TABS = [
+  { id: 'general', label: 'General Knowledge', views: [
+    { id: 'cheatsheet', label: 'Cheat Sheet' },
+    { id: 'topicindex', label: 'Topic Index' },
+    { id: 'exercises', label: 'Practical Exercises' },
+    { id: 'roadmap7', label: 'Course Roadmap' }
+  ]},
+  { id: 'course', label: 'NTI Linux Course', views: [
+    { id: 'roadmap', label: 'Roadmap (5-day)' },
+    { id: 'day1', label: 'Day 1' },
+    { id: 'day2', label: 'Day 2' },
+    { id: 'day3', label: 'Day 3' },
+    { id: 'day4', label: 'Day 4' },
+    { id: 'day5', label: 'Day 5' }
+  ]},
+  { id: 'links', label: 'Helpful Links', views: [ { id: 'links', label: 'Helpful Links' } ] },
+  { id: 'quiz', label: 'Flashcards & Quizzes', views: [ { id: 'quiz', label: 'Flashcards & Quiz' } ] }
+];
+const VIEW_MAP = {
+  'cheatsheet': { tab: 'general', view: 'cheatsheet' },
+  'commandsBank': { tab: 'general', view: 'cheatsheet' },
+  'topicindex': { tab: 'general', view: 'topicindex' },
+  'exercises': { tab: 'general', view: 'exercises' },
+  'course': { tab: 'general', view: 'roadmap7' },
+  'rh124': { tab: 'course', view: 'day1' },
+  'links': { tab: 'course', view: 'day1' },
+  'notes-rahma': { tab: 'course', view: 'day1' },
+  'notes-michael': { tab: 'course', view: 'day1' },
+  'notes-hager': { tab: 'course', view: 'day1' },
+  'lab': { tab: 'course', view: 'day1' },
+  'quiz': { tab: 'quiz', view: 'quiz' }
+};
+function tabDefaultView(tab) { const t = TABS.find(x => x.id === tab); return t ? t.views[0].id : 'cheatsheet'; }
+
 function goToView(view) {
+  const m = VIEW_MAP[view] || { tab: 'general', view: 'cheatsheet' };
+  setView(m.tab, m.view);
+}
+
+function setView(tab, view) {
+  state.tab = tab;
   state.view = view;
   state.searchTerm = '';
-  pushRecent(view);
   const input = document.getElementById('searchInput');
   if (input) input.value = '';
-  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.view === view));
-  ensureGroupOpen(view);
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  renderSubNav();
   render(); saveState(); closeSidebar();
 }
 
-const VIEW_GROUP = {
-  cheatsheet: 'cheatsheet',
-  commandsBank: 'course', exercises: 'course', rh124: 'course', links: 'course',
-  course: 'practice', quiz: 'practice',
-  'notes-rahma': 'day1', 'notes-michael': 'day1', 'notes-hager': 'day1', lab: 'day1', topicindex: 'day1'
-};
-function groupForView(view) { return VIEW_GROUP[view] || 'cheatsheet'; }
-function ensureGroupOpen(view) {
-  const el = document.querySelector(`.nav-group[data-group="${groupForView(view)}"]`);
-  if (el) el.classList.remove('collapsed');
+function switchTab(tab) {
+  setView(tab, tabDefaultView(tab));
 }
-function toggleNavGroup(group) {
-  const el = document.querySelector(`.nav-group[data-group="${group}"]`);
-  if (!el) return;
-  const collapsed = el.classList.toggle('collapsed');
-  state.collapsedGroups[group] = collapsed;
-  saveState();
+
+function renderSubNav() {
+  const nav = document.getElementById('subnav');
+  if (!nav) return;
+  const tab = TABS.find(t => t.id === state.tab);
+  if (!tab) return;
+  nav.innerHTML = tab.views.map(v => `<button class="subnav-item ${v.id === state.view ? 'active' : ''}" data-view="${v.id}" onclick="setView('${tab.id}','${v.id}')">${escapeHtml(v.label)}</button>`).join('');
 }
+
 function pushRecent(view) {
   if (!view) return;
   state.recentViews = [view, ...state.recentViews.filter(v => v !== view)].slice(0, 10);
@@ -1020,88 +1052,97 @@ function renderQuiz() {
 }
 
 let quizState = null;
-let quizMissed = [];
+let quizOpen = [];
+
+function makeQuizQ(front, back, deck) {
+  const others = deck.filter(d => d.back !== back).sort(() => Math.random() - 0.5).slice(0, 3).map(d => d.back);
+  const options = [back, ...others].sort(() => Math.random() - 0.5);
+  return { command: front, answer: back, options };
+}
 
 function startQuiz(questionsOverride) {
   const deck = buildQuizDeck();
   let questions;
   if (questionsOverride && questionsOverride.length) {
-    questions = questionsOverride.map(q => {
-      const others = deck.filter(d => d.back !== q.back).sort(() => Math.random() - 0.5).slice(0, 3).map(d => d.back);
-      return { command: q.front, answer: q.back, options: [q.back, ...others].sort(() => Math.random() - 0.5) };
-    });
+    questions = questionsOverride.map(q => makeQuizQ(q.front, q.back, deck));
   } else {
-    const total = deck.length;
-    const qCount = Math.min(10, total);
     const pool = deck.slice().sort(() => Math.random() - 0.5);
+    const qCount = Math.min(10, deck.length);
     questions = [];
-    for (let i = 0; i < qCount; i++) {
-      const q = pool[i];
-      const others = deck.filter(d => d.back !== q.back).sort(() => Math.random() - 0.5).slice(0, 3).map(d => d.back);
-      const options = [q.back, ...others].sort(() => Math.random() - 0.5);
-      questions.push({ command: q.front, answer: q.back, options });
-    }
+    for (let i = 0; i < qCount; i++) questions.push(makeQuizQ(pool[i].front, pool[i].back, deck));
   }
-  quizState = { questions, current: 0, score: 0, wrong: [] };
-  showQuizQuestion();
+  quizState = { questions, score: 0, wrong: [], answered: {} };
+  quizOpen = questions.map(() => true);
+  renderQuizQuestions();
 }
 
-function showQuizQuestion() {
+function toggleQuizAcc(i) {
+  if (!quizState) return;
+  quizOpen[i] = !quizOpen[i];
+  renderQuizQuestions();
+}
+
+function answerQuiz(i, chosen, btn) {
+  if (!quizState || quizState.answered[i]) return;
+  const q = quizState.questions[i];
+  const correct = chosen === q.answer;
+  quizState.answered[i] = { chosen, correct };
+  if (correct) quizState.score += 1;
+  else quizState.wrong.push({ front: q.command, back: q.answer });
+  const best = Math.max(state.quizScores.best || 0, quizState.score);
+  state.quizScores.best = best;
+  saveState();
+  renderQuizQuestions();
+}
+
+function quizAccItem(q, i) {
+  const open = quizOpen[i];
+  const a = quizState.answered[i];
+  let body = '';
+  if (open) {
+    if (!a) {
+      body = `<div class="quiz-options">${q.options.map(opt => `<button class="quiz-option" onclick="answerQuiz(${i}, '${escapeAttr(opt)}', this)">${escapeHtml(opt)}</button>`).join('')}</div>`;
+    } else {
+      body = `<div class="quiz-feedback-inline">
+        <span class="quiz-answered ${a.correct ? 'correct' : 'wrong'}">${a.correct ? ICONS.check + ' Correct' : ICONS.alert + ' Incorrect'}</span>
+        ${!a.correct ? `<span class="quiz-correct-answer">Answer: ${escapeHtml(q.answer)}</span>` : ''}
+      </div>`;
+    }
+  }
+  const status = a ? (a.correct ? '✓' : '✗') : (open ? '' : ICONS.chevron);
+  return `
+    <div class="quiz-acc-item ${open ? 'open' : ''} ${a ? (a.correct ? 'done-correct' : 'done-wrong') : ''}">
+      <div class="quiz-acc-header" onclick="toggleQuizAcc(${i})">
+        <span class="quiz-acc-q">Q${i + 1}. What does <code>${escapeHtml(q.command)}</code> do?</span>
+        <span class="quiz-acc-status">${status}</span>
+      </div>
+      <div class="quiz-acc-body">${body}</div>
+    </div>`;
+}
+
+function renderQuizQuestions() {
   const box = document.getElementById('quizBox');
   if (!quizState) return;
-  if (quizState.current >= quizState.questions.length) {
-    const isBest = quizState.score > (state.quizScores.best || 0);
-    if (isBest) { state.quizScores.best = quizState.score; saveState(); }
-    const missed = quizState.wrong.length;
-    quizMissed = quizState.wrong;
-    box.innerHTML = `
-      <div class="no-results">
-        ${ICONS.check}
-        <h3>Quiz complete!</h3>
-        <p>You scored <strong>${quizState.score} / ${quizState.questions.length}</strong>.</p>
-        ${isBest ? '<p class="quiz-correct">New best score!</p>' : ''}
-        ${missed ? `<button class="toggle-complete" onclick="startQuiz(quizMissed)">${ICONS.check} Retry ${missed} missed</button>` : ''}
-        <button class="toggle-complete" onclick="startQuiz()">${ICONS.check} Try Again</button>
-      </div>`;
-    render();
-    return;
-  }
-  const q = quizState.questions[quizState.current];
-  const dots = quizState.questions.map((_, i) => `<span class="quiz-dot ${i < quizState.current ? 'done' : ''} ${i === quizState.current ? 'current' : ''}"></span>`).join('');
+  const total = quizState.questions.length;
+  const complete = (quizState.score + quizState.wrong.length) >= total;
+  const missed = quizState.wrong;
   box.innerHTML = `
-    <div class="quiz-dots">${dots}</div>
-    <div class="quiz-progress">Question ${quizState.current + 1} of ${quizState.questions.length} &middot; Score: ${quizState.score}</div>
-    <div class="quiz-question">What does <code>${escapeHtml(q.command)}</code> do?</div>
-    <div class="quiz-options">
-      ${q.options.map((opt, oi) => `<button class="quiz-option" onclick="answerQuiz(${oi}, this)">${escapeHtml(opt)}</button>`).join('')}
+    <div class="quiz-progress">Score: <strong>${quizState.score}</strong> / ${total}${state.quizScores.best ? ` &middot; Best: ${state.quizScores.best}` : ''}</div>
+    <div class="quiz-accordion">
+      ${quizState.questions.map((q, i) => quizAccItem(q, i)).join('')}
     </div>
-    <div class="quiz-feedback" id="quizFeedback"></div>
+    ${complete ? `
+      <div class="no-results">
+        <h3>Quiz complete!</h3>
+        <p>You scored <strong>${quizState.score} / ${total}</strong>.</p>
+        ${missed.length ? `<button class="toggle-complete" onclick="startQuiz(${JSON.stringify(missed).replace(/"/g, '&quot;')})">${ICONS.check} Retry ${missed.length} missed</button>` : ''}
+        <button class="toggle-complete" onclick="startQuiz()">${ICONS.check} Try Again</button>
+      </div>` : ''}
   `;
 }
 
-function answerQuiz(oi, btn) {
-  if (!quizState) return;
-  const q = quizState.questions[quizState.current];
-  const chosen = q.options[oi];
-  const correct = q.answer;
-  const feedback = document.getElementById('quizFeedback');
-  document.querySelectorAll('.quiz-option').forEach(b => b.disabled = true);
-  if (chosen === correct) {
-    quizState.score += 1;
-    btn.classList.add('correct');
-    feedback.innerHTML = '<span class="quiz-correct">Correct!</span>';
-  } else {
-    quizState.wrong.push({ front: q.command, back: q.answer });
-    btn.classList.add('wrong');
-    feedback.innerHTML = `<span class="quiz-wrong">Incorrect.</span> Correct answer: ${escapeHtml(correct)}`;
-    document.querySelectorAll('.quiz-option').forEach(b => { if (b.textContent.trim() === correct) b.classList.add('correct'); });
-  }
-  quizState.current += 1;
-  const next = document.createElement('button');
-  next.className = 'toggle-complete';
-  next.innerHTML = (quizState.current >= quizState.questions.length ? ICONS.check + ' See Results' : 'Next ' + ICONS.chevron);
-  next.onclick = showQuizQuestion;
-  feedback.appendChild(next);
+function flipCard(i, el) {
+  el.classList.toggle('flipped');
 }
 
 // ===== HELPERS =====
@@ -1162,6 +1203,188 @@ function toggleComplete(num) {
   render(); saveState();
 }
 
+// ===== MERGED CHEAT SHEET + COMMAND BANK =====
+function deriveFlags(example, notes, brief) {
+  const text = ((example || '') + ' ' + (notes || '') + ' ' + (brief || ''));
+  const flags = [];
+  const re = /(?:^|\s)(-{1,2}[A-Za-z][\w-]*)/g;
+  let m;
+  while ((m = re.exec(text))) { if (!flags.includes(m[1])) flags.push(m[1]); }
+  return flags.slice(0, 6);
+}
+
+function buildCommandIndex() {
+  const map = {};
+  const add = (cmd) => {
+    const key = cmd.command.trim();
+    if (!map[key]) map[key] = { command: key, category: cmd.category, briefDescription: cmd.briefDescription, example: cmd.example || cmd.command, notes: cmd.notes || '', keywords: cmd.keywords || [], flags: [] };
+    const m = map[key];
+    if (cmd.notes && (!m.notes || m.notes.length < cmd.notes.length)) m.notes = cmd.notes;
+    if (cmd.keywords && cmd.keywords.length) m.keywords = m.keywords.concat(cmd.keywords);
+  };
+  (DATA.categories || []).forEach(cat => cat.commands.forEach(c => add({ command: c.command, category: cat.title, briefDescription: c.description, example: c.example, notes: c.notes || '' })));
+  (DATA.commandsBank || []).forEach(c => add({ command: c.command, category: c.category, briefDescription: c.briefDescription, example: c.command, notes: c.notes || '', keywords: c.keywords }));
+  Object.values(map).forEach(c => { c.flags = deriveFlags(c.example, c.notes, c.briefDescription); });
+  return Object.values(map);
+}
+
+function getCmds() {
+  const term = state.cmdTerm.toLowerCase().trim();
+  let cmds = buildCommandIndex();
+  if (state.cmdCats.length) cmds = cmds.filter(c => state.cmdCats.includes(c.category));
+  if (term) cmds = cmds.filter(c => `${c.command} ${c.category} ${c.briefDescription} ${c.notes} ${c.keywords.join(' ')}`.toLowerCase().includes(term));
+  return cmds;
+}
+
+function cmdCard(c) {
+  const catClass = 'cat-' + (c.category || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  return `
+    <div class="cmd-card ${catClass}">
+      <div class="cmd-card-name">${escapeHtml(c.command)}</div>
+      <div class="cmd-card-desc">${escapeHtml(c.briefDescription)}</div>
+      ${c.example ? `<div class="cmd-card-example"><code>${highlightCode(escapeHtml(c.example))}</code><button class="copy-btn" onclick="copyText('${escapeAttr(c.example)}', this)" title="Copy">${ICONS.copy}</button></div>` : ''}
+      ${c.flags.length ? `<div class="cmd-card-flags">${c.flags.map(f => `<span class="flag-chip">${escapeHtml(f)}</span>`).join('')}</div>` : ''}
+      ${c.notes ? `<div class="cmd-card-note">${ICONS.alert}<span>${escapeHtml(c.notes)}</span></div>` : ''}
+    </div>`;
+}
+
+function renderMergedCheatSheet() {
+  const all = buildCommandIndex();
+  const cats = Array.from(new Set(all.map(c => c.category)));
+  const cmds = getCmds();
+  const term = state.cmdTerm.trim();
+  const grid = cmds.length
+    ? `<div id="cmdResults" class="cmd-grid">${cmds.map(cmdCard).join('')}</div>`
+    : `<div class="no-results">${ICONS.search}<h3>No commands match</h3><p>Try clearing the filters or search term.</p></div>`;
+  return `
+    <h1 class="view-title">Linux Cheat Sheet &amp; Command Bank</h1>
+    <p class="view-subtitle">${all.length} commands across ${cats.length} categories — the cheat sheet and command bank, merged.</p>
+    <div class="cmd-filterbar">
+      <div class="cmd-search-box">
+        <span class="cmd-search-icon">${ICONS.search}</span>
+        <input id="cmdSearch" class="cmd-search-input" type="text" placeholder="Filter commands (name, flag, description)…" value="${escapeAttr(state.cmdTerm)}">
+      </div>
+      <div class="cmd-chips">
+        ${cats.map(cat => `<button class="chip ${state.cmdCats.includes(cat) ? 'active' : ''}" data-cat="${escapeAttr(cat)}" onclick="toggleCmdCat('${escapeAttr(cat)}')">${escapeHtml(cat)}</button>`).join('')}
+      </div>
+    </div>
+    <div class="cmd-results-meta">${cmds.length} command${cmds.length !== 1 ? 's' : ''} shown${term ? ` for “${escapeHtml(term)}”` : ''}</div>
+    ${grid}
+  `;
+}
+
+function renderCmdResults() {
+  const wrap = document.getElementById('cmdResults');
+  if (!wrap) return;
+  const cmds = getCmds();
+  wrap.outerHTML = cmds.length
+    ? `<div id="cmdResults" class="cmd-grid">${cmds.map(cmdCard).join('')}</div>`
+    : `<div class="no-results">${ICONS.search}<h3>No commands match</h3><p>Try clearing the filters or search term.</p></div>`;
+}
+
+function toggleCmdCat(cat) {
+  const i = state.cmdCats.indexOf(cat);
+  if (i >= 0) state.cmdCats.splice(i, 1); else state.cmdCats.push(cat);
+  saveState();
+  document.querySelectorAll('.chip[data-cat]').forEach(b => b.classList.toggle('active', state.cmdCats.includes(b.dataset.cat)));
+  renderCmdResults();
+}
+
+function setupCmdSearch() {
+  const input = document.getElementById('cmdSearch');
+  if (!input) return;
+  input.value = state.cmdTerm;
+  input.addEventListener('input', (e) => { state.cmdTerm = e.target.value; renderCmdResults(); });
+}
+
+// ===== NTI LINUX COURSE =====
+function renderNTIRoadmap() {
+  let html = `
+    <h1 class="view-title">NTI Linux Course — Roadmap</h1>
+    <p class="view-subtitle">A 5-day Red Hat (RH124-style) outline plus the 7-module practical track.</p>
+    <h2 class="day-part-title">5-Day Course Outline</h2>
+    <div class="roadmap-grid">
+  `;
+  const outline = RH124_SECTIONS.find(s => s.id === 'overview');
+  const days = outline ? (outline.days || []) : [];
+  days.forEach(d => {
+    html += `
+      <div class="roadmap-card">
+        <div class="roadmap-day">${escapeHtml(d.day)}</div>
+        <div class="roadmap-title">${escapeHtml(d.title)}</div>
+        <ul class="roadmap-list">${d.topics.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>
+        ${d.id ? `<button class="roadmap-go" onclick="setView('course','${d.id}')">Open ${escapeHtml(d.day)} →</button>` : ''}
+      </div>`;
+  });
+  html += `</div>`;
+  html += `
+    <h2 class="day-part-title">7-Module Practical Track</h2>
+    ${renderCourse()}
+  `;
+  return html;
+}
+
+function renderDayPlaceholder(view) {
+  const dayNum = view.replace('day', '');
+  return `
+    <h1 class="view-title">NTI Linux Course — Day ${dayNum}</h1>
+    <div class="no-results">
+      ${ICONS.file}
+      <h3>Day ${dayNum} content coming soon</h3>
+      <p>Day 1 is fully populated. Check back later for Day ${dayNum} notes, labs, and guides.</p>
+      <button class="toggle-complete" onclick="setView('course','day1')">${ICONS.chevron} Go to Day 1</button>
+    </div>`;
+}
+
+function renderDay1() {
+  return `
+    <h1 class="view-title">NTI Linux Course — Day 1</h1>
+    <p class="view-subtitle">RH124 summary, soft vs hard links, classmate notes, and the lab task.</p>
+    <div class="day-part">
+      <h2 class="day-part-title">RH124 — Day 1 Summary</h2>
+      ${renderRH124Body()}
+    </div>
+    <div class="day-part">
+      <h2 class="day-part-title">Soft vs Hard Links</h2>
+      ${renderLinksBody()}
+    </div>
+    <div class="day-part">
+      <h2 class="day-part-title">Classmate Notes</h2>
+      ${renderNotesBody('rahma')}
+      ${renderNotesBody('michael')}
+      ${renderNotesBody('hager')}
+    </div>
+    <div class="day-part">
+      <h2 class="day-part-title">Lab Task</h2>
+      ${renderLabBody()}
+    </div>
+  `;
+}
+
+// ===== HELPFUL LINKS (TAB 3) =====
+function renderHelpfulLinks() {
+  const links = DATA.helpfulLinks || [];
+  let html = `
+    <h1 class="view-title">Helpful Links</h1>
+    <p class="view-subtitle">Curated resources to support the NTI Linux course.</p>
+    <div class="link-card-grid">
+  `;
+  links.forEach(l => {
+    html += `
+      <a class="ext-link-card" href="${escapeAttr(l.url)}" target="_blank" rel="noopener noreferrer">
+        <div class="ext-link-icon">${ICONS.link}</div>
+        <div class="ext-link-body">
+          <div class="ext-link-title">${escapeHtml(l.title)}</div>
+          <div class="ext-link-desc">${escapeHtml(l.desc)}</div>
+          <div class="ext-link-url">${escapeHtml(l.url)}</div>
+        </div>
+        <div class="ext-link-go">${ICONS.chevron}</div>
+      </a>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
 // ===== RENDER DISPATCHER =====
 function render() {
   const content = document.getElementById('content');
@@ -1170,18 +1393,20 @@ function render() {
   // Global search: any non-empty term searches across ALL sections.
   if (state.searchTerm.trim()) {
     html = renderSearchResults();
-  } else if (state.view === 'cheatsheet') html = renderCheatSheet();
-  else if (state.view === 'commandsBank') html = renderCommandsBank();
-  else if (state.view === 'exercises') html = renderExercises();
-  else if (state.view === 'rh124') html = renderRH124();
-  else if (state.view === 'links') html = renderLinksGuide();
-  else if (state.view === 'notes-rahma') html = renderNotes('rahma');
-  else if (state.view === 'notes-michael') html = renderNotes('michael');
-  else if (state.view === 'notes-hager') html = renderNotes('hager');
-  else if (state.view === 'lab') html = renderLab();
-  else if (state.view === 'topicindex') html = renderTopicIndex();
-  else if (state.view === 'course') html = renderCourse();
-  else if (state.view === 'quiz') html = renderQuiz();
+  } else if (state.tab === 'general') {
+    if (state.view === 'cheatsheet') html = renderMergedCheatSheet();
+    else if (state.view === 'topicindex') html = renderTopicIndex();
+    else if (state.view === 'exercises') html = renderExercises();
+    else if (state.view === 'roadmap7') html = renderCourse();
+  } else if (state.tab === 'course') {
+    if (state.view === 'roadmap') html = renderNTIRoadmap();
+    else if (state.view === 'day1') html = renderDay1();
+    else if (['day2','day3','day4','day5'].includes(state.view)) html = renderDayPlaceholder(state.view);
+  } else if (state.tab === 'links') {
+    html = renderHelpfulLinks();
+  } else if (state.tab === 'quiz') {
+    html = renderQuiz();
+  }
 
   content.innerHTML = html;
   content.classList.remove('fade-in');
@@ -1199,6 +1424,7 @@ function render() {
 }
 
 function postRender() {
+  setupCmdSearch();
   const toc = document.querySelector('.note-toc');
   if (!toc || !('IntersectionObserver' in window)) return;
   const links = Array.from(toc.querySelectorAll('a'));
@@ -1215,16 +1441,9 @@ function postRender() {
 }
 
 // ===== EVENT LISTENERS =====
-document.querySelectorAll('.nav-item').forEach(btn => {
+document.querySelectorAll('.tab').forEach(btn => {
   btn.addEventListener('click', () => {
-    state.view = btn.dataset.view;
-    pushRecent(btn.dataset.view);
-    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    ensureGroupOpen(btn.dataset.view);
-    render();
-    saveState();
-    closeSidebar();
+    switchTab(btn.dataset.tab);
   });
 });
 
@@ -1281,17 +1500,7 @@ function closeSidebar() {
   document.getElementById('themeIcon').outerHTML = state.theme === 'dark'
     ? '<svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>'
     : '<svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
-  const active = document.querySelector(`.nav-item[data-view="${state.view}"]`);
-  if (active) {
-    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-    active.classList.add('active');
-  }
-  Object.keys(state.collapsedGroups).forEach(g => {
-    if (state.collapsedGroups[g]) {
-      const el = document.querySelector(`.nav-group[data-group="${g}"]`);
-      if (el) el.classList.add('collapsed');
-    }
-  });
-  ensureGroupOpen(state.view);
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === state.tab));
+  renderSubNav();
   render();
 })();
