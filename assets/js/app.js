@@ -1419,8 +1419,10 @@ function render() {
   postRender();
 
   const sw = document.getElementById('searchWrapper');
-  // Search bar is always visible (it drives global search).
-  sw.style.display = 'block';
+  // The merged Cheat Sheet has its own search + filter cluster, so the
+  // universal search bar is hidden there to avoid two stacked search bars.
+  const onMergedCheatSheet = state.tab === 'general' && state.view === 'cheatsheet' && !state.searchTerm.trim();
+  sw.style.display = onMergedCheatSheet ? 'none' : 'block';
 }
 
 function postRender() {
@@ -1469,15 +1471,23 @@ document.getElementById('searchInput').addEventListener('input', (e) => {
 document.addEventListener('keydown', (e) => {
   if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
     e.preventDefault();
-    document.getElementById('searchInput').focus();
+    const local = document.getElementById('cmdSearch');
+    if (local && local.offsetParent !== null) local.focus();
+    else document.getElementById('searchInput').focus();
   }
   if (e.key === 'Escape') {
-    const input = document.getElementById('searchInput');
-    if (document.activeElement === input) {
-      input.value = '';
+    const gi = document.getElementById('searchInput');
+    const ci = document.getElementById('cmdSearch');
+    if (document.activeElement === gi) {
+      gi.value = '';
       state.searchTerm = '';
       render();
-      input.blur();
+      gi.blur();
+    } else if (document.activeElement === ci) {
+      ci.value = '';
+      state.cmdTerm = '';
+      ci.blur();
+      renderCmdResults();
     }
   }
 });

@@ -188,7 +188,7 @@ body {
 
 /* ===== Main Content ===== */
 .main {
-  padding: 32px 40px 80px;
+  padding: 0 40px 80px;
   max-width: 1100px;
   width: 100%;
 }
@@ -262,7 +262,7 @@ body {
 .view-subtitle {
   color: var(--text-muted);
   font-size: 13px;
-  margin-bottom: 28px;
+  margin-bottom: 18px;
 }
 
 /* ===== Accordion Cards (Shared) ===== */
@@ -1060,8 +1060,14 @@ mark {
 
 /* Merged cheat sheet */
 .cmd-filterbar {
-  position: sticky; top: 116px; z-index: 40; background: var(--bg);
-  padding: 10px 0; display: flex; flex-direction: column; gap: 10px;
+  position: sticky; top: 54px; z-index: 45;
+  background: var(--bg);
+  padding: 8px 0;
+  display: flex; flex-direction: column; gap: 8px;
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 10px 18px -14px rgba(0,0,0,0.7);
+  margin-bottom: 4px;
+  transition: box-shadow var(--transition), border-color var(--transition);
 }
 .cmd-search-box { display: flex; align-items: center; position: relative; }
 .cmd-search-icon { position: absolute; left: 14px; width: 16px; height: 16px; color: var(--text-dim); pointer-events: none; }
@@ -1071,7 +1077,8 @@ mark {
   font-family: var(--font-sans); font-size: 13px;
 }
 .cmd-search-input:focus { outline: none; border-color: var(--accent); }
-.cmd-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.cmd-chips { display: flex; flex-wrap: nowrap; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.cmd-chips::-webkit-scrollbar { height: 0; display: none; }
 .chip {
   padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border);
   background: var(--bg-secondary); color: var(--text-muted); font-size: 12px;
@@ -1170,8 +1177,8 @@ mark {
   .topbar { flex-wrap: wrap; }
   .tabs { order: 3; width: 100%; }
   #menuBtn { display: grid; }
-  .search-wrapper { top: 0; }
-  .cmd-filterbar { top: 70px; }
+  .search-wrapper { top: 100px; }
+  .cmd-filterbar { top: 100px; }
 }
 @media (min-width: 861px) {
   #menuBtn { display: none; }
