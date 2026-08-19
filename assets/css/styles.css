@@ -189,8 +189,9 @@ body {
 /* ===== Main Content ===== */
 .main {
   padding: 0 40px 80px;
-  max-width: 1100px;
+  max-width: 100%;
   width: 100%;
+  margin: 0 auto;
 }
 
 /* ===== Search Bar ===== */
@@ -1104,7 +1105,9 @@ mark {
 
 /* NTI roadmap */
 .roadmap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-bottom: 8px; }
-.roadmap-card { padding: 14px 16px; border-radius: var(--radius); background: var(--bg-secondary); border: 1px solid var(--border); }
+.roadmap-card { padding: 14px 16px; border-radius: var(--radius); background: var(--bg-secondary); border: 1px solid var(--border); transition: border-color var(--transition), transform var(--transition); }
+.roadmap-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.roadmap-card--soon { opacity: 0.9; }
 .roadmap-day { font-size: 12px; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
 .roadmap-title { font-size: 15px; font-weight: 600; margin: 4px 0 8px; }
 .roadmap-list { list-style: none; padding: 0; margin: 0 0 10px; }
@@ -1241,7 +1244,7 @@ mark {
 }
 
 /* Content width */
-#content { max-width: 880px; margin: 0 auto; }
+#content { max-width: 1180px; margin: 0 auto; }
 
 /* View title scale */
 .view-title { font-size: 24px; font-weight: 700; }

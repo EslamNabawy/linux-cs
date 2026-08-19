@@ -664,7 +664,9 @@ function renderBlock(b) {
 function renderNotesBody(authorKey) {
   const note = DATA.notes[authorKey];
   const secId = (s) => `note-sec-${authorKey}-${s}`;
-  let html = `<div class="note-page">`;
+  let html = `<h1 class="view-title">${escapeHtml(note.author)}'s Notes</h1>`;
+  html += `<p class="view-subtitle">${escapeHtml(note.subtitle)}</p>`;
+  html += `<div class="note-page">`;
   html += `
     <div class="note-miniheader">
       <div class="mini-avatar">${note.avatar}</div>
@@ -695,7 +697,8 @@ function goToNoteSection(authorKey, secId) {
 // ===== RENDER LAB (body) =====
 function renderLabBody() {
   const lab = DATA.lab;
-  let html = '';
+  let html = `<h1 class="view-title">${escapeHtml(lab.title || 'Lab Task')}</h1>`;
+  html += `<p class="view-subtitle">${escapeHtml(lab.subtitle || 'Hands-on task for this day.')}</p>`;
   const total = lab.tasks.length;
   const doneCount = lab.tasks.filter(t => state.completedLab[t.id]).length;
   const pct = total ? Math.round((doneCount / total) * 100) : 0;
@@ -780,13 +783,58 @@ const VIEW_MAP = {
   'topicindex': { tab: 'general', view: 'topicindex' },
   'exercises': { tab: 'general', view: 'exercises' },
   'course': { tab: 'general', view: 'roadmap7' },
-  'rh124': { tab: 'course', view: 'day1' },
-  'links': { tab: 'course', view: 'day1' },
-  'notes-rahma': { tab: 'course', view: 'day1' },
-  'notes-michael': { tab: 'course', view: 'day1' },
-  'notes-hager': { tab: 'course', view: 'day1' },
-  'lab': { tab: 'course', view: 'day1' },
+  'rh124': { tab: 'course', view: 'day1-content' },
+  'links': { tab: 'course', view: 'day1-content' },
+  'notes-rahma': { tab: 'course', view: 'day1-notes-rahma' },
+  'notes-michael': { tab: 'course', view: 'day1-notes-michael' },
+  'notes-hager': { tab: 'course', view: 'day1-notes-hager' },
+  'lab': { tab: 'course', view: 'day1-lab' },
   'quiz': { tab: 'quiz', view: 'quiz' }
+};
+
+// NTI Course sub-navigation: each day splits into Content / Notes / Lab sub-pages.
+const COURSE_NAV = [
+  { id: 'roadmap', label: 'Roadmap (5-day)' },
+  { id: 'day1', label: 'Day 1', sub: [
+    { id: 'day1-content', label: 'Content' },
+    { id: 'day1-notes-rahma', label: "Rahma's Notes" },
+    { id: 'day1-notes-michael', label: "Michael's Notes" },
+    { id: 'day1-notes-hager', label: "Hager's Notes" },
+    { id: 'day1-lab', label: 'Lab Task' }
+  ]},
+  { id: 'day2', label: 'Day 2', sub: [
+    { id: 'day2-content', label: 'Content' },
+    { id: 'day2-lab', label: 'Lab Task' }
+  ]},
+  { id: 'day3', label: 'Day 3', sub: [
+    { id: 'day3-content', label: 'Content' },
+    { id: 'day3-lab', label: 'Lab Task' }
+  ]},
+  { id: 'day4', label: 'Day 4', sub: [
+    { id: 'day4-content', label: 'Content' },
+    { id: 'day4-lab', label: 'Lab Task' }
+  ]},
+  { id: 'day5', label: 'Day 5', sub: [
+    { id: 'day5-content', label: 'Content' },
+    { id: 'day5-lab', label: 'Lab Task' }
+  ]}
+];
+
+const COURSE_RENDER = {
+  'roadmap': () => renderNTIRoadmap(),
+  'day1-content': () => renderDay1Content(),
+  'day1-notes-rahma': () => renderNotesBody('rahma'),
+  'day1-notes-michael': () => renderNotesBody('michael'),
+  'day1-notes-hager': () => renderNotesBody('hager'),
+  'day1-lab': () => renderLabBody(),
+  'day2-content': () => renderDayPlaceholder('day2'),
+  'day2-lab': () => renderDayPlaceholder('day2'),
+  'day3-content': () => renderDayPlaceholder('day3'),
+  'day3-lab': () => renderDayPlaceholder('day3'),
+  'day4-content': () => renderDayPlaceholder('day4'),
+  'day4-lab': () => renderDayPlaceholder('day4'),
+  'day5-content': () => renderDayPlaceholder('day5'),
+  'day5-lab': () => renderDayPlaceholder('day5')
 };
 function tabDefaultView(tab) { const t = TABS.find(x => x.id === tab); return t ? t.views[0].id : 'cheatsheet'; }
 
@@ -813,6 +861,29 @@ function switchTab(tab) {
 function renderSubNav() {
   const nav = document.getElementById('subnav');
   if (!nav) return;
+
+  if (state.tab === 'course') {
+    let html = '';
+    COURSE_NAV.forEach(group => {
+      if (!group.sub) {
+        html += `<button class="subnav-item ${group.id === state.view ? 'active' : ''}" data-view="${group.id}" onclick="setView('course','${group.id}')">${escapeHtml(group.label)}</button>`;
+        return;
+      }
+      html += `
+        <div class="nav-group nav-group-day">
+          <div class="nav-group-header" onclick="setView('course','${group.sub[0].id}')">
+            <span>${escapeHtml(group.label)}</span>
+            <svg class="group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </div>
+          <div class="nav-group-items">
+            ${group.sub.map(s => `<button class="subnav-item ${s.id === state.view ? 'active' : ''}" data-view="${s.id}" onclick="setView('course','${s.id}')">${escapeHtml(s.label)}</button>`).join('')}
+          </div>
+        </div>`;
+    });
+    nav.innerHTML = html;
+    return;
+  }
+
   const tab = TABS.find(t => t.id === state.tab);
   if (!tab) return;
   nav.innerHTML = tab.views.map(v => `<button class="subnav-item ${v.id === state.view ? 'active' : ''}" data-view="${v.id}" onclick="setView('${tab.id}','${v.id}')">${escapeHtml(v.label)}</button>`).join('');
@@ -1305,15 +1376,16 @@ function renderNTIRoadmap() {
     <h2 class="day-part-title">5-Day Course Outline</h2>
     <div class="roadmap-grid">
   `;
-  const outline = RH124_SECTIONS.find(s => s.id === 'overview');
-  const days = outline ? (outline.days || []) : [];
+  const days = DATA.course.days || [];
   days.forEach(d => {
+    const label = d.id.replace('day', 'Day ');
+    const isReady = d.id === 'day1';
     html += `
-      <div class="roadmap-card">
-        <div class="roadmap-day">${escapeHtml(d.day)}</div>
+      <div class="roadmap-card ${isReady ? '' : 'roadmap-card--soon'}">
+        <div class="roadmap-day">${escapeHtml(label)}</div>
         <div class="roadmap-title">${escapeHtml(d.title)}</div>
         <ul class="roadmap-list">${d.topics.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>
-        ${d.id ? `<button class="roadmap-go" onclick="setView('course','${d.id}')">Open ${escapeHtml(d.day)} →</button>` : ''}
+        <button class="roadmap-go" onclick="setView('course','${d.id}-content')">Open ${escapeHtml(label)} →</button>
       </div>`;
   });
   html += `</div>`;
@@ -1332,14 +1404,14 @@ function renderDayPlaceholder(view) {
       ${ICONS.file}
       <h3>Day ${dayNum} content coming soon</h3>
       <p>Day 1 is fully populated. Check back later for Day ${dayNum} notes, labs, and guides.</p>
-      <button class="toggle-complete" onclick="setView('course','day1')">${ICONS.chevron} Go to Day 1</button>
+       <button class="toggle-complete" onclick="setView('course','day1-content')">${ICONS.chevron} Go to Day 1</button>
     </div>`;
 }
 
-function renderDay1() {
+function renderDay1Content() {
   return `
     <h1 class="view-title">NTI Linux Course — Day 1</h1>
-    <p class="view-subtitle">RH124 summary, soft vs hard links, classmate notes, and the lab task.</p>
+    <p class="view-subtitle">RH124 summary and the soft vs hard links guide.</p>
     <div class="day-part">
       <h2 class="day-part-title">RH124 — Day 1 Summary</h2>
       ${renderRH124Body()}
@@ -1347,16 +1419,6 @@ function renderDay1() {
     <div class="day-part">
       <h2 class="day-part-title">Soft vs Hard Links</h2>
       ${renderLinksBody()}
-    </div>
-    <div class="day-part">
-      <h2 class="day-part-title">Classmate Notes</h2>
-      ${renderNotesBody('rahma')}
-      ${renderNotesBody('michael')}
-      ${renderNotesBody('hager')}
-    </div>
-    <div class="day-part">
-      <h2 class="day-part-title">Lab Task</h2>
-      ${renderLabBody()}
     </div>
   `;
 }
@@ -1399,9 +1461,8 @@ function render() {
     else if (state.view === 'exercises') html = renderExercises();
     else if (state.view === 'roadmap7') html = renderCourse();
   } else if (state.tab === 'course') {
-    if (state.view === 'roadmap') html = renderNTIRoadmap();
-    else if (state.view === 'day1') html = renderDay1();
-    else if (['day2','day3','day4','day5'].includes(state.view)) html = renderDayPlaceholder(state.view);
+    const fn = COURSE_RENDER[state.view];
+    html = fn ? fn() : renderNTIRoadmap();
   } else if (state.tab === 'links') {
     html = renderHelpfulLinks();
   } else if (state.tab === 'quiz') {

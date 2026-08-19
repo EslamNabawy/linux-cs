@@ -345,6 +345,13 @@ const DATA = {
       { number: 5, title: "Software Installation & Processes", concepts: ["Package Managers", "Daemons/Services", "PID"], skills: ["apt/yum/dnf", "systemctl (start, stop, enable, status)", "ps, top, kill"], project: "Install the Nginx web server, start the service, and ensure it restarts automatically on boot." },
       { number: 6, title: "Networking & SSH", concepts: ["IP Addressing", "Ports", "SSH Keys"], skills: ["ip, ping, curl", "netstat / ss", "ssh-keygen, ssh-copy-id"], project: "Generate an SSH key pair and set up passwordless SSH login between two Linux machines." },
       { number: 7, title: "Shell Scripting Basics", concepts: ["Automation", "Variables", "Conditionals", "Loops"], skills: ["Writing .sh files", "if statements", "for loops", "cron for scheduling"], project: "Write a bash script that checks if Nginx is running. If not, start it and log the event. Schedule via cron every 5 minutes." }
+    ],
+    days: [
+      { id: "day1", title: "Get Started with RHEL & Files", topics: ["Access the command line", "Manage files from the command line", "Soft vs hard links", "Classmate notes", "Lab task"] },
+      { id: "day2", title: "Help & Text Files", topics: ["Get help in RHEL", "Create, view & edit text files", "Manage local users and groups"] },
+      { id: "day3", title: "Permissions & Processes", topics: ["Control access to files", "Manage Linux processes", "Monitor and control services & daemons"] },
+      { id: "day4", title: "SSH, Logs & Networking", topics: ["Configure and secure SSH", "Analyze and store logs", "Manage networking"] },
+      { id: "day5", title: "Archiving & Packages", topics: ["Archive and transfer files", "Install and update software packages", "Access Linux file systems"] }
     ]
   },
   notes: {
