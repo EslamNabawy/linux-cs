@@ -1514,6 +1514,27 @@ mark {
 .task-card.done { border-color: var(--accent); }
 .task-card.done .task-title { color: var(--accent); }
 .task-card.done .task-title::after { content: " ✓"; color: var(--accent); }
+.task-tag {
+  flex: 0 0 auto;
+  font-size: 11px; font-weight: 700; letter-spacing: .02em;
+  text-transform: uppercase;
+  color: var(--accent); background: var(--accent-dim);
+  padding: 2px 8px; border-radius: 999px;
+}
+.topic-list { list-style: none; padding: 0; margin: 10px 0 0; }
+.topic-list li {
+  position: relative; padding: 6px 0 6px 20px;
+  border-top: 1px dashed var(--border); font-size: 14px; color: var(--text); line-height: 1.5;
+}
+.topic-list li:first-child { border-top: none; }
+.topic-list li::before {
+  content: "›"; position: absolute; left: 4px; top: 6px;
+  color: var(--accent); font-weight: 700;
+}
+.section-note {
+  margin: 10px 0 0; font-size: 13px; color: var(--text-dim); line-height: 1.55; font-style: italic;
+}
+.day-nav-foot { margin-top: 28px; }
 
 /* Focus rings */
 :focus-visible { outline: 2px solid var(--accent-alt); outline-offset: 2px; }

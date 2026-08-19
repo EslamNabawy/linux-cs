@@ -348,10 +348,26 @@ const DATA = {
     ],
     days: [
       { id: "day1", title: "Get Started with RHEL & Files", topics: ["Access the command line", "Manage files from the command line", "Soft vs hard links", "Classmate notes", "Lab task"] },
-      { id: "day2", title: "Help & Text Files", topics: ["Get help in RHEL", "Create, view & edit text files", "Manage local users and groups"] },
-      { id: "day3", title: "Permissions & Processes", topics: ["Control access to files", "Manage Linux processes", "Monitor and control services & daemons"] },
-      { id: "day4", title: "SSH, Logs & Networking", topics: ["Configure and secure SSH", "Analyze and store logs", "Manage networking"] },
-      { id: "day5", title: "Archiving & Packages", topics: ["Archive and transfer files", "Install and update software packages", "Access Linux file systems"] }
+      { id: "day2", title: "Help & Text Files", topics: ["Get help in RHEL", "Create, view & edit text files", "Manage local users and groups"], content: [
+        { title: "Get help in RHEL", points: ["man <command> and <command> --help", "info pages and pinfo", "whatis and apropos to search the manual", "Documentation in /usr/share/doc"], note: "Hands-on: look up a command you don't know and read its description." },
+        { title: "Create, view & edit text files", points: ["Redirect output with > and >>", "View files with cat, less, head, tail", "Edit with vim / nano", "Pipeline text with | and filters (grep, cut)"], note: "Hands-on: create a file, append text, and view the last lines." },
+        { title: "Manage local users and groups", points: ["useradd, usermod, userdel", "groupadd, groupmod", "passwd and chage", "id, whoami, /etc/passwd, /etc/group"], note: "Hands-on: create a user, add them to a group, and verify membership." }
+      ]},
+      { id: "day3", title: "Permissions & Processes", topics: ["Control access to files", "Manage Linux processes", "Monitor and control services & daemons"], content: [
+        { title: "Control access to files", points: ["Read / write / execute bits (rwx)", "chmod numeric and symbolic modes", "chown and chgrp ownership", "Special bits: setuid, setgid, sticky"], note: "Hands-on: set permissions so a group can read but not write a file." },
+        { title: "Manage Linux processes", points: ["ps, top, htop to view processes", "Signals: kill, killall, pkill", "Foreground vs background (&, jobs, fg, bg)", "nice and renice for priority"], note: "Hands-on: start a process in the background and stop it with a signal." },
+        { title: "Monitor and control services & daemons", points: ["systemd and unit files", "systemctl start/stop/enable/status", "journalctl for logs", "Masking and disabling services"], note: "Hands-on: check a service's status and enable it at boot." }
+      ]},
+      { id: "day4", title: "SSH, Logs & Networking", topics: ["Configure and secure SSH", "Analyze and store logs", "Manage networking"], content: [
+        { title: "Configure and secure SSH", points: ["ssh, scp, sftp basics", "ssh-keygen and passwordless login", "Hardening: disable root login, change port", "/etc/ssh/sshd_config"], note: "Hands-on: generate a key pair and copy it to a second machine." },
+        { title: "Analyze and store logs", points: ["Log locations in /var/log", "rsyslog and journald", "journalctl filters (unit, since, priority)", "logrotate basics"], note: "Hands-on: filter the journal for a specific service." },
+        { title: "Manage networking", points: ["ip addr / ip link to inspect interfaces", "ip route and default gateway", "nmcli for NetworkManager", "Testing with ping and curl"], note: "Hands-on: display your IP address and default route." }
+      ]},
+      { id: "day5", title: "Archiving & Packages", topics: ["Archive and transfer files", "Install and update software packages", "Access Linux file systems"], content: [
+        { title: "Archive and transfer files", points: ["tar -czf / -xzf for compression", "zip / unzip", "Transfer with scp and rsync", "Compare with diff"], note: "Hands-on: create a tar.gz archive and extract it elsewhere." },
+        { title: "Install and update software packages", points: ["RPM vs DNF (or apt/yum)", "dnf install / remove / update", "Search and info", "Repositories and .repo files"], note: "Hands-on: install a package and verify its version." },
+        { title: "Access Linux file systems", points: ["Common file systems (ext4, xfs)", "Mount and umount", "/etc/fstab for persistent mounts", "df, du, lsblk"], note: "Hands-on: check disk usage and list block devices." }
+      ]}
     ]
   },
   notes: {

@@ -827,14 +827,14 @@ const COURSE_RENDER = {
   'day1-notes-michael': () => renderNotesBody('michael'),
   'day1-notes-hager': () => renderNotesBody('hager'),
   'day1-lab': () => renderLabBody(),
-  'day2-content': () => renderDayPlaceholder('day2'),
-  'day2-lab': () => renderDayPlaceholder('day2'),
-  'day3-content': () => renderDayPlaceholder('day3'),
-  'day3-lab': () => renderDayPlaceholder('day3'),
-  'day4-content': () => renderDayPlaceholder('day4'),
-  'day4-lab': () => renderDayPlaceholder('day4'),
-  'day5-content': () => renderDayPlaceholder('day5'),
-  'day5-lab': () => renderDayPlaceholder('day5')
+  'day2-content': () => renderCourseDayContent('day2'),
+  'day2-lab': () => renderCourseDayLab('day2'),
+  'day3-content': () => renderCourseDayContent('day3'),
+  'day3-lab': () => renderCourseDayLab('day3'),
+  'day4-content': () => renderCourseDayContent('day4'),
+  'day4-lab': () => renderCourseDayLab('day4'),
+  'day5-content': () => renderCourseDayContent('day5'),
+  'day5-lab': () => renderCourseDayLab('day5')
 };
 function tabDefaultView(tab) { const t = TABS.find(x => x.id === tab); return t ? t.views[0].id : 'cheatsheet'; }
 
@@ -1421,6 +1421,42 @@ function renderDay1Content() {
       ${renderLinksBody()}
     </div>
   `;
+}
+
+function renderCourseDayContent(dayId) {
+  const day = (DATA.course.days || []).find(d => d.id === dayId);
+  if (!day) return renderDayPlaceholder(dayId);
+  const num = dayId.replace('day', '');
+  let html = `<h1 class="view-title">NTI Linux Course — Day ${num}</h1>`;
+  html += `<p class="view-subtitle">${escapeHtml(day.title)}</p>`;
+  (day.content || []).forEach(sec => {
+    html += `<div class="day-part"><h2 class="day-part-title">${escapeHtml(sec.title)}</h2>`;
+    if (sec.points && sec.points.length) {
+      html += '<ul class="topic-list">';
+      sec.points.forEach(p => html += `<li>${escapeHtml(p)}</li>`);
+      html += '</ul>';
+    }
+    if (sec.note) html += `<p class="section-note">${escapeHtml(sec.note)}</p>`;
+    html += '</div>';
+  });
+  html += `<div class="day-nav-foot"><button class="toggle-complete" onclick="setView('course','${dayId}-lab')">${ICONS.chevron} Go to Lab Task</button></div>`;
+  return html;
+}
+
+function renderCourseDayLab(dayId) {
+  const day = (DATA.course.days || []).find(d => d.id === dayId);
+  const num = dayId.replace('day', '');
+  let html = `<h1 class="view-title">Lab · Day ${num}</h1>`;
+  html += `<p class="view-subtitle">${escapeHtml(day ? day.title : 'Practice tasks')}</p>`;
+  html += `<div class="task-card"><div class="task-header"><span class="task-tag">Practice</span><span class="task-title">${escapeHtml('Hands-on tasks for ' + (day ? day.title : ('Day ' + num)))}</span></div>`;
+  if (day && day.topics) {
+    html += '<ul class="task-steps">';
+    day.topics.forEach(t => html += `<li class="task-step">${escapeHtml(t)}</li>`);
+    html += '</ul>';
+  }
+  html += `<p class="task-objective">Detailed step-by-step lab instructions will be added here.</p></div>`;
+  html += `<div class="day-nav-foot"><button class="toggle-complete" onclick="setView('course','${dayId}-content')">${ICONS.chevron} Back to Content</button></div>`;
+  return html;
 }
 
 // ===== HELPFUL LINKS (TAB 3) =====
