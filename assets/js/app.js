@@ -1578,6 +1578,23 @@ document.getElementById('searchInput').addEventListener('input', (e) => {
   render();
 });
 
+// Mobile: tap the minimized search icon to expand it; collapse when empty and blurred.
+(function setupMobileSearch() {
+  const box = document.querySelector('.search-box');
+  const input = document.getElementById('searchInput');
+  const wrap = document.getElementById('searchWrapper');
+  if (!box || !input || !wrap) return;
+  box.addEventListener('click', (e) => {
+    if (wrap.classList.contains('search-expanded')) return;
+    if (e.target === input) return;
+    wrap.classList.add('search-expanded');
+    setTimeout(() => input.focus(), 60);
+  });
+  input.addEventListener('blur', () => {
+    if (!input.value.trim()) wrap.classList.remove('search-expanded');
+  });
+})();
+
 document.addEventListener('keydown', (e) => {
   if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
     e.preventDefault();
