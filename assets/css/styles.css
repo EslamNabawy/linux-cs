@@ -208,7 +208,7 @@ body {
   width: 100%;
   margin: 0 auto;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* ===== Search Bar ===== */
@@ -1128,10 +1128,13 @@ mark {
   font-family: var(--font-sans); font-size: 13px;
 }
 .cmd-search-input:focus { outline: none; border-color: var(--accent); }
-.cmd-chips { display: flex; flex-wrap: nowrap; gap: 8px; overflow-x: auto; padding: 4px 2px 8px; scrollbar-width: thin; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; touch-action: auto; overscroll-behavior-x: auto; -webkit-mask-image: linear-gradient(to right, #000 80%, transparent); mask-image: linear-gradient(to right, #000 80%, transparent); scroll-padding-inline: 8px; }
-.cmd-chips::-webkit-scrollbar { height: 6px; }
-.cmd-chips::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.cmd-chips { display: flex; flex-wrap: nowrap; gap: 8px; overflow-x: auto; overflow-y: hidden; padding: 4px 2px 8px; scrollbar-width: thin; scrollbar-color: var(--border) transparent; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; touch-action: auto; overscroll-behavior-x: auto; -webkit-mask-image: linear-gradient(to right, #000 80%, transparent); mask-image: linear-gradient(to right, #000 80%, transparent); scroll-padding-inline: 8px; cursor: grab; user-select: none; }
+.cmd-chips:active { cursor: grabbing; }
+.cmd-chips::-webkit-scrollbar { height: 8px; }
+.cmd-chips::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; border: 1px solid transparent; background-clip: content-box; }
+.cmd-chips::-webkit-scrollbar-thumb:hover { background: var(--text-dim); background-clip: content-box; }
 .cmd-chips::-webkit-scrollbar-track { background: transparent; }
+.cmd-chips.dragging { scroll-snap-type: none; cursor: grabbing; }
 .chip {
   flex: 0 0 auto; scroll-snap-align: start;
   padding: 10px 14px; border-radius: 999px; border: 1px solid var(--border);

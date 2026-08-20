@@ -1606,6 +1606,7 @@ function toggleCmdCat(cat) {
 }
 
 function setupCmdSearch() {
+  enableChipScroll();
   const input = document.getElementById('cmdSearch');
   if (!input) return;
   input.value = state.cmdTerm;
@@ -1616,6 +1617,68 @@ function setupCmdSearch() {
     renderCmdResults();
   });
   // clear on Escape inside this field is handled globally
+}
+function enableChipScroll(){
+  const scrollers = document.querySelectorAll('.cmd-chips, .tabs');
+  scrollers.forEach(el=>{
+    if(!el.hasAttribute('tabindex')) el.setAttribute('tabindex','0');
+    if(!el.hasAttribute('role')) el.setAttribute('role','region');
+    if(!el.hasAttribute('aria-label')){
+      el.setAttribute('aria-label', el.classList.contains('tabs') ? 'Scrollable tabs' : 'Scrollable filters');
+    }
+    if(el._chipScrollBound) return;
+    el._chipScrollBound = true;
+    // wheel: vertical wheel -> horizontal scroll
+    el.addEventListener('wheel', (e)=>{
+      if(Math.abs(e.deltaX) < Math.abs(e.deltaY) && el.scrollWidth > el.clientWidth){
+        // if can scroll horizontally, convert
+        if((e.deltaY < 0 && el.scrollLeft > 0) || (e.deltaY > 0 && el.scrollLeft + el.clientWidth < el.scrollWidth)){
+          e.preventDefault();
+          el.scrollLeft += e.deltaY;
+        }
+      }
+    }, {passive:false});
+    // drag to scroll (mouse)
+    let isDown=false, startX, scrollLeft, isDragging=false;
+    el.addEventListener('mousedown', (e)=>{
+      if(e.button!==0) return;
+      isDown=true;
+      isDragging=false;
+      el.classList.add('dragging');
+      startX = e.pageX - el.offsetLeft;
+      scrollLeft = el.scrollLeft;
+    });
+    el.addEventListener('mouseleave', ()=>{ isDown=false; el.classList.remove('dragging'); });
+    el.addEventListener('mouseup', (e)=>{
+      if(isDragging){
+        // prevent chip click after drag
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      isDown=false;
+      setTimeout(()=>{ isDragging=false; el.classList.remove('dragging'); }, 50);
+    });
+    el.addEventListener('mousemove', (e)=>{
+      if(!isDown) return;
+      e.preventDefault();
+      const x = e.pageX - el.offsetLeft;
+      const walk = (x - startX);
+      if(Math.abs(walk) > 5) isDragging=true;
+      el.scrollLeft = scrollLeft - walk;
+    });
+    el.addEventListener('click', (e)=>{
+      if(isDragging){
+        e.preventDefault();
+        e.stopPropagation();
+        isDragging=false;
+      }
+    }, true);
+    // keyboard: arrow keys when focused
+    el.addEventListener('keydown', (e)=>{
+      if(e.key==='ArrowRight'){ e.preventDefault(); el.scrollBy({left: 120, behavior:'smooth'}); }
+      if(e.key==='ArrowLeft'){ e.preventDefault(); el.scrollBy({left: -120, behavior:'smooth'}); }
+    });
+  });
 }
 
 // ===== NTI LINUX COURSE =====
