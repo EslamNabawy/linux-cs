@@ -480,13 +480,16 @@ mark {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 28px;
-  margin-bottom: 24px;
+  padding: 24px;
+  width: 100%;
+  max-width: 680px;
+  min-width: 0;
+  margin: 0 auto 24px;
   display: flex;
   justify-content: center;
 }
 
-.links-diagram svg { max-width: 100%; height: auto; }
+.links-diagram svg { width: 100%; height: auto; max-width: 100%; min-width: 0; }
 
 .comparison-table {
   width: 100%;
@@ -789,9 +792,11 @@ mark {
   .search-wrapper { top: 53px; padding-bottom: 12px; }
   .cmd-grid { grid-template-columns: 1fr; gap: 6px; }
   .cmd-name { padding-top: 0; }
-  /* Let wide tables scroll horizontally instead of breaking layout */
-  .comparison-table { display: block; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; font-size: 12px; }
-  .comparison-table th, .comparison-table td { padding: 8px 10px; white-space: nowrap; }
+  /* Let wide tables wrap on mobile instead of forcing page overflow */
+  .comparison-table { display: block; width: 100%; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; font-size: 12px; }
+  .comparison-table th, .comparison-table td { padding: 8px 10px; white-space: normal; word-break: break-word; overflow-wrap: anywhere; }
+  /* Prevent grid blowout on mobile (note-layout is already single-column by default) */
+  .note-layout > * { min-width: 0; }
   .flashcard-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
   .view-title { font-size: 20px; }
   /* Prevent long tokens from forcing horizontal page scroll */
@@ -1316,10 +1321,14 @@ mark {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 16px;
+  width: 100%;
+  max-width: 680px;
+  min-width: 0;
+  margin: 0 auto;
   display: flex;
   justify-content: center;
 }
-.note-diagram svg { max-width: 100%; height: auto; }
+.note-diagram svg { width: 100%; height: auto; max-width: 100%; min-width: 0; }
 .diagram-caption { text-align: center; font-size: 12px; color: var(--text-dim); margin-top: 8px; }
 
 /* Arabic side-note */
@@ -1383,7 +1392,10 @@ mark {
   font-family: var(--font-sans);
   max-width: 180px;
 }
-.note-layout { display: grid; grid-template-columns: 200px 1fr; gap: 24px; }
+.note-layout { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 769px) {
+  .note-layout { grid-template-columns: 200px 1fr; gap: 24px; }
+}
 .note-toc { position: sticky; top: 84px; align-self: start; }
 .note-toc a {
   display: block;
@@ -1399,6 +1411,7 @@ mark {
   border-left: 1px solid var(--border);
   padding-left: 24px;
   background: linear-gradient(90deg, rgba(210,153,34,0.025), transparent 40%);
+  min-width: 0;
 }
 .note-section { margin-bottom: 30px; scroll-margin-top: 84px; }
 .note-section > h2 {
