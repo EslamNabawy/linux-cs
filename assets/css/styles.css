@@ -1030,6 +1030,7 @@ mark {
 }
 .tab:hover { background: var(--bg-hover); color: var(--text); }
 .tab.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+.tab-short { display: none; }
 
 /* Layout grid */
 .layout { display: grid; grid-template-columns: 260px 1fr; align-items: start; flex: 1; }
@@ -1181,10 +1182,11 @@ mark {
   .content-col { padding: 16px; }
   .topbar { flex-wrap: wrap; gap: 8px; padding: 8px 14px; }
   /* Drop tabs to their own full-width row so they never cram beside the logo */
-  .tabs { order: 3; flex: 0 0 100%; width: 100%; padding: 2px 0; scroll-snap-type: x proximity; }
-  .tab { scroll-snap-align: start; }
-  .tabs::-webkit-scrollbar { display: none; }
-  .tabs { scrollbar-width: none; -ms-overflow-style: none; }
+  .tabs { order: 3; flex: 0 0 100%; width: 100%; padding: 2px 0; scroll-snap-type: none; overflow: visible; gap: 2px; }
+  .tabs .tab { flex: 1 1 0; min-width: 0; justify-content: center; padding: 9px 6px; }
+  .tab-long { display: none; }
+  .tab-short { display: inline; }
+  .tabs .tab span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #menuBtn { display: grid; }
   .search-wrapper { top: 102px; }
   .cmd-filterbar { top: 102px; }
