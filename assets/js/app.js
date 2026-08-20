@@ -11,13 +11,28 @@ function loadState() {
 
 const savedState = loadState();
 
+const THEMES = ['dark', 'midnight', 'light', 'paper'];
+const THEME_LABELS = { dark: 'Dark', midnight: 'Midnight', light: 'Light', paper: 'Paper' };
+function themeIconSvg(theme){
+  if(theme==='dark') return '<svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>';
+  if(theme==='midnight') return '<svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.7 4.3L18 9l-4.3 1.7L12 15l-1.7-4.3L6 9l4.3-1.7z"/><path d="M19 14l1.1 2.8L23 18l-2.9 1.2L19 22l-1.1-2.8L15 18l2.9-1.2z"/><path d="M6 14l.9 2.2L9 17l-2.1.9L6 20l-.9-2.2L3 17l2.1-.9z"/></svg>';
+  if(theme==='light') return '<svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+  // paper
+  return '<svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/></svg>';
+}
+function cycleTheme(current){
+  const idx = THEMES.indexOf(current);
+  return THEMES[(idx + 1) % THEMES.length];
+}
+const _validTheme = THEMES.includes(savedState.theme) ? savedState.theme : 'dark';
+
 const state = {
   tab: savedState.tab || 'general',
   view: savedState.view || 'cheatsheet',
   searchTerm: '',
   cmdTerm: savedState.cmdTerm || '',
   cmdCats: savedState.cmdCats || [],
-  theme: savedState.theme || 'dark',
+  theme: _validTheme,
   collapsedCategories: savedState.collapsedCategories || {},
   collapsedExercises: savedState.collapsedExercises || {},
   collapsedDeepDives: savedState.collapsedDeepDives || {},
@@ -1889,12 +1904,33 @@ function postRender() {
 })();
 
 document.getElementById('themeToggle').addEventListener('click', () => {
-  const next = state.theme === 'dark' ? 'light' : 'dark';
+  const next = cycleTheme(state.theme);
   state.theme = next;
   document.documentElement.dataset.theme = next;
-  document.getElementById('themeIcon').outerHTML = next === 'dark'
-    ? '<svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>'
-    : '<svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+  const btn = document.getElementById('themeToggle');
+  document.getElementById('themeIcon').outerHTML = themeIconSvg(next);
+  if(btn){
+    btn.setAttribute('title', THEME_LABELS[next] + ' — click to switch');
+    btn.setAttribute('aria-label', 'Theme: ' + THEME_LABELS[next] + ' (click to change)');
+  }
+  showToast('Theme: ' + THEME_LABELS[next]);
+  saveState();
+});
+// also support right-click to open picker (optional) — cycle on click is primary
+document.getElementById('themeToggle').addEventListener('contextmenu', (e)=>{
+  e.preventDefault();
+  // quick cycle backwards on right-click
+  const idx = THEMES.indexOf(state.theme);
+  const prev = THEMES[(idx - 1 + THEMES.length) % THEMES.length];
+  state.theme = prev;
+  document.documentElement.dataset.theme = prev;
+  document.getElementById('themeIcon').outerHTML = themeIconSvg(prev);
+  const btn = document.getElementById('themeToggle');
+  if(btn){
+    btn.setAttribute('title', THEME_LABELS[prev] + ' — click to switch');
+    btn.setAttribute('aria-label', 'Theme: ' + THEME_LABELS[prev] + ' (click to change)');
+  }
+  showToast('Theme: ' + THEME_LABELS[prev]);
   saveState();
 });
 
@@ -1993,9 +2029,12 @@ document.getElementById('overlay').addEventListener('click', closeSidebar);
 // ===== INIT =====
 (function init() {
   document.documentElement.dataset.theme = state.theme;
-  document.getElementById('themeIcon').outerHTML = state.theme === 'dark'
-    ? '<svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>'
-    : '<svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+  document.getElementById('themeIcon').outerHTML = themeIconSvg(state.theme);
+  const tbtn = document.getElementById('themeToggle');
+  if(tbtn){
+    tbtn.setAttribute('title', THEME_LABELS[state.theme] + ' — click to switch (right-click previous)');
+    tbtn.setAttribute('aria-label', 'Theme: ' + THEME_LABELS[state.theme] + ' (click to change, right-click previous)');
+  }
   document.querySelectorAll('.tab').forEach(t => {
     const isActive = t.dataset.tab === state.tab;
     t.classList.toggle('active', isActive);
