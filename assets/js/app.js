@@ -850,8 +850,21 @@ function setView(tab, view) {
   const input = document.getElementById('searchInput');
   if (input) input.value = '';
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  scrollActiveTabIntoView();
   renderSubNav();
   render(); saveState(); closeSidebar();
+}
+
+function scrollActiveTabIntoView() {
+  const tabs = document.getElementById('tabs');
+  if (!tabs) return;
+  const active = tabs.querySelector('.tab.active');
+  if (!active) return;
+  const tabRect = active.getBoundingClientRect();
+  const tabsRect = tabs.getBoundingClientRect();
+  if (tabRect.left < tabsRect.left || tabRect.right > tabsRect.right) {
+    tabs.scrollTo({ left: active.offsetLeft - 8, behavior: 'smooth' });
+  }
 }
 
 function switchTab(tab) {

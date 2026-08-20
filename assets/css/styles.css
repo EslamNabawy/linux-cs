@@ -806,6 +806,8 @@ mark {
   .view-title { font-size: 18px; }
   .mobile-header { padding: 10px 12px; }
   .category-title, .exercise-title, .rh124-title { font-size: 13px; }
+  .tab { font-size: 12px; padding: 7px 12px; }
+  .topbar { gap: 6px; padding: 8px 10px; }
 }
 
 /* Scrollbar */
@@ -1177,11 +1179,15 @@ mark {
   }
   .sidebar.open { transform: translateX(0); }
   .content-col { padding: 16px; }
-  .topbar { flex-wrap: wrap; }
-  .tabs { order: 3; width: 100%; }
+  .topbar { flex-wrap: wrap; gap: 8px; padding: 8px 14px; }
+  /* Drop tabs to their own full-width row so they never cram beside the logo */
+  .tabs { order: 3; flex: 0 0 100%; width: 100%; padding: 2px 0; scroll-snap-type: x proximity; }
+  .tab { scroll-snap-align: start; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabs { scrollbar-width: none; -ms-overflow-style: none; }
   #menuBtn { display: grid; }
-  .search-wrapper { top: 100px; }
-  .cmd-filterbar { top: 100px; }
+  .search-wrapper { top: 102px; }
+  .cmd-filterbar { top: 102px; }
 }
 @media (min-width: 861px) {
   #menuBtn { display: none; }
