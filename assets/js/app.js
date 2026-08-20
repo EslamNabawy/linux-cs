@@ -2071,6 +2071,27 @@ document.getElementById('overlay').addEventListener('click', closeSidebar);
     setTimeout(updateTopbarHeight, 60);
     return res;
   };
+  // mobile: hide miniheader on scroll down, show on scroll up
+  let lastScrollY = window.scrollY;
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (window.innerWidth > 860) return;
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      const cur = window.scrollY;
+      const hdr = document.querySelector('.note-miniheader');
+      if (hdr) {
+        if (cur > lastScrollY && cur > 120) hdr.classList.add('miniheader-hidden');
+        else if (cur < lastScrollY) hdr.classList.remove('miniheader-hidden');
+        // at top, always visible
+        if (cur <= 10) hdr.classList.remove('miniheader-hidden');
+      }
+      lastScrollY = cur;
+      ticking = false;
+    });
+  }, {passive:true});
+
   // resize: auto-close sidebar on desktop
   window.addEventListener('resize', () => {
     if (window.innerWidth > 860) closeSidebar();

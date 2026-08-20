@@ -1302,6 +1302,7 @@ mark {
   .note-toc { display: none; }
   .note-content { border-left: none; padding-left: 0; background: none; }
   .note-miniheader select { max-width: 140px; }
+  .note-miniheader.miniheader-hidden { transform: translateY(-130%); opacity: 0; pointer-events: none; }
   .comparison-table { display: block; width: 100%; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; font-size: 12px; }
   .comparison-table th, .comparison-table td { padding: 8px 10px; white-space: normal; word-break: break-word; overflow-wrap: anywhere; }
   .search-input, .cmd-search-input { font-size: 16px; }
@@ -1497,6 +1498,8 @@ mark {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   margin-bottom: 18px;
+  transition: transform 200ms ease, opacity 200ms ease;
+  will-change: transform;
 }
 .note-miniheader .mini-avatar {
   width: 28px; height: 28px;
