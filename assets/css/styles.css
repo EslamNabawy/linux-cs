@@ -1086,7 +1086,7 @@ mark {
   font-family: var(--font-sans); font-size: 13px;
 }
 .cmd-search-input:focus { outline: none; border-color: var(--accent); }
-.cmd-chips { display: flex; flex-wrap: nowrap; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; -webkit-mask-image: linear-gradient(to right, #000 94%, transparent); mask-image: linear-gradient(to right, #000 94%, transparent); }
+.cmd-chips { display: flex; flex-wrap: nowrap; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; touch-action: pan-x; overscroll-behavior-x: contain; -webkit-mask-image: linear-gradient(to right, #000 94%, transparent); mask-image: linear-gradient(to right, #000 94%, transparent); }
 .cmd-chips::-webkit-scrollbar { height: 0; display: none; }
 .chip {
   flex: 0 0 auto; scroll-snap-align: start;
@@ -1210,6 +1210,11 @@ mark {
   }
   .search-wrapper.search-expanded .search-input,
   .search-box:focus-within .search-input { opacity: 1; pointer-events: auto; }
+  /* Also expand on hover for devices that have a real hover state (desktop/tablet mouse) */
+  @media (hover: hover) {
+    .search-box:hover { width: 100%; border-radius: var(--radius); cursor: text; }
+    .search-box:hover .search-input { opacity: 1; pointer-events: auto; }
+  }
 }
 @media (min-width: 861px) {
   #menuBtn { display: none; }
