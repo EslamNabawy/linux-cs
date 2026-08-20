@@ -656,10 +656,29 @@ function diagramSVG(kind) {
 }
 
 // ===== RENDER NOTE BLOCKS =====
+function cleanHeadings(html){
+  if(!html || !html.includes('#')) return html;
+  // Convert markdown headings inside <p>...</p> or raw lines: ### Title -> <h6>, ## -> <h5>, # -> <h4>
+  // Handle <p>### Title</p> and also raw "### Title"
+  return html
+    .replace(/<p>\s*#{3}\s+([^<]+?)\s*<\/p>/g, '<h6>$1</h6>')
+    .replace(/<p>\s*#{2}\s+([^<]+?)\s*<\/p>/g, '<h5>$1</h5>')
+    .replace(/<p>\s*#\s+([^<]+?)\s*<\/p>/g, '<h4>$1</h4>')
+    .replace(/^#{3}\s+(.+)$/gm, '<h6>$1</h6>')
+    .replace(/^#{2}\s+(.+)$/gm, '<h5>$1</h5>')
+    .replace(/^#\s+(.+)$/gm, '<h4>$1</h4>')
+    // Remove any remaining stray ## at line start inside <p> (e.g., "## Title<br>")
+    .replace(/<p>\s*##\s*/g, '<p>')
+    .replace(/##\s+/g, '');
+}
 function renderBlock(b) {
   switch (b.t) {
-    case 'text':
-      return `<div class="note-intro">${b.html}</div>`;
+    case 'text': {
+      let html = cleanHeadings(b.html);
+      // Also strip any remaining leading ## that survived
+      html = html.replace(/^\s*#{1,6}\s+/gm, '');
+      return `<div class="note-intro">${html}</div>`;
+    }
     case 'list':
       return `<ul class="note-list">${b.items.map(i => `<li>${i}</li>`).join('')}</ul>`;
     case 'steps':
@@ -675,7 +694,9 @@ function renderBlock(b) {
       const kind = b.kind || 'info';
       const klass = kind === 'warn' ? 'warning' : (kind === 'danger' ? 'danger' : (kind === 'tip' ? 'tip' : 'info'));
       const label = { info: 'INFO', tip: 'TIP', warning: 'WARNING', danger: 'DANGER' }[klass] || 'NOTE';
-      return `<div class="callout callout--${klass}" data-label="${label}">${ICONS.alert}<p>${b.html}</p></div>`;
+      let cHtml = cleanHeadings(b.html);
+      cHtml = cHtml.replace(/^\s*#{1,6}\s+/gm, '');
+      return `<div class="callout callout--${klass}" data-label="${label}">${ICONS.alert}<p>${cHtml}</p></div>`;
     }
     case 'arabic':
       return `<div class="arabic-note" lang="ar" dir="rtl">${escapeHtml(b.text)}</div>`;
