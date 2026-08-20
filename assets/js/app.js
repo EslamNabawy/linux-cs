@@ -2050,28 +2050,35 @@ document.getElementById('overlay').addEventListener('click', closeSidebar);
     if (e.target.closest('.topic-pill') || e.target.closest('#topicPopover')) return;
     pop.innerHTML=''; pop.dataset.open=''; document.querySelectorAll('.topic-pill').forEach(p=>p.classList.remove('active'));
   });
-  // dynamic topbar height for sticky offsets (most reasonable: measure actual rendered height)
-  function updateTopbarHeight(){
+  // dynamic sticky heights for correct stacking (fixes 25% peek & half search)
+  function updateStickyHeights(){
     const tb = document.querySelector('.topbar');
-    if(!tb) return;
-    const h = Math.ceil(tb.getBoundingClientRect().height);
-    if(h>0) document.documentElement.style.setProperty('--topbar-h', h + 'px');
+    if(tb){
+      const h = Math.ceil(tb.getBoundingClientRect().height);
+      if(h>0) document.documentElement.style.setProperty('--topbar-h', h + 'px');
+    }
+    const sw = document.getElementById('searchWrapper');
+    const sh = (sw && sw.offsetParent !== null && getComputedStyle(sw).display !== 'none') ? Math.ceil(sw.getBoundingClientRect().height) : 0;
+    document.documentElement.style.setProperty('--search-h', sh + 'px');
   }
-  updateTopbarHeight();
-  window.addEventListener('resize', updateTopbarHeight);
-  // also observe topbar size changes (tabs wrap)
+  window.updateTopbarHeight = updateStickyHeights;
+  window.updateStickyHeights = updateStickyHeights;
+  updateStickyHeights();
+  window.addEventListener('resize', updateStickyHeights);
   if(window.ResizeObserver){
     const tb = document.querySelector('.topbar');
-    if(tb) new ResizeObserver(updateTopbarHeight).observe(tb);
+    if(tb) new ResizeObserver(updateStickyHeights).observe(tb);
+    const sw = document.getElementById('searchWrapper');
+    if(sw) new ResizeObserver(updateStickyHeights).observe(sw);
   }
-  // recalc after tab switch
   const _oldSetView = setView;
   setView = function(tab, view){
     const res = _oldSetView.apply(this, arguments);
-    setTimeout(updateTopbarHeight, 60);
+    setTimeout(updateStickyHeights, 60);
+    setTimeout(updateStickyHeights, 300);
     return res;
   };
-  // mobile: hide miniheader on scroll down, show on scroll up
+  // mobile: hide sticky bars (search + miniheader) on scroll down, show on scroll up
   let lastScrollY = window.scrollY;
   let ticking = false;
   window.addEventListener('scroll', () => {
@@ -2081,20 +2088,27 @@ document.getElementById('overlay').addEventListener('click', closeSidebar);
     requestAnimationFrame(() => {
       const cur = window.scrollY;
       const hdr = document.querySelector('.note-miniheader');
+      const sw = document.getElementById('searchWrapper');
+      const goingDown = cur > lastScrollY && cur > 120;
+      const goingUp = cur < lastScrollY;
       if (hdr) {
-        if (cur > lastScrollY && cur > 120) hdr.classList.add('miniheader-hidden');
-        else if (cur < lastScrollY) hdr.classList.remove('miniheader-hidden');
-        // at top, always visible
+        if (goingDown) hdr.classList.add('miniheader-hidden');
+        else if (goingUp) hdr.classList.remove('miniheader-hidden');
         if (cur <= 10) hdr.classList.remove('miniheader-hidden');
+      }
+      if (sw && sw.offsetParent !== null) {
+        if (goingDown) sw.classList.add('search-hidden');
+        else if (goingUp) sw.classList.remove('search-hidden');
+        if (cur <= 10) sw.classList.remove('search-hidden');
       }
       lastScrollY = cur;
       ticking = false;
     });
   }, {passive:true});
 
-  // resize: auto-close sidebar on desktop
+  // resize: auto-close sidebar on desktop + recalc sticky heights
   window.addEventListener('resize', () => {
     if (window.innerWidth > 860) closeSidebar();
-    updateTopbarHeight();
+    updateStickyHeights();
   });
 })();
