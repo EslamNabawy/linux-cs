@@ -18,7 +18,6 @@ const state = {
   cmdTerm: savedState.cmdTerm || '',
   cmdCats: savedState.cmdCats || [],
   theme: savedState.theme || 'dark',
-  searchTerm: '',
   collapsedCategories: savedState.collapsedCategories || {},
   collapsedExercises: savedState.collapsedExercises || {},
   collapsedDeepDives: savedState.collapsedDeepDives || {},
@@ -46,6 +45,8 @@ function saveState() {
     collapsedRH124: state.collapsedRH124,
     collapsedBank: state.collapsedBank,
     collapsedNotes: state.collapsedNotes,
+    collapsedGroups: state.collapsedGroups,
+    recentViews: state.recentViews,
     completedLab: state.completedLab,
     completedModules: state.completedModules,
     expandedModules: state.expandedModules,
@@ -59,20 +60,31 @@ function highlightCode(code) {
   let s = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   s = s.replace(/(#.*$)/gm, '<span class="comment-token">$1</span>');
   s = s.replace(/"([^"]*)"/g, '<span class="str-token">"$1"</span>');
-  s = s.replace(/(~\/[^\s|>]*)/g, '<span class="path-token">$1</span>');
-  s = s.replace(/(\/[^\s|>]*)/g, '<span class="path-token">$1</span>');
-  s = s.replace(/(\s)(-{1,2}[a-zA-Z]+)/g, '$1<span class="flag-token">$2</span>');
+  // Paths: handle ~/ first, then absolute paths without double-wrapping or matching </span>
+  s = s.replace(/(~\/[^\s<>"'|]*)/g, '<span class="path-token">$1</span>');
+  s = s.replace(/(?<![~\w"'>])(\/[^\s<>"'|]*)/g, '<span class="path-token">$1</span>');
+  // Flags: avoid matching inside already-created spans (starts with <)
+  s = s.replace(/(\s)(-{1,2}[a-zA-Z][\w-]*)/g, '$1<span class="flag-token">$2</span>');
   return s;
 }
 
 function highlightCommandName(cmd) {
-  const parts = cmd.split(' ');
-  return `<span class="cmd-token">${parts[0]}</span>` + (parts.length > 1 ? ' ' + parts.slice(1).join(' ') : '');
+  if (!cmd) return '';
+  const parts = String(cmd).split(' ');
+  return `<span class="cmd-token">${escapeHtml(parts[0])}</span>` + (parts.length > 1 ? ' ' + escapeHtml(parts.slice(1).join(' ')) : '');
 }
 
 function highlightMatch(text, term) {
-  if (!term) return text;
-  const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  if (!term || !text) return text;
+  const escTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escTerm})`, 'gi');
+  // Avoid injecting <mark> inside HTML tags: split by tags and only highlight outside
+  if (text.includes('<')) {
+    return text.split(/(<[^>]*>)/g).map(part => {
+      if (part.startsWith('<')) return part;
+      return part.replace(regex, '<mark>$1</mark>');
+    }).join('');
+  }
   return text.replace(regex, '<mark>$1</mark>');
 }
 
@@ -105,12 +117,12 @@ function renderCheatSheet() {
       cmdsHtml += `
         <div class="cmd-row">
           <div class="cmd-grid">
-            <div class="cmd-name">${highlightMatch(highlightCommandName(escapeHtml(cmd.command)), state.searchTerm)}</div>
+            <div class="cmd-name">${highlightMatch(highlightCommandName(cmd.command), state.searchTerm)}</div>
             <div>
               <div class="cmd-desc">${highlightMatch(escapeHtml(cmd.description), state.searchTerm)}</div>
               <div class="cmd-example">
-                <code>${highlightCode(highlightMatch(escapeHtml(cmd.example), state.searchTerm))}</code>
-                <button class="copy-btn" onclick="copyText('${escapeAttr(cmd.example)}', this)" title="Copy">
+                <code>${highlightMatch(highlightCode(escapeHtml(cmd.example)), state.searchTerm)}</code>
+                <button class="copy-btn" onclick="copyText('${escapeAttr(cmd.example)}', this)" title="Copy" aria-label="Copy code">
                   ${ICONS.copy}
                 </button>
               </div>
@@ -202,8 +214,8 @@ function renderCommandsBank() {
               <div>
                 <div class="cmd-desc">${highlightMatch(escapeHtml(cmd.briefDescription), state.searchTerm)}</div>
                 <div class="cmd-example">
-                  <code>${highlightCode(escapeHtml(example))}</code>
-                  <button class="copy-btn" onclick="copyText('${escapeAttr(example)}', this)" title="Copy">
+                  <code>${highlightMatch(highlightCode(escapeHtml(example)), state.searchTerm)}</code>
+                  <button class="copy-btn" onclick="copyText('${escapeAttr(example)}', this)" title="Copy" aria-label="Copy code">
                     ${ICONS.copy}
                   </button>
                 </div>
@@ -236,6 +248,7 @@ function renderCommandsBank() {
 // ===== RENDER EXERCISES =====
 function renderExercises() {
   let html = `
+    ${breadcrumbs([{label:'General Knowledge', tab:'general'}, {label:'Practical Exercises'}])}
     <h1 class="view-title">Practical Exercises - Part 1</h1>
     <p class="view-subtitle">Common Linux tasks with deep-dive explanations and context.</p>
   `;
@@ -641,7 +654,7 @@ function renderBlock(b) {
     case 'code': {
       const code = b.code;
       const lang = b.lang || 'bash';
-      return `<div class="cmd-example"><span class="code-label">${escapeHtml(lang)}</span><code>${highlightCode(escapeHtml(code))}</code><button class="copy-btn" onclick="copyText('${escapeAttr(code)}', this)" title="Copy">${ICONS.copy}</button></div>`;
+      return `<div class="cmd-example"><span class="code-label" aria-hidden="true">${escapeHtml(lang)}</span><code>${highlightCode(escapeHtml(code))}</code><button class="copy-btn" onclick="copyText('${escapeAttr(code)}', this)" title="Copy" aria-label="Copy code">${ICONS.copy}</button></div>`;
     }
     case 'callout': {
       const kind = b.kind || 'info';
@@ -650,10 +663,10 @@ function renderBlock(b) {
       return `<div class="callout callout--${klass}" data-label="${label}">${ICONS.alert}<p>${b.html}</p></div>`;
     }
     case 'arabic':
-      return `<div class="arabic-note">${escapeHtml(b.text)}</div>`;
+      return `<div class="arabic-note" lang="ar" dir="rtl">${escapeHtml(b.text)}</div>`;
     case 'diagram': {
       const CAP = { links: 'Symbolic vs hard links', architecture: 'Linux / RHEL system architecture', syntax: 'Command-line syntax and shell parsing' };
-      return `<div class="note-diagram"><div class="diagram-card">${diagramSVG(b.kind)}</div><div class="diagram-caption">${CAP[b.kind] || ''}</div></div>`;
+      return `<div class="note-diagram"><div class="diagram-card" role="img" aria-label="${CAP[b.kind] || ''}">${diagramSVG(b.kind)}</div><div class="diagram-caption">${CAP[b.kind] || ''}</div></div>`;
     }
     default:
       return '';
@@ -664,7 +677,8 @@ function renderBlock(b) {
 function renderNotesBody(authorKey) {
   const note = DATA.notes[authorKey];
   const secId = (s) => `note-sec-${authorKey}-${s}`;
-  let html = `<h1 class="view-title">${escapeHtml(note.author)}'s Notes</h1>`;
+  let html = breadcrumbs([{label:'NTI Linux Course', tab:'course'}, {label:'Day 1', tab:'course', view:'day1-content'}, {label: note.author + "'s Notes"}]);
+  html += `<h1 class="view-title">${escapeHtml(note.author)}'s Notes</h1>`;
   html += `<p class="view-subtitle">${escapeHtml(note.subtitle)}</p>`;
   html += `<div class="note-page">`;
   html += `
@@ -697,7 +711,8 @@ function goToNoteSection(authorKey, secId) {
 // ===== RENDER LAB (body) =====
 function renderLabBody() {
   const lab = DATA.lab;
-  let html = `<h1 class="view-title">${escapeHtml(lab.title || 'Lab Task')}</h1>`;
+  let html = breadcrumbs([{label:'NTI Linux Course', tab:'course'}, {label:'Day 1', tab:'course', view:'day1-content'}, {label:'Lab Task'}]);
+  html += `<h1 class="view-title">${escapeHtml(lab.title || 'Lab Task')}</h1>`;
   html += `<p class="view-subtitle">${escapeHtml(lab.subtitle || 'Hands-on task for this day.')}</p>`;
   const total = lab.tasks.length;
   const doneCount = lab.tasks.filter(t => state.completedLab[t.id]).length;
@@ -718,7 +733,8 @@ function renderLabBody() {
 
 // ===== RENDER TOPIC INDEX (pill cloud + popover) =====
 function renderTopicIndex() {
-  let html = `<h1 class="view-title">Topic Index</h1>`;
+  let html = breadcrumbs([{label:'General Knowledge', tab:'general'}, {label:'Topic Index'}]);
+  html += `<h1 class="view-title">Topic Index</h1>`;
   html += `<p class="view-subtitle">Overlapping topics across all Day 1 contributors. Click a topic to see where it lives.</p>`;
   html += `<div class="topic-cloud">`;
   DATA.topicIndex.forEach((t, i) => {
@@ -756,6 +772,18 @@ function toggleLabTask(id, el) {
   state.completedLab[id] = el.checked;
   const card = document.getElementById('task-' + id);
   if (card) card.classList.toggle('done', el.checked);
+  // live-update progress bar without full re-render
+  const lab = DATA.lab;
+  if (lab) {
+    const total = lab.tasks.length;
+    const doneCount = lab.tasks.filter(t => state.completedLab[t.id]).length;
+    const pct = total ? Math.round((doneCount / total) * 100) : 0;
+    const bar = document.querySelector('.lab-progress .progress-fill');
+    const countEl = document.querySelector('.lab-progress .lab-count');
+    if (bar) bar.style.width = pct + '%';
+    if (countEl) countEl.textContent = `${doneCount} / ${total} tasks complete`;
+    if (doneCount === total) showToast('Lab complete — great work!');
+  }
   saveState();
 }
 
@@ -788,55 +816,136 @@ const VIEW_MAP = {
   'notes-rahma': { tab: 'course', view: 'day1-notes-rahma' },
   'notes-michael': { tab: 'course', view: 'day1-notes-michael' },
   'notes-hager': { tab: 'course', view: 'day1-notes-hager' },
+  'notes-sagda': { tab: 'course', view: 'day2-notes-sagda' },
+  'notes-tarek': { tab: 'course', view: 'day2-notes-tarek' },
   'lab': { tab: 'course', view: 'day1-lab' },
+  'lab2': { tab: 'course', view: 'day2-lab' },
   'quiz': { tab: 'quiz', view: 'quiz' }
 };
 
 // NTI Course sub-navigation: each day splits into Content / Notes / Lab sub-pages.
+// Fully replaced from NTI Course Content Resources (single source of truth)
 const COURSE_NAV = [
-  { id: 'roadmap', label: 'Roadmap (5-day)' },
-  { id: 'day1', label: 'Day 1', sub: [
-    { id: 'day1-content', label: 'Content' },
+  { id: 'roadmap', label: 'Roadmap (3-day)' },
+  { id: 'day1', label: 'Day 1 — RHEL & Files', sub: [
+    { id: 'day1-content', label: 'Content (Canonical)' },
     { id: 'day1-notes-rahma', label: "Rahma's Notes" },
     { id: 'day1-notes-michael', label: "Michael's Notes" },
     { id: 'day1-notes-hager', label: "Hager's Notes" },
-    { id: 'day1-lab', label: 'Lab Task' }
+    { id: 'day1-lab', label: 'Lab 1' }
   ]},
-  { id: 'day2', label: 'Day 2', sub: [
-    { id: 'day2-content', label: 'Content' },
-    { id: 'day2-lab', label: 'Lab Task' }
+  { id: 'day2', label: 'Day 2 — Help & Users', sub: [
+    { id: 'day2-content', label: 'Content (Canonical)' },
+    { id: 'day2-notes-sagda', label: "Sagda's Notes" },
+    { id: 'day2-notes-tarek', label: "Mohammed Tarek's Notes" },
+    { id: 'day2-lab', label: 'Lab 2' }
   ]},
-  { id: 'day3', label: 'Day 3', sub: [
-    { id: 'day3-content', label: 'Content' },
-    { id: 'day3-lab', label: 'Lab Task' }
-  ]},
-  { id: 'day4', label: 'Day 4', sub: [
-    { id: 'day4-content', label: 'Content' },
-    { id: 'day4-lab', label: 'Lab Task' }
-  ]},
-  { id: 'day5', label: 'Day 5', sub: [
-    { id: 'day5-content', label: 'Content' },
-    { id: 'day5-lab', label: 'Lab Task' }
+  { id: 'day3', label: 'Day 3 — Coming Soon', sub: [
+    { id: 'day3-content', label: 'Coming Soon' }
   ]}
 ];
 
 const COURSE_RENDER = {
   'roadmap': () => renderNTIRoadmap(),
-  'day1-content': () => renderDay1Content(),
+  'day1-content': () => renderNTICanonical('day1'),
   'day1-notes-rahma': () => renderNotesBody('rahma'),
   'day1-notes-michael': () => renderNotesBody('michael'),
   'day1-notes-hager': () => renderNotesBody('hager'),
-  'day1-lab': () => renderLabBody(),
-  'day2-content': () => renderCourseDayContent('day2'),
-  'day2-lab': () => renderCourseDayLab('day2'),
-  'day3-content': () => renderCourseDayContent('day3'),
-  'day3-lab': () => renderCourseDayLab('day3'),
-  'day4-content': () => renderCourseDayContent('day4'),
-  'day4-lab': () => renderCourseDayLab('day4'),
-  'day5-content': () => renderCourseDayContent('day5'),
-  'day5-lab': () => renderCourseDayLab('day5')
+  'day1-lab': () => renderLabBodyForDay('day1'),
+  'day2-content': () => renderNTICanonical('day2'),
+  'day2-notes-sagda': () => renderNotesBody('sagda'),
+  'day2-notes-tarek': () => renderNotesBody('tarek'),
+  'day2-lab': () => renderLabBodyForDay('day2'),
+  'day3-content': () => renderNTICanonical('day3')
 };
+function breadcrumbs(items) {
+  // items: [{label, view?, tab?}]
+  if (!items || !items.length) return '';
+  const html = items.map((it, idx) => {
+    const isLast = idx === items.length - 1;
+    if (isLast || (!it.view && !it.tab)) return `<span class="crumb current" aria-current="page">${escapeHtml(it.label)}</span>`;
+    let onclick = '';
+    if (it.tab && it.view) onclick = `setView('${it.tab}','${it.view}')`;
+    else if (it.view) onclick = `goToView('${it.view}')`;
+    else if (it.tab) onclick = `switchTab('${it.tab}')`;
+    return `<button class="crumb link" onclick="${onclick}">${escapeHtml(it.label)}</button>`;
+  }).join('<span class="crumb-sep" aria-hidden="true">›</span>');
+  return `<nav class="breadcrumbs" aria-label="Breadcrumb">${html}</nav>`;
+}
 function tabDefaultView(tab) { const t = TABS.find(x => x.id === tab); return t ? t.views[0].id : 'cheatsheet'; }
+
+// ===== NTI CANONICAL RENDER (single source of truth) =====
+function renderNTICanonical(dayId){
+  const day = (DATA.nti && DATA.nti.days && DATA.nti.days[dayId]) || null;
+  if(!day){
+    // fallback to old placeholder
+    return renderDayPlaceholder(dayId);
+  }
+  // Day3 coming soon has single section
+  const isComingSoon = day.title && day.title.toLowerCase().includes('coming soon');
+  let html = breadcrumbs([{label:'NTI Linux Course', tab:'course'}, {label: dayId==='day1'?'Day 1': dayId==='day2'?'Day 2':'Day 3', tab:'course', view: dayId+'-content'}, {label: isComingSoon?'Coming Soon':'Content'}]);
+  // Override for day3: simpler breadcrumb
+  if(dayId==='day3'){
+    html = breadcrumbs([{label:'NTI Linux Course', tab:'course'}, {label:'Day 3'}]);
+  } else {
+    html = breadcrumbs([{label:'NTI Linux Course', tab:'course'}, {label:'Roadmap', tab:'course', view:'roadmap'}, {label: dayId==='day1'?'Day 1':'Day 2'}]);
+  }
+  html += `<h1 class="view-title">${escapeHtml(day.title)}</h1>`;
+  if(day.subtitle) html += `<p class="view-subtitle">${escapeHtml(day.subtitle)}</p>`;
+  if(isComingSoon){
+    // Render its sections as is
+    html += `<div class="note-page"><div class="note-layout"><aside class="note-toc" style="display:none"></aside><div class="note-content" style="border:none;padding:0">`;
+    day.sections.forEach(sec=>{
+      const body = sec.blocks.map(renderBlock).join('');
+      html += `<section class="note-section"><h2>${escapeHtml(sec.title)}</h2>${body}</section>`;
+    });
+    html += `</div></div></div>`;
+    html += `<div class="day-nav-foot" style="display:flex;gap:10px;flex-wrap:wrap"><button class="toggle-complete" onclick="setView('course','day2-content')">Review Day 2</button><button class="chip" onclick="setView('course','roadmap')">Back to Roadmap</button></div>`;
+    return html;
+  }
+  // For day1/day2: render with TOC similar to notes
+  const secId = (s) => `nti-sec-${dayId}-${s}`;
+  html += `<div class="note-page">`;
+  html += `<div class="note-miniheader"><div class="mini-avatar">${dayId==='day1'?'1':'2'}</div><div class="mini-name">${escapeHtml(day.title)}</div><select onchange="if(this.value) document.getElementById('nti-sec-${dayId}-'+this.value)?.scrollIntoView({behavior:'smooth', block:'start'})"><option value="">Jump to section…</option>${day.sections.map(s=>`<option value="${s.id}">${escapeHtml(s.title)}</option>`).join('')}</select></div>`;
+  html += `<div class="note-layout"><aside class="note-toc">`;
+  day.sections.forEach(s=>{ html += `<a href="#${secId(s.id)}" onclick="event.preventDefault(); document.getElementById('${secId(s.id)}')?.scrollIntoView({behavior:'smooth', block:'start'})">${escapeHtml(s.title)}</a>`; });
+  html += `</aside><div class="note-content">`;
+  day.sections.forEach(s=>{
+    const body = s.blocks.map(renderBlock).join('');
+    html += `<section class="note-section" id="${secId(s.id)}"><h2>${escapeHtml(s.title)}</h2>${body}</section>`;
+  });
+  html += `</div></div></div>`;
+  // Cross-links
+  if(dayId==='day1'){
+    html += `<div class="day-nav-foot" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px"><button class="toggle-complete" onclick="setView('course','day1-lab')">Go to Lab 1 →</button><button class="chip" onclick="setView('course','day2-content')">Next: Day 2 →</button></div>`;
+  } else if(dayId==='day2'){
+    html += `<div class="day-nav-foot" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px"><button class="toggle-complete" onclick="setView('course','day2-lab')">Go to Lab 2 →</button><button class="chip" onclick="setView('course','day1-content')">← Back to Day 1</button><button class="chip" onclick="setView('course','day3-content')">Day 3 (Coming Soon)</button></div>`;
+  }
+  return html;
+}
+
+function renderLabBodyForDay(dayId){
+  // Prefer nti.labs, fallback to DATA.labs or DATA.lab
+  const lab = (DATA.nti && DATA.nti.labs && DATA.nti.labs[dayId]) || (DATA.labs && DATA.labs[dayId]) || (dayId==='day1' ? DATA.lab : null);
+  if(!lab || !lab.tasks || !lab.tasks.length){
+    // fallback to generic placeholder
+    return renderCourseDayLab(dayId);
+  }
+  const num = dayId.replace('day','');
+  let html = breadcrumbs([{label:'NTI Linux Course', tab:'course'}, {label:'Day ' + num, tab:'course', view: dayId+'-content'}, {label:'Lab ' + num}]);
+  html += `<h1 class="view-title">${escapeHtml(lab.title || ('Lab ' + num))}</h1>`;
+  html += `<p class="view-subtitle">${escapeHtml(lab.subtitle || 'Hands-on tasks. Tick when done.')}</p>`;
+  const total = lab.tasks.length;
+  const doneCount = lab.tasks.filter(t=> state.completedLab[t.id]).length;
+  const pct = total ? Math.round((doneCount/total)*100):0;
+  html += `<div class="lab-progress"><span class="lab-count">${doneCount} / ${total} tasks complete</span><div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div></div>`;
+  lab.tasks.forEach(task=>{
+    const done = state.completedLab[task.id];
+    html += `<div class="task-card ${done?'done':''}" id="task-${task.id}"><div class="task-header"><span class="source-badge">${escapeHtml(task.tag||'Lab')}</span><span class="task-title">${escapeHtml(task.title)}</span></div><p class="task-objective">${escapeHtml(task.objective||'')}</p><ol class="task-steps">${(task.steps||[]).map(s=>`<li>${escapeHtml(s)}</li>`).join('')}</ol><label class="task-checkbox"><input type="checkbox" ${done?'checked':''} onchange="toggleLabTask('${task.id}', this)"> Mark this task complete</label></div>`;
+  });
+  html += `<div class="day-nav-foot" style="display:flex;gap:10px;flex-wrap:wrap"><button class="toggle-complete" onclick="setView('course','${dayId}-content')">← Back to Content</button>${dayId==='day1'?`<button class="chip" onclick="setView('course','day2-content')">Next: Day 2 →</button>`:''}${dayId==='day2'?`<button class="chip" onclick="setView('course','day3-content')">Day 3 (Coming Soon)</button>`:''}</div>`;
+  return html;
+}
 
 function goToView(view) {
   const m = VIEW_MAP[view] || { tab: 'general', view: 'cheatsheet' };
@@ -847,12 +956,21 @@ function setView(tab, view) {
   state.tab = tab;
   state.view = view;
   state.searchTerm = '';
+  pushRecent(view);
   const input = document.getElementById('searchInput');
   if (input) input.value = '';
-  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.tab').forEach(t => {
+    const isActive = t.dataset.tab === tab;
+    t.classList.toggle('active', isActive);
+    t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    t.tabIndex = isActive ? 0 : -1;
+  });
   scrollActiveTabIntoView();
   renderSubNav();
   render(); saveState(); closeSidebar();
+  // Move focus to content for screen readers
+  const contentEl = document.getElementById('content');
+  if (contentEl) contentEl.focus({preventScroll:true});
 }
 
 function scrollActiveTabIntoView() {
@@ -879,17 +997,21 @@ function renderSubNav() {
     let html = '';
     COURSE_NAV.forEach(group => {
       if (!group.sub) {
-        html += `<button class="subnav-item ${group.id === state.view ? 'active' : ''}" data-view="${group.id}" onclick="setView('course','${group.id}')">${escapeHtml(group.label)}</button>`;
+        const active = group.id === state.view;
+        html += `<button class="subnav-item ${active ? 'active' : ''}" data-view="${group.id}" onclick="setView('course','${group.id}')" ${active ? 'aria-current="page"' : ''}>${escapeHtml(group.label)}</button>`;
         return;
       }
       html += `
         <div class="nav-group nav-group-day">
-          <div class="nav-group-header" onclick="setView('course','${group.sub[0].id}')">
+          <div class="nav-group-header" onclick="setView('course','${group.sub[0].id}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ') {event.preventDefault(); setView('course','${group.sub[0].id}')}">
             <span>${escapeHtml(group.label)}</span>
-            <svg class="group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            <svg class="group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
           </div>
           <div class="nav-group-items">
-            ${group.sub.map(s => `<button class="subnav-item ${s.id === state.view ? 'active' : ''}" data-view="${s.id}" onclick="setView('course','${s.id}')">${escapeHtml(s.label)}</button>`).join('')}
+            ${group.sub.map(s => {
+              const active = s.id === state.view;
+              return `<button class="subnav-item ${active ? 'active' : ''}" data-view="${s.id}" onclick="setView('course','${s.id}')" ${active ? 'aria-current="page"' : ''}>${escapeHtml(s.label)}</button>`;
+            }).join('')}
           </div>
         </div>`;
     });
@@ -899,7 +1021,10 @@ function renderSubNav() {
 
   const tab = TABS.find(t => t.id === state.tab);
   if (!tab) return;
-  nav.innerHTML = tab.views.map(v => `<button class="subnav-item ${v.id === state.view ? 'active' : ''}" data-view="${v.id}" onclick="setView('${tab.id}','${v.id}')">${escapeHtml(v.label)}</button>`).join('');
+  nav.innerHTML = tab.views.map(v => {
+    const active = v.id === state.view;
+    return `<button class="subnav-item ${active ? 'active' : ''}" data-view="${v.id}" onclick="setView('${tab.id}','${v.id}')" ${active ? 'aria-current="page"' : ''}>${escapeHtml(v.label)}</button>`;
+  }).join('');
 }
 
 function pushRecent(view) {
@@ -914,6 +1039,7 @@ function renderCourse() {
   const progress = Math.round((completedCount / modules.length) * 100);
 
   let html = `
+    ${breadcrumbs([{label:'General Knowledge', tab:'general'}, {label:'7-Module Roadmap'}])}
     <h1 class="view-title">Course Roadmap</h1>
     <p class="view-subtitle">7 modules from Linux beginner to confident power user.</p>
     <div class="progress-bar">
@@ -976,8 +1102,9 @@ function renderSearchResults() {
   const term = state.searchTerm.toLowerCase();
   const t = state.searchTerm;
   let html = `
+    ${breadcrumbs([{label:'Search', view:'cheatsheet'}, {label:`“${escapeHtml(t)}”`}])}
     <h1 class="view-title">Search results</h1>
-    <p class="view-subtitle">Matches for "${escapeHtml(t)}" across all sections.</p>
+    <p class="view-subtitle">Matches for "${escapeHtml(t)}" across all sections. <button class="topic-link" onclick="document.getElementById('searchInput').value=''; state.searchTerm=''; render()" style="margin-left:8px">Clear search ✕</button></p>
   `;
 
   const results = [];
@@ -1021,6 +1148,36 @@ function renderSearchResults() {
       const hay = `${task.tag} ${task.title} ${task.objective} ${task.steps.join(' ')}`.toLowerCase();
       if (hay.includes(term)) results.push({ section: 'Lab 1', title: task.title, desc: task.objective });
     });
+  }
+  // Search new NTI canonical days (single source of truth)
+  if (DATA.nti && DATA.nti.days) {
+    Object.keys(DATA.nti.days).forEach(dayId=>{
+      const day = DATA.nti.days[dayId];
+      if(!day || !day.sections) return;
+      const dayLabel = dayId==='day1'?'NTI Day 1': dayId==='day2'?'NTI Day 2':'NTI Day 3';
+      day.sections.forEach(sec=>{
+        const hay = `${day.title} ${day.subtitle||''} ${sec.title} ${getNoteText(sec.blocks)}`.toLowerCase();
+        if(hay.includes(term)) results.push({ section: dayLabel, title: sec.title, desc: sec.blocks.find(b=>b.t==='text')?.html?.replace(/<[^>]+>/g,'').slice(0,160) || 'See canonical content' });
+      });
+    });
+    // labs per day
+    if(DATA.nti.labs){
+      Object.keys(DATA.nti.labs).forEach(labId=>{
+        const lab = DATA.nti.labs[labId];
+        if(!lab || !lab.tasks) return;
+        lab.tasks.forEach(task=>{
+          const hay = `${task.tag} ${task.title} ${task.objective} ${(task.steps||[]).join(' ')}`.toLowerCase();
+          if(hay.includes(term)) results.push({ section: `Lab ${labId.replace('day','')}`, title: task.title, desc: task.objective });
+        });
+      });
+    }
+    // flashcards
+    if(DATA.nti.flashcards){
+      DATA.nti.flashcards.forEach(fc=>{
+        const hay = `${fc.q} ${fc.a}`.toLowerCase();
+        if(hay.includes(term)) results.push({ section: 'Flashcards NTI', title: fc.q.slice(0,60), desc: fc.a.slice(0,140) });
+      });
+    }
   }
 
   (typeof RH124_SECTIONS !== 'undefined' ? RH124_SECTIONS : []).forEach(sec => {
@@ -1066,7 +1223,7 @@ function renderSearchResults() {
 }
 
 function searchRow(r, t) {
-  return `<div class="cmd-row"><div class="cmd-grid"><div class="cmd-name">${highlightMatch(escapeHtml(r.title), t)}</div><div>${r.desc ? `<div class="cmd-desc">${highlightMatch(escapeHtml(r.desc), t)}</div>` : ''}${r.example ? `<div class="cmd-example"><code>${highlightCode(highlightMatch(escapeHtml(r.example), t))}</code><button class="copy-btn" onclick="copyText('${escapeAttr(r.example)}', this)">${ICONS.copy}</button></div>` : ''}</div></div><span class="source-badge search-badge">${escapeHtml(r.section)}</span></div>`;
+  return `<div class="cmd-row"><div class="cmd-grid"><div class="cmd-name">${highlightMatch(escapeHtml(r.title), t)}</div><div>${r.desc ? `<div class="cmd-desc">${highlightMatch(escapeHtml(r.desc), t)}</div>` : ''}${r.example ? `<div class="cmd-example"><code>${highlightMatch(highlightCode(escapeHtml(r.example)), t)}</code><button class="copy-btn" onclick="copyText('${escapeAttr(r.example)}', this)" aria-label="Copy code">${ICONS.copy}</button></div>` : ''}</div></div><span class="source-badge search-badge">${escapeHtml(r.section)}</span></div>`;
 }
 
 function escId(s) { return String(s).replace(/[^a-zA-Z0-9_-]/g, '_'); }
@@ -1078,7 +1235,16 @@ function toggleSearchGroup(sec) {
 
 // ===== QUIZ & FLASHCARDS =====
 function buildQuizDeck() {
-  // Flashcards from the commands bank: front = command, back = description.
+  // Prefer NTI Day1+Day2 flashcards (single source of truth) if present; fallback to commandsBank
+  const ntiCards = (DATA.nti && DATA.nti.flashcards) || DATA.flashcards;
+  if (ntiCards && ntiCards.length) {
+    // ntiCards are {q,a} from notes; map to flashcard shape
+    return ntiCards.map(c => ({
+      front: c.q || c.front,
+      back: c.a || c.back,
+      category: c.category || 'NTI'
+    })).filter(c=> c.front && c.back);
+  }
   return DATA.commandsBank.map(c => ({
     front: c.command,
     back: c.briefDescription,
@@ -1091,8 +1257,9 @@ function renderQuiz() {
   const best = state.quizScores.best || 0;
   const total = deck.length;
   let html = `
-    <h1 class="view-title">Quiz &amp; Flashcards</h1>
-    <p class="view-subtitle">Flip the cards to memorize commands, then take the multiple-choice quiz.</p>
+    ${breadcrumbs([{label:'Flashcards & Quizzes', tab:'quiz'}])}
+    <h1 class="view-title">Quiz &amp; Flashcards — Day 1 & Day 2</h1>
+    <p class="view-subtitle">Day 1 & Day 2 flashcards (NTI source) — flip to memorize, then take the multiple-choice quiz. Covers 98 Q&A from Rahma, Michael, Hager, Sagda & Tarek notes.</p>
     <div class="progress-bar">
       <div class="progress-bar-header">
         <span>Best Quiz Score</span>
@@ -1106,7 +1273,7 @@ function renderQuiz() {
   html += `<div class="links-section"><h3>Flashcards <span class="badge">${total} cards</span></h3><div class="flashcard-grid">`;
   deck.forEach((card, i) => {
     html += `
-      <div class="flashcard" onclick="this.classList.toggle('flipped')" title="Click to flip">
+      <button class="flashcard" onclick="this.classList.toggle('flipped')" title="Click to flip" aria-label="Flashcard ${escapeHtml(card.front)}: press to reveal" aria-pressed="false" onkeydown="if(event.key==='Enter'||event.key===' ') {event.preventDefault(); this.classList.toggle('flipped'); this.setAttribute('aria-pressed', this.classList.contains('flipped'))}" onClick="this.setAttribute('aria-pressed', this.classList.contains('flipped') ? 'true':'false')">
         <div class="flashcard-inner">
           <div class="flashcard-front">
             <span class="flashcard-cat">${escapeHtml(card.category)}</span>
@@ -1118,7 +1285,7 @@ function renderQuiz() {
             <p>${escapeHtml(card.back)}</p>
           </div>
         </div>
-      </div>`;
+      </button>`;
   });
   html += `</div></div>`;
 
@@ -1204,12 +1371,14 @@ function quizAccItem(q, i) {
     </div>`;
 }
 
+let _lastMissed = [];
 function renderQuizQuestions() {
   const box = document.getElementById('quizBox');
   if (!quizState) return;
   const total = quizState.questions.length;
   const complete = (quizState.score + quizState.wrong.length) >= total;
   const missed = quizState.wrong;
+  _lastMissed = missed.slice();
   box.innerHTML = `
     <div class="quiz-progress">Score: <strong>${quizState.score}</strong> / ${total}${state.quizScores.best ? ` &middot; Best: ${state.quizScores.best}` : ''}</div>
     <div class="quiz-accordion">
@@ -1219,7 +1388,7 @@ function renderQuizQuestions() {
       <div class="no-results">
         <h3>Quiz complete!</h3>
         <p>You scored <strong>${quizState.score} / ${total}</strong>.</p>
-        ${missed.length ? `<button class="toggle-complete" onclick="startQuiz(${JSON.stringify(missed).replace(/"/g, '&quot;')})">${ICONS.check} Retry ${missed.length} missed</button>` : ''}
+        ${missed.length ? `<button class="toggle-complete" onclick="startQuiz(_lastMissed)">${ICONS.check} Retry ${missed.length} missed</button>` : ''}
         <button class="toggle-complete" onclick="startQuiz()">${ICONS.check} Try Again</button>
       </div>` : ''}
   `;
@@ -1230,14 +1399,18 @@ function flipCard(i, el) {
 }
 
 // ===== HELPERS =====
-function escapeHtml(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-function escapeAttr(s) {
-  return s.replace(/\\/g, '\\\\')
-          .replace(/'/g, "\\'")
-          .replace(/"/g, '&quot;')
-          .replace(/\r/g, '')
-          .replace(/\n/g, '\\n');
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
+function escapeAttr(s) {
+  if (s == null) return '';
+  return String(s).replace(/\\/g, '\\\\')
+           .replace(/'/g, "\\'")
+           .replace(/\r/g, '')
+           .replace(/\n/g, '\\n');
+}
+function escapeAttrHtml(s) { return escapeHtml(s); }
 function stripHtml(s) { return s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(); }
 function getNoteText(blocks) {
   return blocks.map(b => {
@@ -1251,10 +1424,46 @@ function getNoteText(blocks) {
 }
 
 function copyText(text, btn) {
-  navigator.clipboard.writeText(text).then(() => {
+  const onSuccess = () => {
     btn.classList.add('copied');
-    setTimeout(() => btn.classList.remove('copied'), 1500);
-  });
+    const original = btn.getAttribute('aria-label') || 'Copy';
+    btn.setAttribute('aria-label', 'Copied!');
+    showToast('Copied to clipboard');
+    setTimeout(() => { btn.classList.remove('copied'); btn.setAttribute('aria-label', original); }, 1500);
+  };
+  const fallback = (t) => {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = t;
+      ta.setAttribute('readonly','');
+      ta.style.position = 'absolute';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      onSuccess();
+    } catch(_e) { showToast('Copy failed'); }
+  };
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(onSuccess).catch(() => fallback(text));
+  } else fallback(text);
+}
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.setAttribute('role','status');
+    t.setAttribute('aria-live','polite');
+    Object.assign(t.style, {position:'fixed',bottom:'24px',left:'50%',transform:'translateX(-50%) translateY(20px)',background:'var(--bg-elevated)',color:'var(--text)',border:'1px solid var(--border)',padding:'10px 16px',borderRadius:'999px',fontSize:'13px',zIndex:'9999',opacity:'0',transition:'opacity 180ms, transform 180ms',pointerEvents:'none',boxShadow:'var(--shadow)'});
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(t._hide);
+  t._hide = setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateX(-50%) translateY(10px)'; }, 1800);
 }
 
 // ===== FIXED TOGGLE FUNCTIONS =====
@@ -1326,7 +1535,7 @@ function cmdCard(c) {
     <div class="cmd-card ${catClass}">
       <div class="cmd-card-name">${escapeHtml(c.command)}</div>
       <div class="cmd-card-desc">${escapeHtml(c.briefDescription)}</div>
-      ${c.example ? `<div class="cmd-card-example"><code>${highlightCode(escapeHtml(c.example))}</code><button class="copy-btn" onclick="copyText('${escapeAttr(c.example)}', this)" title="Copy">${ICONS.copy}</button></div>` : ''}
+      ${c.example ? `<div class="cmd-card-example"><code>${highlightCode(escapeHtml(c.example))}</code><button class="copy-btn" onclick="copyText('${escapeAttr(c.example)}', this)" title="Copy ${escapeAttr(c.command)}" aria-label="Copy ${escapeAttr(c.command)}">${ICONS.copy}</button></div>` : ''}
       ${c.flags.length ? `<div class="cmd-card-flags">${c.flags.map(f => `<span class="flag-chip">${escapeHtml(f)}</span>`).join('')}</div>` : ''}
       ${c.notes ? `<div class="cmd-card-note">${ICONS.alert}<span>${escapeHtml(c.notes)}</span></div>` : ''}
     </div>`;
@@ -1341,36 +1550,58 @@ function renderMergedCheatSheet() {
     ? `<div id="cmdResults" class="cmd-grid">${cmds.map(cmdCard).join('')}</div>`
     : `<div class="no-results">${ICONS.search}<h3>No commands match</h3><p>Try clearing the filters or search term.</p></div>`;
   return `
+    ${breadcrumbs([{label:'General Knowledge', tab:'general'}, {label:'Cheat Sheet'}])}
     <h1 class="view-title">Linux Cheat Sheet &amp; Command Bank</h1>
-    <p class="view-subtitle">${all.length} commands across ${cats.length} categories — the cheat sheet and command bank, merged.</p>
+    <p class="view-subtitle">${all.length} commands across ${cats.length} categories — cheat sheet + bank merged. <span style="color:var(--text-dim)">Press <kbd style="font-family:var(--font-mono);font-size:11px;border:1px solid var(--border);padding:1px 5px;border-radius:3px;background:var(--bg-tertiary)">/</kbd> to filter • Global search finds notes & exercises</span></p>
     <div class="cmd-filterbar">
       <div class="cmd-search-box">
         <span class="cmd-search-icon">${ICONS.search}</span>
-        <input id="cmdSearch" class="cmd-search-input" type="text" placeholder="Filter commands (name, flag, description)…" value="${escapeAttr(state.cmdTerm)}">
+        <input id="cmdSearch" class="cmd-search-input" type="text" placeholder="Filter commands (name, flag, description)…" value="${escapeAttr(state.cmdTerm)}" aria-label="Filter commands by name or description">
       </div>
-      <div class="cmd-chips">
-        ${cats.map(cat => `<button class="chip ${state.cmdCats.includes(cat) ? 'active' : ''}" data-cat="${escapeAttr(cat)}" onclick="toggleCmdCat('${escapeAttr(cat)}')">${escapeHtml(cat)}</button>`).join('')}
+      <div class="cmd-chips" role="toolbar" aria-label="Filter by category">
+        ${cats.map(cat => `<button class="chip ${state.cmdCats.includes(cat) ? 'active' : ''}" data-cat="${escapeAttr(cat)}" onclick="toggleCmdCat('${escapeAttr(cat)}')" aria-pressed="${state.cmdCats.includes(cat) ? 'true' : 'false'}">${escapeHtml(cat)}</button>`).join('')}
       </div>
     </div>
-    <div class="cmd-results-meta">${cmds.length} command${cmds.length !== 1 ? 's' : ''} shown${term ? ` for “${escapeHtml(term)}”` : ''}</div>
+    <div class="cmd-results-meta" role="status" aria-live="polite">${cmds.length} command${cmds.length !== 1 ? 's' : ''} shown${term ? ` for “${escapeHtml(term)}”` : ''}${state.cmdCats.length ? ` · ${state.cmdCats.length} filter${state.cmdCats.length!==1?'s':''}` : ''}</div>
     ${grid}
   `;
 }
 
+function updateCmdMeta() {
+  const meta = document.querySelector('.cmd-results-meta');
+  if (!meta) return;
+  const cmds = getCmds();
+  const term = state.cmdTerm.trim();
+  meta.textContent = `${cmds.length} command${cmds.length !== 1 ? 's' : ''} shown${term ? ` for “${term}”` : ''}${state.cmdCats.length ? ` · ${state.cmdCats.length} filter${state.cmdCats.length!==1?'s':''}` : ''}`;
+}
 function renderCmdResults() {
   const wrap = document.getElementById('cmdResults');
   if (!wrap) return;
   const cmds = getCmds();
-  wrap.outerHTML = cmds.length
+  const newHtml = cmds.length
     ? `<div id="cmdResults" class="cmd-grid">${cmds.map(cmdCard).join('')}</div>`
-    : `<div class="no-results">${ICONS.search}<h3>No commands match</h3><p>Try clearing the filters or search term.</p></div>`;
+    : `<div id="cmdResults"><div class="no-results">${ICONS.search}<h3>No commands match</h3><p>Try clearing the filters or search term.</p><button class="toggle-complete" onclick="clearCmdFilters()">Clear filters</button></div></div>`;
+  wrap.outerHTML = newHtml;
+  updateCmdMeta();
 }
-
+function clearCmdFilters() {
+  state.cmdTerm = '';
+  state.cmdCats = [];
+  saveState();
+  const inp = document.getElementById('cmdSearch');
+  if (inp) inp.value = '';
+  document.querySelectorAll('.chip[data-cat]').forEach(b => b.classList.remove('active'));
+  renderCmdResults();
+}
 function toggleCmdCat(cat) {
   const i = state.cmdCats.indexOf(cat);
   if (i >= 0) state.cmdCats.splice(i, 1); else state.cmdCats.push(cat);
   saveState();
-  document.querySelectorAll('.chip[data-cat]').forEach(b => b.classList.toggle('active', state.cmdCats.includes(b.dataset.cat)));
+  document.querySelectorAll('.chip[data-cat]').forEach(b => {
+    const active = state.cmdCats.includes(b.dataset.cat);
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
   renderCmdResults();
 }
 
@@ -1378,21 +1609,29 @@ function setupCmdSearch() {
   const input = document.getElementById('cmdSearch');
   if (!input) return;
   input.value = state.cmdTerm;
-  input.addEventListener('input', (e) => { state.cmdTerm = e.target.value; renderCmdResults(); });
+  input.setAttribute('aria-label','Filter commands');
+  input.addEventListener('input', (e) => {
+    state.cmdTerm = e.target.value;
+    saveState();
+    renderCmdResults();
+  });
+  // clear on Escape inside this field is handled globally
 }
 
 // ===== NTI LINUX COURSE =====
 function renderNTIRoadmap() {
+  const days = DATA.course.days || [];
+  const readySet = new Set(['day1','day2']);
   let html = `
+    ${breadcrumbs([{label:'NTI Linux Course', tab:'course'}, {label:'Roadmap'}])}
     <h1 class="view-title">NTI Linux Course — Roadmap</h1>
-    <p class="view-subtitle">A 5-day Red Hat (RH124-style) outline plus the 7-module practical track.</p>
-    <h2 class="day-part-title">5-Day Course Outline</h2>
+    <p class="view-subtitle">${days.length}-day Red Hat (RH124-style) outline — Day 1 & Day 2 live, Day 3 coming soon — plus the 7-module practical track.</p>
+    <h2 class="day-part-title">${days.length}-Day Course Outline</h2>
     <div class="roadmap-grid">
   `;
-  const days = DATA.course.days || [];
   days.forEach(d => {
     const label = d.id.replace('day', 'Day ');
-    const isReady = d.id === 'day1';
+    const isReady = readySet.has(d.id);
     html += `
       <div class="roadmap-card ${isReady ? '' : 'roadmap-card--soon'}">
         <div class="roadmap-day">${escapeHtml(label)}</div>
@@ -1411,18 +1650,28 @@ function renderNTIRoadmap() {
 
 function renderDayPlaceholder(view) {
   const dayNum = view.replace('day', '');
+  const day = (DATA.course.days || []).find(d => d.id === view.replace('-content','').replace('-lab',''));
+  const topics = day ? day.topics : [];
   return `
+    ${breadcrumbs([{label:'NTI Linux Course', tab:'course'}, {label:'Roadmap', tab:'course', view:'roadmap'}, {label:'Day ' + dayNum}])}
     <h1 class="view-title">NTI Linux Course — Day ${dayNum}</h1>
+    ${day ? `<p class="view-subtitle">${escapeHtml(day.title)}</p>` : ''}
     <div class="no-results">
       ${ICONS.file}
       <h3>Day ${dayNum} content coming soon</h3>
-      <p>Day 1 is fully populated. Check back later for Day ${dayNum} notes, labs, and guides.</p>
-       <button class="toggle-complete" onclick="setView('course','day1-content')">${ICONS.chevron} Go to Day 1</button>
+      <p>Day 1 is fully populated. Day ${dayNum} will cover:</p>
+      ${topics.length ? `<ul class="topic-list" style="text-align:left;max-width:480px;margin:12px auto">${topics.map(t=>`<li>${escapeHtml(t)}</li>`).join('')}</ul>` : ''}
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">
+        <button class="toggle-complete" onclick="setView('course','day1-content')">${ICONS.chevron} Go to Day 1</button>
+        <button class="chip" onclick="setView('course','roadmap')">Back to Roadmap</button>
+      </div>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:14px">Want this sooner? Check the 7-module Practical Track in General Knowledge.</p>
     </div>`;
 }
 
 function renderDay1Content() {
   return `
+    ${breadcrumbs([{label:'NTI Linux Course', tab:'course'}, {label:'Roadmap', tab:'course', view:'roadmap'}, {label:'Day 1'}])}
     <h1 class="view-title">NTI Linux Course — Day 1</h1>
     <p class="view-subtitle">RH124 summary and the soft vs hard links guide.</p>
     <div class="day-part">
@@ -1440,7 +1689,8 @@ function renderCourseDayContent(dayId) {
   const day = (DATA.course.days || []).find(d => d.id === dayId);
   if (!day) return renderDayPlaceholder(dayId);
   const num = dayId.replace('day', '');
-  let html = `<h1 class="view-title">NTI Linux Course — Day ${num}</h1>`;
+  let html = breadcrumbs([{label:'NTI Linux Course', tab:'course'}, {label:'Roadmap', tab:'course', view:'roadmap'}, {label:'Day ' + num}]);
+  html += `<h1 class="view-title">NTI Linux Course — Day ${num}</h1>`;
   html += `<p class="view-subtitle">${escapeHtml(day.title)}</p>`;
   (day.content || []).forEach(sec => {
     html += `<div class="day-part"><h2 class="day-part-title">${escapeHtml(sec.title)}</h2>`;
@@ -1459,7 +1709,8 @@ function renderCourseDayContent(dayId) {
 function renderCourseDayLab(dayId) {
   const day = (DATA.course.days || []).find(d => d.id === dayId);
   const num = dayId.replace('day', '');
-  let html = `<h1 class="view-title">Lab · Day ${num}</h1>`;
+  let html = breadcrumbs([{label:'NTI Linux Course', tab:'course'}, {label:'Day ' + num, tab:'course', view: dayId + '-content'}, {label:'Lab Task'}]);
+  html += `<h1 class="view-title">Lab · Day ${num}</h1>`;
   html += `<p class="view-subtitle">${escapeHtml(day ? day.title : 'Practice tasks')}</p>`;
   html += `<div class="task-card"><div class="task-header"><span class="task-tag">Practice</span><span class="task-title">${escapeHtml('Hands-on tasks for ' + (day ? day.title : ('Day ' + num)))}</span></div>`;
   if (day && day.topics) {
@@ -1476,8 +1727,10 @@ function renderCourseDayLab(dayId) {
 function renderHelpfulLinks() {
   const links = DATA.helpfulLinks || [];
   let html = `
+    ${breadcrumbs([{label:'Helpful Links'}])}
     <h1 class="view-title">Helpful Links</h1>
     <p class="view-subtitle">Curated resources to support the NTI Linux course.</p>
+    ${!links.length ? `<div class="no-results">${ICONS.link}<h3>No links yet</h3><p>Add resources to DATA.helpfulLinks.</p></div>` : ''}
     <div class="link-card-grid">
   `;
   links.forEach(l => {
@@ -1553,11 +1806,24 @@ function postRender() {
 }
 
 // ===== EVENT LISTENERS =====
-document.querySelectorAll('.tab').forEach(btn => {
-  btn.addEventListener('click', () => {
-    switchTab(btn.dataset.tab);
+(function initTabs(){
+  const tabs = Array.from(document.querySelectorAll('.tab'));
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    btn.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft' && e.key !== 'Home' && e.key !== 'End') return;
+      e.preventDefault();
+      const idx = tabs.indexOf(btn);
+      let nextIdx = idx;
+      if (e.key === 'ArrowRight') nextIdx = (idx + 1) % tabs.length;
+      if (e.key === 'ArrowLeft') nextIdx = (idx - 1 + tabs.length) % tabs.length;
+      if (e.key === 'Home') nextIdx = 0;
+      if (e.key === 'End') nextIdx = tabs.length - 1;
+      tabs[nextIdx].focus();
+      switchTab(tabs[nextIdx].dataset.tab);
+    });
   });
-});
+})();
 
 document.getElementById('themeToggle').addEventListener('click', () => {
   const next = state.theme === 'dark' ? 'light' : 'dark';
@@ -1596,13 +1862,23 @@ document.getElementById('searchInput').addEventListener('input', (e) => {
 })();
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+  if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) {
+    if (document.activeElement.isContentEditable) return;
     e.preventDefault();
     const local = document.getElementById('cmdSearch');
     if (local && local.offsetParent !== null) local.focus();
     else document.getElementById('searchInput').focus();
   }
   if (e.key === 'Escape') {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar && sidebar.classList.contains('open')) {
+      closeSidebar();
+      document.getElementById('menuBtn')?.focus();
+      return;
+    }
+    // close topic popover if open
+    const pop = document.getElementById('topicPopover');
+    if (pop && pop.dataset.open) { pop.innerHTML=''; pop.dataset.open=''; document.querySelectorAll('.topic-pill').forEach(p=>p.classList.remove('active')); return; }
     const gi = document.getElementById('searchInput');
     const ci = document.getElementById('cmdSearch');
     if (document.activeElement === gi) {
@@ -1614,22 +1890,42 @@ document.addEventListener('keydown', (e) => {
       ci.value = '';
       state.cmdTerm = '';
       ci.blur();
-      renderCmdResults();
+      renderCmdResults(); updateCmdMeta();
+    } else if (state.searchTerm.trim()) {
+      state.searchTerm = '';
+      if (gi) gi.value='';
+      render();
     }
   }
 });
 
-document.getElementById('menuBtn').addEventListener('click', () => {
-  document.getElementById('sidebar').classList.add('open');
-  document.getElementById('overlay').classList.add('show');
-});
-
-document.getElementById('overlay').addEventListener('click', closeSidebar);
-
-function closeSidebar() {
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('overlay').classList.remove('show');
+function openSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  const btn = document.getElementById('menuBtn');
+  if (!sidebar || !overlay) return;
+  sidebar.classList.add('open');
+  overlay.classList.add('show');
+  overlay.setAttribute('aria-hidden','false');
+  if (btn) btn.setAttribute('aria-expanded','true');
+  document.body.style.overflow = 'hidden';
+  // focus first item in sidebar
+  const first = sidebar.querySelector('button, a, [tabindex]:not([tabindex="-1"])');
+  if (first) setTimeout(()=>first.focus(), 50);
 }
+function closeSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  const btn = document.getElementById('menuBtn');
+  if (!sidebar || !overlay) return;
+  sidebar.classList.remove('open');
+  overlay.classList.remove('show');
+  overlay.setAttribute('aria-hidden','true');
+  if (btn) btn.setAttribute('aria-expanded','false');
+  document.body.style.overflow = '';
+}
+document.getElementById('menuBtn').addEventListener('click', openSidebar);
+document.getElementById('overlay').addEventListener('click', closeSidebar);
 
 // ===== INIT =====
 (function init() {
@@ -1637,7 +1933,23 @@ function closeSidebar() {
   document.getElementById('themeIcon').outerHTML = state.theme === 'dark'
     ? '<svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>'
     : '<svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
-  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === state.tab));
+  document.querySelectorAll('.tab').forEach(t => {
+    const isActive = t.dataset.tab === state.tab;
+    t.classList.toggle('active', isActive);
+    t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    t.tabIndex = isActive ? 0 : -1;
+  });
   renderSubNav();
   render();
+  // close popover on outside click
+  document.addEventListener('click', (e) => {
+    const pop = document.getElementById('topicPopover');
+    if (!pop || !pop.dataset.open) return;
+    if (e.target.closest('.topic-pill') || e.target.closest('#topicPopover')) return;
+    pop.innerHTML=''; pop.dataset.open=''; document.querySelectorAll('.topic-pill').forEach(p=>p.classList.remove('active'));
+  });
+  // resize: auto-close sidebar on desktop
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 860) closeSidebar();
+  });
 })();

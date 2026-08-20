@@ -10,17 +10,17 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+Arabic:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/css/styles.css?v=9">
+<link rel="stylesheet" href="assets/css/styles.css?v=12">
 </head>
 <body>
-
-<div class="overlay" id="overlay"></div>
+<a class="skip-link" href="#content">Skip to content</a>
+<div class="overlay" id="overlay" tabindex="-1" aria-hidden="true"></div>
 
 <div class="app">
   <header class="topbar">
     <div class="topbar-left">
-      <button class="menu-btn" id="menuBtn" aria-label="Toggle navigation">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      <button class="menu-btn" id="menuBtn" aria-label="Toggle navigation" aria-expanded="false" aria-controls="sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
       <div class="logo">
         <div class="logo-icon">
@@ -33,11 +33,11 @@
       </div>
     </div>
 
-    <nav class="tabs" id="tabs">
-      <button class="tab" data-tab="general"><span class="tab-long">General Knowledge</span><span class="tab-short">General</span></button>
-      <button class="tab" data-tab="course"><span class="tab-long">NTI Linux Course</span><span class="tab-short">Course</span></button>
-      <button class="tab" data-tab="links"><span class="tab-long">Helpful Links</span><span class="tab-short">Links</span></button>
-      <button class="tab" data-tab="quiz"><span class="tab-long">Flashcards &amp; Quizzes</span><span class="tab-short">Quiz</span></button>
+    <nav class="tabs" id="tabs" role="tablist" aria-label="Primary">
+      <button class="tab" data-tab="general" role="tab" aria-selected="false" tabindex="-1"><span class="tab-long">General Knowledge</span><span class="tab-short">General</span></button>
+      <button class="tab" data-tab="course" role="tab" aria-selected="false" tabindex="-1"><span class="tab-long">NTI Linux Course</span><span class="tab-short">Course</span></button>
+      <button class="tab" data-tab="links" role="tab" aria-selected="false" tabindex="-1"><span class="tab-long">Helpful Links</span><span class="tab-short">Links</span></button>
+      <button class="tab" data-tab="quiz" role="tab" aria-selected="false" tabindex="-1"><span class="tab-long">Flashcards &amp; Quizzes</span><span class="tab-short">Quiz</span></button>
     </nav>
 
     <div class="topbar-right">
@@ -51,8 +51,8 @@
   </header>
 
   <div class="layout">
-    <aside class="sidebar" id="sidebar">
-      <nav class="subnav" id="subnav"></nav>
+    <aside class="sidebar" id="sidebar" aria-label="Section navigation">
+      <nav class="subnav" id="subnav" aria-label="Subnavigation"></nav>
       <div class="sidebar-footer">
         <a class="sidebar-link" href="https://github.com/EslamNabawy/linux-cs" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
@@ -62,22 +62,22 @@
     </aside>
 
     <div class="content-col">
-      <main class="main">
+      <main class="main" id="main">
         <div class="search-wrapper" id="searchWrapper">
           <div class="search-box">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" class="search-input" id="searchInput" placeholder="Search everything — commands, exercises, notes…  (press /)">
-            <span class="search-kbd">/</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" class="search-input" id="searchInput" placeholder="Search everything — commands, exercises, notes…  (press /)" aria-label="Search everything" autocomplete="off" spellcheck="false">
+            <span class="search-kbd" aria-hidden="true">/</span>
           </div>
         </div>
 
-        <div id="content"></div>
+        <div id="content" tabindex="-1"></div>
       </main>
     </div>
   </div>
 </div>
 
-<script src="assets/js/data.js?v=9"></script>
-<script src="assets/js/app.js?v=9"></script>
+<script src="assets/js/data.js?v=12"></script>
+<script src="assets/js/app.js?v=12"></script>
 </body>
 </html>
