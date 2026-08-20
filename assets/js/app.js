@@ -1948,8 +1948,30 @@ document.getElementById('overlay').addEventListener('click', closeSidebar);
     if (e.target.closest('.topic-pill') || e.target.closest('#topicPopover')) return;
     pop.innerHTML=''; pop.dataset.open=''; document.querySelectorAll('.topic-pill').forEach(p=>p.classList.remove('active'));
   });
+  // dynamic topbar height for sticky offsets (most reasonable: measure actual rendered height)
+  function updateTopbarHeight(){
+    const tb = document.querySelector('.topbar');
+    if(!tb) return;
+    const h = Math.ceil(tb.getBoundingClientRect().height);
+    if(h>0) document.documentElement.style.setProperty('--topbar-h', h + 'px');
+  }
+  updateTopbarHeight();
+  window.addEventListener('resize', updateTopbarHeight);
+  // also observe topbar size changes (tabs wrap)
+  if(window.ResizeObserver){
+    const tb = document.querySelector('.topbar');
+    if(tb) new ResizeObserver(updateTopbarHeight).observe(tb);
+  }
+  // recalc after tab switch
+  const _oldSetView = setView;
+  setView = function(tab, view){
+    const res = _oldSetView.apply(this, arguments);
+    setTimeout(updateTopbarHeight, 60);
+    return res;
+  };
   // resize: auto-close sidebar on desktop
   window.addEventListener('resize', () => {
     if (window.innerWidth > 860) closeSidebar();
+    updateTopbarHeight();
   });
 })();
