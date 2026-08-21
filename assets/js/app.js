@@ -2272,12 +2272,13 @@ function openCmdDrawer(cmd){
   const panel = document.getElementById('cmdDrawerPanel');
   if(!drawer || !panel) return;
   const flagsHtml = (c.flags||[]).length ? `<div class="drawer-section"><h4>Flags</h4><div class="table-wrap"><table class="comparison-table"><thead><tr><th>Flag</th><th>Description</th></tr></thead><tbody>${c.flags.map(f=>`<tr><td><code>${escapeHtml(f.flag)}</code></td><td>${escapeHtml(f.desc||'—')}</td></tr>`).join('')}</tbody></table></div></div>` : '';
-  const examplesHtml = (c.examples||[]).map((ex,i)=>`<div class="drawer-example"><div class="drawer-example-head"><span class="drawer-example-num">#${i+1}</span><span class="drawer-example-desc">${escapeHtml(ex.desc||'Example')}</span><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(ex.code)}" aria-label="Copy">${ICONS.copy}</button></div><div class="cmd-example"><span class="code-label">bash</span><code>${highlightCode(ex.code)}</code></div></div>`).join('');
+  const examplesHtml = (c.examples||[]).map((ex,i)=>`<div class="drawer-example"><div class="drawer-example-head"><span class="drawer-example-num">#${i+1}</span><span class="drawer-example-desc">${escapeHtml(ex.desc||'Example')}</span><button class="copy-btn" data-action="explain-cmd" data-cmd="${escapeCopyAttr(ex.code)}" title="Explain with explainshell.com" aria-label="Explain this command with explainshell">${EXTLINK_SVG}</button><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(ex.code)}" aria-label="Copy">${ICONS.copy}</button></div><div class="cmd-example"><span class="code-label">bash</span><code>${highlightCode(ex.code)}</code></div></div>`).join('');
   const relatedHtml = (c.related||[]).length ? `<div class="drawer-related">${c.related.map(r=>`<button class="chip chip--sm" data-action="open-cmd" data-cmd="${escapeHtml(r)}">${escapeHtml(r)}</button>`).join('')}</div>` : '<span style="color:var(--text-dim)">No related</span>';
   panel.innerHTML = `
     <div class="drawer-header">
       <div class="drawer-title-row">
         <code class="drawer-cmd">${escapeHtml(c.command)}</code>
+        <button class="icon-btn icon-btn--sm" data-action="man-page" data-cmd="${escapeAttrHtml(c.command)}" title="Official man page (man7.org)" aria-label="Open official man page for ${escapeHtml(c.command)}">${ICONS.book}</button>
         <button class="fav-btn ${isFav(c.command)?'is-fav':''}" data-action="toggle-fav" data-cmd="${escapeHtml(c.command)}" aria-pressed="${isFav(c.command)?'true':'false'}" title="Favorite">${isFav(c.command)?'★':'☆'}</button>
         <button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(c.command)}" title="Copy command">${ICONS.copy}</button>
       </div>
@@ -2330,7 +2331,7 @@ function cmdCard(c) {
         <span class="cmd-card-count">${(c.examples||[]).length} ex · ${(c.flags||[]).length} flags</span>
       </div>
       <div class="cmd-card-desc">${escapeHtml(c.briefDescription)}</div>
-      ${firstEx ? `<div class="cmd-card-example" onclick="event.stopPropagation()"><span class="code-label">bash</span><code>${highlightCode(firstEx.code)}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(firstEx.code)}" title="Copy" aria-label="Copy ${escapeHtml(c.command)}">${ICONS.copy}</button></div>` : ''}
+      ${firstEx ? `<div class="cmd-card-example" onclick="if(event.target.closest('[data-action]'))return;event.stopPropagation()"><span class="code-label">bash</span><code>${highlightCode(firstEx.code)}</code><button class="copy-btn" data-action="explain-cmd" data-cmd="${escapeCopyAttr(firstEx.code)}" title="Explain with explainshell.com" aria-label="Explain this command with explainshell">${EXTLINK_SVG}</button><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(firstEx.code)}" title="Copy" aria-label="Copy ${escapeHtml(c.command)}">${ICONS.copy}</button></div>` : ''}
       ${(c.flags||[]).length ? `<div class="cmd-card-flags">${flagChips}${moreFlags}</div>` : ''}
       ${pit}
       ${rel}
@@ -2941,6 +2942,8 @@ document.addEventListener('keydown', (e) => {
     return;
   }
   if (e.key === 'Escape') {
+    const ext = document.getElementById('extModal');
+    if (ext && ext.classList.contains('open')) { closeExtModal(); return; }
     const drawer = document.getElementById('cmdDrawer');
     if (drawer && drawer.classList.contains('open')) {
       closeCmdDrawer();
@@ -3150,8 +3153,10 @@ async function openManPage(cmd, triggerEl){
 }
 // --- explainshell.com: allows framing today; iframe-first + permanent escape hatch ---
 function openExplainShell(cmd, triggerEl){
-  const url = explainShellUrl(cmd);
-  openExtModal(cmd, true, `
+  const raw = (cmd || '').trim();
+  if(!raw){ showToast('Nothing to explain — select a command first'); return; }
+  const url = explainShellUrl(raw);
+  openExtModal(raw, true, `
     <div class="ext-modal-frame-wrap">
       <div class="ext-modal-loading ext-frame-loading"><span class="ext-spinner"></span> Loading explanation…</div>
       <iframe class="ext-modal-frame" src="${escapeAttrHtml(url)}"
@@ -3201,6 +3206,9 @@ document.addEventListener('click', (e) => {
   if (a === 'set-cmd-view') { setCmdView(btn.dataset.view); return; }
   if (a === 'toggle-fav') { toggleFav(btn.dataset.cmd, event); return; }
   if (a === 'open-cmd') { openCmdDrawer(btn.dataset.cmd); return; }
+  if (a === 'explain-cmd') { openExplainShell(btn.dataset.cmd || '', btn); return; }
+  if (a === 'man-page') { openManPage(btn.dataset.cmd || '', btn); return; }
+  if (a === 'close-ext-modal') { closeExtModal(); return; }
   if (a === 'close-drawer') { closeCmdDrawer(); return; }
   if (a === 'toggle-fav-filter') { toggleFavFilter(); return; }
   if (a === 'clear-cmd-term') { clearCmdTerm(); return; }
