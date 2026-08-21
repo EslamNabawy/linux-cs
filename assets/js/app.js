@@ -54,6 +54,11 @@ const state = {
   searchTerm: '',
   cmdTerm: savedState.cmdTerm || '',
   cmdCats: savedState.cmdCats || [],
+  cmdDifficulty: savedState.cmdDifficulty || [],
+  cmdSort: savedState.cmdSort || 'name',
+  cmdView: savedState.cmdView || 'grid',
+  cmdFav: savedState.cmdFav || [],
+  cmdFavOnly: savedState.cmdFavOnly || false,
   theme: _validTheme,
   collapsedCategories: savedState.collapsedCategories || {},
   collapsedExercises: savedState.collapsedExercises || {},
@@ -75,6 +80,11 @@ function saveState() {
     view: state.view,
     cmdTerm: state.cmdTerm,
     cmdCats: state.cmdCats,
+    cmdDifficulty: state.cmdDifficulty,
+    cmdSort: state.cmdSort,
+    cmdView: state.cmdView,
+    cmdFav: state.cmdFav,
+    cmdFavOnly: state.cmdFavOnly,
     theme: state.theme,
     collapsedCategories: state.collapsedCategories,
     collapsedExercises: state.collapsedExercises,
@@ -1996,15 +2006,45 @@ function buildCommandIndex() {
   if (_cmdIndex) return _cmdIndex;
   const map = {};
   const add = (cmd) => {
-    const key = cmd.command.trim();
-    if (!map[key]) map[key] = { command: key, category: cmd.category, briefDescription: cmd.briefDescription, example: cmd.example || cmd.command, notes: cmd.notes || '', keywords: cmd.keywords || [], flags: [] };
-    const m = map[key];
-    if (cmd.notes && (!m.notes || m.notes.length < cmd.notes.length)) m.notes = cmd.notes;
-    if (cmd.keywords && cmd.keywords.length) m.keywords = m.keywords.concat(cmd.keywords);
+    const key = String(cmd.command).trim();
+    if (!map[key]) {
+      map[key] = {
+        command: key,
+        category: cmd.category || 'Other',
+        briefDescription: cmd.briefDescription || cmd.description || '',
+        example: cmd.example || cmd.command,
+        notes: cmd.notes || '',
+        keywords: cmd.keywords ? [...cmd.keywords] : [],
+        flags: cmd.flags ? [...cmd.flags] : [],
+        examples: cmd.examples ? [...cmd.examples] : null,
+        pitfall: cmd.pitfall || '',
+        related: cmd.related ? [...cmd.related] : [],
+        difficulty: cmd.difficulty || 'beginner'
+      };
+    } else {
+      const m = map[key];
+      if (cmd.briefDescription && m.briefDescription.length < cmd.briefDescription.length) m.briefDescription = cmd.briefDescription;
+      if (cmd.description && m.briefDescription.length < cmd.description.length) m.briefDescription = cmd.description;
+      if (cmd.notes && (!m.notes || m.notes.length < cmd.notes.length)) m.notes = cmd.notes;
+      if (cmd.keywords) m.keywords = Array.from(new Set([...m.keywords, ...cmd.keywords]));
+      if (cmd.flags && cmd.flags.length) m.flags = cmd.flags;
+      if (cmd.examples && cmd.examples.length) m.examples = cmd.examples;
+      if (cmd.pitfall) m.pitfall = cmd.pitfall;
+      if (cmd.related) m.related = cmd.related;
+      if (cmd.difficulty) m.difficulty = cmd.difficulty;
+      if (cmd.example && cmd.example.length > (m.example||'').length) m.example = cmd.example;
+    }
   };
-  (DATA.categories || []).forEach(cat => cat.commands.forEach(c => add({ command: c.command, category: cat.title, briefDescription: c.description, example: c.example, notes: c.notes || '' })));
-  (DATA.commandsBank || []).forEach(c => add({ command: c.command, category: c.category, briefDescription: c.briefDescription, example: c.command, notes: c.notes || '', keywords: c.keywords }));
-  Object.values(map).forEach(c => { c.flags = deriveFlags(c.example, c.notes, c.briefDescription); });
+  (DATA.categories || []).forEach(cat => cat.commands.forEach(c => add({ command: c.command, category: cat.title, briefDescription: c.description, example: c.example, notes: c.notes || '', keywords: [] })));
+  (DATA.commandsBank || []).forEach(c => add(c));
+  Object.values(map).forEach(c => {
+    if (!c.flags || !c.flags.length) c.flags = deriveFlags(c.example, c.notes, c.briefDescription).map(f=>({flag:f, desc:''}));
+    else c.flags = c.flags.map(f => typeof f==='string' ? {flag:f, desc:''} : f);
+    if (!c.examples) {
+      c.examples = c.example ? [{code:c.example, desc:c.briefDescription}] : [];
+    }
+    if (!['beginner','intermediate','advanced'].includes(c.difficulty)) c.difficulty = 'beginner';
+  });
   _cmdIndex = Object.values(map);
   return _cmdIndex;
 }
@@ -2013,45 +2053,198 @@ function getCmds() {
   const term = state.cmdTerm.toLowerCase().trim();
   let cmds = buildCommandIndex();
   if (state.cmdCats.length) cmds = cmds.filter(c => state.cmdCats.includes(c.category));
-  if (term) cmds = cmds.filter(c => `${c.command} ${c.category} ${c.briefDescription} ${c.notes} ${c.keywords.join(' ')}`.toLowerCase().includes(term));
+  if (state.cmdDifficulty.length) cmds = cmds.filter(c => state.cmdDifficulty.includes(c.difficulty));
+  if (state.cmdFavOnly) cmds = cmds.filter(c => state.cmdFav.includes(c.command));
+  if (term) {
+    cmds = cmds.filter(c => {
+      const hay = `${c.command} ${c.category} ${c.briefDescription} ${c.notes} ${c.keywords.join(' ')} ${(c.pitfall||'')} ${(c.related||[]).join(' ')} ${(c.flags||[]).map(f=>f.flag+' '+(f.desc||'')).join(' ')} ${(c.examples||[]).map(e=>e.code+' '+(e.desc||'')).join(' ')}`.toLowerCase();
+      return hay.includes(term);
+    });
+  }
+  const sort = state.cmdSort || 'name';
+  cmds = [...cmds].sort((a,b)=>{
+    if (sort==='category') return a.category.localeCompare(b.category) || a.command.localeCompare(b.command);
+    if (sort==='difficulty') {
+      const order = {beginner:0, intermediate:1, advanced:2};
+      return (order[a.difficulty]??0)-(order[b.difficulty]??0) || a.command.localeCompare(b.command);
+    }
+    if (sort==='examples') return (b.examples?.length||0)-(a.examples?.length||0) || a.command.localeCompare(b.command);
+    return a.command.localeCompare(b.command);
+  });
   return cmds;
 }
 
+function difficultyBadge(d){
+  const map = {beginner:'bg', intermediate:'im', advanced:'ad'};
+  const label = {beginner:'Beginner', intermediate:'Intermediate', advanced:'Advanced'}[d] || 'Beginner';
+  const cls = 'diff-' + (d||'beginner');
+  return `<span class="diff-badge ${cls}" title="${label}"><span class="diff-dot"></span>${label}</span>`;
+}
+function isFav(cmd){ return state.cmdFav.includes(cmd); }
+function toggleFav(cmd, e){
+  if(e) e.stopPropagation();
+  const idx = state.cmdFav.indexOf(cmd);
+  if(idx>=0) state.cmdFav.splice(idx,1); else state.cmdFav.push(cmd);
+  saveState();
+  // update UI without full re-render for snappy
+  document.querySelectorAll(`.cmd-card[data-cmd="${CSS.escape(cmd)}"] .fav-btn`).forEach(b=>{
+    const fav = state.cmdFav.includes(cmd);
+    b.classList.toggle('is-fav', fav);
+    b.setAttribute('aria-pressed', fav?'true':'false');
+    b.innerHTML = fav ? '★' : '☆';
+  });
+  updateCmdMeta();
+  if(state.cmdFavOnly) renderCmdResults();
+  showToast(idx>=0 ? 'Removed from favorites' : 'Added to favorites');
+}
+function openCmdDrawer(cmd){
+  const all = buildCommandIndex();
+  const c = all.find(x=>x.command===cmd);
+  if(!c) return;
+  const drawer = document.getElementById('cmdDrawer');
+  const panel = document.getElementById('cmdDrawerPanel');
+  if(!drawer || !panel) return;
+  const flagsHtml = (c.flags||[]).length ? `<div class="drawer-section"><h4>Flags</h4><div class="table-wrap"><table class="comparison-table"><thead><tr><th>Flag</th><th>Description</th></tr></thead><tbody>${c.flags.map(f=>`<tr><td><code>${escapeHtml(f.flag)}</code></td><td>${escapeHtml(f.desc||'—')}</td></tr>`).join('')}</tbody></table></div></div>` : '';
+  const examplesHtml = (c.examples||[]).map((ex,i)=>`<div class="drawer-example"><div class="drawer-example-head"><span class="drawer-example-num">#${i+1}</span><span class="drawer-example-desc">${escapeHtml(ex.desc||'Example')}</span><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(ex.code)}" aria-label="Copy">${ICONS.copy}</button></div><div class="cmd-example"><span class="code-label">bash</span><code>${highlightCode(escapeHtml(ex.code))}</code></div></div>`).join('');
+  const relatedHtml = (c.related||[]).length ? `<div class="drawer-related">${c.related.map(r=>`<button class="chip chip--sm" data-action="open-cmd" data-cmd="${escapeHtml(r)}">${escapeHtml(r)}</button>`).join('')}</div>` : '<span style="color:var(--text-dim)">No related</span>';
+  panel.innerHTML = `
+    <div class="drawer-header">
+      <div class="drawer-title-row">
+        <code class="drawer-cmd">${escapeHtml(c.command)}</code>
+        <button class="fav-btn ${isFav(c.command)?'is-fav':''}" data-action="toggle-fav" data-cmd="${escapeHtml(c.command)}" aria-pressed="${isFav(c.command)?'true':'false'}" title="Favorite">${isFav(c.command)?'★':'☆'}</button>
+        <button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(c.command)}" title="Copy command">${ICONS.copy}</button>
+      </div>
+      <div class="drawer-meta">
+        <span class="source-badge">${escapeHtml(c.category)}</span>
+        ${difficultyBadge(c.difficulty)}
+        <span class="drawer-count">${(c.examples||[]).length} examples · ${(c.flags||[]).length} flags</span>
+      </div>
+      <p class="drawer-desc">${escapeHtml(c.briefDescription)}</p>
+      ${c.pitfall ? `<div class="callout callout--warning"><span aria-hidden="true">${ICONS.alert}</span><p><strong>Pitfall:</strong> ${escapeHtml(c.pitfall)}</p></div>` : ''}
+      ${c.notes ? `<div class="callout callout--info"><p>${escapeHtml(c.notes)}</p></div>` : ''}
+    </div>
+    <div class="drawer-body">
+      <div class="drawer-section"><h4>Examples</h4>${examplesHtml || '<p style="color:var(--text-dim)">No examples yet</p>'}</div>
+      ${flagsHtml}
+      <div class="drawer-section"><h4>Related</h4>${relatedHtml}</div>
+      <div class="drawer-section"><h4>Keywords</h4><div class="drawer-keywords">${(c.keywords||[]).map(k=>`<span class="flag-chip">${escapeHtml(k)}</span>`).join(' ')||'<span style="color:var(--text-dim)">—</span>'}</div></div>
+    </div>
+    <div class="drawer-footer">
+      <button class="toggle-complete" data-action="copy" data-copy="${escapeCopyAttr(c.command)}">${ICONS.copy} Copy command</button>
+      <button class="chip" data-action="close-drawer">Close</button>
+    </div>
+  `;
+  drawer.classList.add('open');
+  drawer.setAttribute('aria-hidden','false');
+  document.body.style.overflow='hidden';
+}
+function closeCmdDrawer(){
+  const d=document.getElementById('cmdDrawer');
+  if(d){ d.classList.remove('open'); d.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
+}
 function cmdCard(c) {
   const catClass = 'cat-' + (c.category || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const fav = isFav(c.command);
+  const diff = c.difficulty||'beginner';
+  const flagChips = (c.flags||[]).slice(0,4).map(f=>`<span class="flag-chip" title="${escapeHtml(f.desc||f.flag)}">${escapeHtml(f.flag)}</span>`).join('');
+  const moreFlags = (c.flags||[]).length>4 ? `<span class="flag-chip flag-chip--more">+${c.flags.length-4}</span>` : '';
+  const firstEx = (c.examples && c.examples[0]) ? c.examples[0] : (c.example ? {code:c.example, desc:''} : null);
+  const pit = c.pitfall ? `<div class="cmd-card-pit">${ICONS.alert}<span>${escapeHtml(c.pitfall.slice(0,90))}${c.pitfall.length>90?'…':''}</span></div>` : '';
+  const rel = (c.related||[]).length ? `<div class="cmd-card-related"><span class="cmd-card-related-label">Related:</span> ${(c.related||[]).slice(0,2).map(r=>`<span class="related-chip">${escapeHtml(r)}</span>`).join('')}${c.related.length>2?`<span class="related-more">+${c.related.length-2}</span>`:''}</div>` : '';
   return `
-    <div class="cmd-card ${catClass}">
-      <div class="cmd-card-name">${escapeHtml(c.command)}</div>
+    <div class="cmd-card ${catClass} ${fav?'is-fav':''}" data-cmd="${escapeHtml(c.command)}" data-action="open-cmd" data-cmd="${escapeHtml(c.command)}" role="button" tabindex="0" aria-label="Open ${escapeHtml(c.command)} details">
+      <div class="cmd-card-head">
+        <div class="cmd-card-name">${escapeHtml(c.command)}</div>
+        <button class="fav-btn ${fav?'is-fav':''}" data-action="toggle-fav" data-cmd="${escapeHtml(c.command)}" aria-pressed="${fav?'true':'false'}" title="${fav?'Unfavorite':'Favorite'}" aria-label="${fav?'Remove favorite':'Add favorite'}">${fav?'★':'☆'}</button>
+      </div>
+      <div class="cmd-card-meta">
+        <span class="source-badge source-badge--sm">${escapeHtml(c.category)}</span>
+        ${difficultyBadge(diff)}
+        <span class="cmd-card-count">${(c.examples||[]).length} ex · ${(c.flags||[]).length} flags</span>
+      </div>
       <div class="cmd-card-desc">${escapeHtml(c.briefDescription)}</div>
-      ${c.example ? `<div class="cmd-card-example"><code>${highlightCode(escapeHtml(c.example))}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(c.example)}" title="Copy ${escapeHtml(c.command)}" aria-label="Copy ${escapeHtml(c.command)}">${ICONS.copy}</button></div>` : ''}
-      ${c.flags.length ? `<div class="cmd-card-flags">${c.flags.map(f => `<span class="flag-chip">${escapeHtml(f)}</span>`).join('')}</div>` : ''}
-      ${c.notes ? `<div class="cmd-card-note">${ICONS.alert}<span>${escapeHtml(c.notes)}</span></div>` : ''}
+      ${firstEx ? `<div class="cmd-card-example" onclick="event.stopPropagation()"><span class="code-label">bash</span><code>${highlightCode(escapeHtml(firstEx.code))}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(firstEx.code)}" title="Copy" aria-label="Copy ${escapeHtml(c.command)}">${ICONS.copy}</button></div>` : ''}
+      ${(c.flags||[]).length ? `<div class="cmd-card-flags">${flagChips}${moreFlags}</div>` : ''}
+      ${pit}
+      ${rel}
+      <div class="cmd-card-foot"><span class="cmd-card-more">Details →</span><span class="cmd-card-kbd" aria-hidden="true">↵</span></div>
     </div>`;
 }
 
 function renderMergedCheatSheet() {
   const all = buildCommandIndex();
-  const cats = Array.from(new Set(all.map(c => c.category)));
+  const cats = Array.from(new Set(all.map(c => c.category))).sort();
+  const diffs = ['beginner','intermediate','advanced'];
   const cmds = getCmds();
   const term = state.cmdTerm.trim();
+  const favCount = state.cmdFav.length;
+  // stats
+  const totalFlags = all.reduce((a,c)=>a+(c.flags?.length||0),0);
+  const totalExamples = all.reduce((a,c)=>a+(c.examples?.length||0),0);
   const grid = cmds.length
-    ? `<div id="cmdResults" class="cmd-grid">${cmds.map(cmdCard).join('')}</div>`
-    : `<div class="no-results">${ICONS.search}<h3>No commands match</h3><p>Try clearing the filters or search term.</p></div>`;
+    ? `<div id="cmdResults" class="cmd-grid ${state.cmdView==='list'?'is-list':''}">${cmds.map(cmdCard).join('')}</div>`
+    : `<div class="no-results">${ICONS.search}<h3>No commands match</h3><p>Try clearing filters or search term.</p><div style="margin-top:12px"><button class="toggle-complete" data-action="clear-cmd-filters">Clear all filters</button></div></div>`;
   return `
     ${breadcrumbs([{label:'Linux101', tab:'linux101'}, {label:'Commands'}])}
-    <h1 class="view-title">Linux101 — Commands</h1>
-    <p class="view-subtitle">${all.length} commands · ${cats.length} categories — merged cheat sheet + bank. <span style="color:var(--text-dim)">Press <kbd style="font-family:var(--font-mono);font-size:11px;border:1px solid var(--border);padding:1px 5px;border-radius:3px;background:var(--bg-tertiary)">⌘K</kbd> to search everywhere</span></p>
-    <div class="cmd-filterbar">
-      <div class="cmd-search-box">
-        <span class="cmd-search-icon">${ICONS.search}</span>
-        <input id="cmdSearch" class="cmd-search-input" type="text" placeholder="Filter commands (name, flag, description)…" value="${escapeHtml(state.cmdTerm)}" aria-label="Filter commands by name or description">
+    <div class="bank-hero">
+      <div class="bank-hero-head">
+        <h1 class="view-title" style="margin:0">Linux101 — Commands</h1>
+        <div class="bank-hero-actions">
+          <button class="icon-btn" data-action="clear-cmd-filters" title="Clear filters">${ICONS.search} Clear</button>
+        </div>
       </div>
-      <div class="cmd-chips" role="toolbar" aria-label="Filter by category">
-        ${cats.map(cat => `<button class="chip ${state.cmdCats.includes(cat) ? 'active' : ''}" data-cat="${escapeHtml(cat)}" data-action="toggle-cmd-cat" data-catval="${escapeHtml(cat)}" aria-pressed="${state.cmdCats.includes(cat) ? 'true' : 'false'}">${escapeHtml(cat)}</button>`).join('')}
+      <p class="view-subtitle" style="margin:6px 0 14px">${all.length} commands · ${cats.length} categories · ${totalFlags} flags · ${totalExamples} examples <span style="color:var(--text-dim)">· Press <kbd style="font-family:var(--font-mono);font-size:11px;border:1px solid var(--border);padding:1px 5px;border-radius:3px;background:var(--bg-tertiary)">⌘K</kbd> for global search</span></p>
+      <div class="bank-stats">
+        <div class="bank-stat"><span class="bank-stat-num">${all.length}</span><span class="bank-stat-label">Commands</span></div>
+        <div class="bank-stat"><span class="bank-stat-num">${cats.length}</span><span class="bank-stat-label">Categories</span></div>
+        <div class="bank-stat"><span class="bank-stat-num">${totalFlags}</span><span class="bank-stat-label">Flags</span></div>
+        <div class="bank-stat"><span class="bank-stat-num">${totalExamples}</span><span class="bank-stat-label">Examples</span></div>
+        <div class="bank-stat bank-stat--fav ${state.cmdFavOnly?'is-active':''}" data-action="toggle-fav-filter" role="button" tabindex="0"><span class="bank-stat-num">★ ${favCount}</span><span class="bank-stat-label">Favorites</span></div>
       </div>
     </div>
-    <div class="cmd-results-meta" role="status" aria-live="polite">${cmds.length} command${cmds.length !== 1 ? 's' : ''} shown${term ? ` for “${escapeHtml(term)}”` : ''}${state.cmdCats.length ? ` · ${state.cmdCats.length} filter${state.cmdCats.length!==1?'s':''}` : ''}</div>
+    <div class="cmd-filterbar cmd-filterbar--v2">
+      <div class="cmd-search-box">
+        <span class="cmd-search-icon">${ICONS.search}</span>
+        <input id="cmdSearch" class="cmd-search-input" type="text" placeholder="Filter by name, flag, use case… try 'network', '-r', 'permission'" value="${escapeHtml(state.cmdTerm)}" aria-label="Filter commands">
+        ${term ? `<button class="cmd-clear" data-action="clear-cmd-term" aria-label="Clear search">✕</button>` : ''}
+      </div>
+      <div class="cmd-controls">
+        <div class="cmd-chips" role="toolbar" aria-label="Filter by category">
+          ${cats.map(cat => {
+            const count = all.filter(x=>x.category===cat).length;
+            return `<button class="chip ${state.cmdCats.includes(cat) ? 'active' : ''}" data-cat="${escapeHtml(cat)}" data-action="toggle-cmd-cat" data-catval="${escapeHtml(cat)}" aria-pressed="${state.cmdCats.includes(cat) ? 'true' : 'false'}">${escapeHtml(cat)} <span class="chip-count">${count}</span></button>`
+          }).join('')}
+        </div>
+        <div class="cmd-secondary">
+          <div class="cmd-difficulty" role="toolbar" aria-label="Filter by difficulty">
+            ${diffs.map(d=>`<button class="chip chip--sm ${state.cmdDifficulty.includes(d)?'active':''}" data-action="toggle-cmd-diff" data-diff="${d}" aria-pressed="${state.cmdDifficulty.includes(d)?'true':'false'}">${d==='beginner'?'● Beginner': d==='intermediate'?'◐ Intermediate':'▲ Advanced'}</button>`).join('')}
+          </div>
+          <div class="cmd-sort">
+            <label class="cmd-sort-label" for="cmdSort">Sort</label>
+            <select id="cmdSort" class="cmd-sort-select" data-action="change-sort" aria-label="Sort commands">
+              <option value="name" ${state.cmdSort==='name'?'selected':''}>A → Z</option>
+              <option value="category" ${state.cmdSort==='category'?'selected':''}>Category</option>
+              <option value="difficulty" ${state.cmdSort==='difficulty'?'selected':''}>Difficulty</option>
+              <option value="examples" ${state.cmdSort==='examples'?'selected':''}>Most examples</option>
+            </select>
+          </div>
+          <div class="view-toggle" role="toolbar" aria-label="View">
+            <button class="icon-btn ${state.cmdView==='grid'?'is-active':''}" data-action="set-cmd-view" data-view="grid" aria-pressed="${state.cmdView==='grid'?'true':'false'}" title="Grid">${ICONS.layers}</button>
+            <button class="icon-btn ${state.cmdView==='list'?'is-active':''}" data-action="set-cmd-view" data-view="list" aria-pressed="${state.cmdView==='list'?'true':'false'}" title="List"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+          </div>
+          <button class="chip ${state.cmdFavOnly?'active':''}" data-action="toggle-fav-filter" aria-pressed="${state.cmdFavOnly?'true':'false'}">★ Favorites only</button>
+        </div>
+      </div>
+    </div>
+    <div class="cmd-results-meta" role="status" aria-live="polite">
+      <span>${cmds.length} of ${all.length} shown${term?` for “${escapeHtml(term)}”`:''}${state.cmdCats.length?` · ${state.cmdCats.length} categories`:''}${state.cmdDifficulty.length?` · ${state.cmdDifficulty.join(', ')}`:''}${state.cmdFavOnly?' · favorites':''}</span>
+      ${(state.cmdCats.length||state.cmdDifficulty.length||state.cmdFavOnly||term)?`<button class="chip chip--sm" data-action="clear-cmd-filters">Clear all</button>`:''}
+    </div>
     ${grid}
+    <div id="cmdDrawer" class="cmd-drawer" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Command details">
+      <div class="cmd-drawer-backdrop" data-action="close-drawer"></div>
+      <div class="cmd-drawer-panel" id="cmdDrawerPanel" role="document"></div>
+    </div>
   `;
 }
 
@@ -2059,27 +2252,32 @@ function updateCmdMeta() {
   const meta = document.querySelector('.cmd-results-meta');
   if (!meta) return;
   const cmds = getCmds();
+  const all = buildCommandIndex();
   const term = state.cmdTerm.trim();
-  meta.textContent = `${cmds.length} command${cmds.length !== 1 ? 's' : ''} shown${term ? ` for “${term}”` : ''}${state.cmdCats.length ? ` · ${state.cmdCats.length} filter${state.cmdCats.length!==1?'s':''}` : ''}`;
+  meta.innerHTML = `<span>${cmds.length} of ${all.length} shown${term?` for “${escapeHtml(term)}”`:''}${state.cmdCats.length?` · ${state.cmdCats.length} categories`:''}${state.cmdDifficulty.length?` · ${state.cmdDifficulty.join(', ')}`:''}${state.cmdFavOnly?' · favorites':''}</span>${(state.cmdCats.length||state.cmdDifficulty.length||state.cmdFavOnly||term)?`<button class="chip chip--sm" data-action="clear-cmd-filters">Clear all</button>`:''}`;
 }
 function renderCmdResults() {
   const wrap = document.getElementById('cmdResults');
   if (!wrap) return;
   const cmds = getCmds();
+  const isList = state.cmdView==='list';
   const newHtml = cmds.length
-    ? `<div id="cmdResults" class="cmd-grid">${cmds.map(cmdCard).join('')}</div>`
-    : `<div id="cmdResults"><div class="no-results">${ICONS.search}<h3>No commands match</h3><p>Try clearing the filters or search term.</p><button class="toggle-complete" data-action="clear-cmd-filters">Clear filters</button></div></div>`;
+    ? `<div id="cmdResults" class="cmd-grid ${isList?'is-list':''}">${cmds.map(cmdCard).join('')}</div>`
+    : `<div id="cmdResults"><div class="no-results">${ICONS.search}<h3>No commands match</h3><p>Try clearing filters or search term.</p><button class="toggle-complete" data-action="clear-cmd-filters">Clear filters</button></div></div>`;
   wrap.outerHTML = newHtml;
   updateCmdMeta();
 }
 function clearCmdFilters() {
   state.cmdTerm = '';
   state.cmdCats = [];
+  state.cmdDifficulty = [];
+  state.cmdFavOnly = false;
   saveState();
   const inp = document.getElementById('cmdSearch');
   if (inp) inp.value = '';
   document.querySelectorAll('.chip[data-cat]').forEach(b => b.classList.remove('active'));
-  renderCmdResults();
+  document.querySelectorAll('.chip[data-diff]').forEach(b=>b.classList.remove('active'));
+  render();
 }
 function toggleCmdCat(cat) {
   const i = state.cmdCats.indexOf(cat);
@@ -2090,6 +2288,39 @@ function toggleCmdCat(cat) {
     b.classList.toggle('active', active);
     b.setAttribute('aria-pressed', active ? 'true' : 'false');
   });
+  renderCmdResults();
+}
+function toggleCmdDiff(diff){
+  const i = state.cmdDifficulty.indexOf(diff);
+  if(i>=0) state.cmdDifficulty.splice(i,1); else state.cmdDifficulty.push(diff);
+  saveState();
+  document.querySelectorAll('.chip[data-diff]').forEach(b=>{
+    const active = state.cmdDifficulty.includes(b.dataset.diff);
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-pressed', active?'true':'false');
+  });
+  renderCmdResults();
+}
+function setCmdView(view){
+  state.cmdView = view;
+  saveState();
+  document.querySelectorAll('.view-toggle .icon-btn').forEach(b=>{
+    const active = b.dataset.view===view;
+    b.classList.toggle('is-active', active);
+    b.setAttribute('aria-pressed', active?'true':'false');
+  });
+  renderCmdResults();
+}
+function toggleFavFilter(){
+  state.cmdFavOnly = !state.cmdFavOnly;
+  saveState();
+  renderCmdResults();
+}
+function clearCmdTerm(){
+  state.cmdTerm = '';
+  saveState();
+  const inp = document.getElementById('cmdSearch');
+  if(inp) inp.value='';
   renderCmdResults();
 }
 
@@ -2104,6 +2335,35 @@ function setupCmdSearch() {
     saveState();
     renderCmdResults();
   });
+  const sortSel = document.getElementById('cmdSort');
+  if(sortSel){
+    sortSel.value = state.cmdSort;
+    sortSel.addEventListener('change', (e)=>{
+      state.cmdSort = e.target.value;
+      saveState();
+      renderCmdResults();
+    });
+  }
+  // close drawer on backdrop
+  const drawer = document.getElementById('cmdDrawer');
+  if(drawer){
+    drawer.addEventListener('click', (e)=>{
+      if(e.target.classList.contains('cmd-drawer') || e.target.classList.contains('cmd-drawer-backdrop')) closeCmdDrawer();
+    });
+  }
+  // keyboard for cards
+  const grid = document.getElementById('cmdResults');
+  if(grid){
+    grid.addEventListener('keydown', (e)=>{
+      if(e.key==='Enter' || e.key===' '){
+        const card = e.target.closest('.cmd-card');
+        if(card && card.dataset.cmd){
+          e.preventDefault();
+          openCmdDrawer(card.dataset.cmd);
+        }
+      }
+    });
+  }
   // clear on Escape inside this field is handled globally
 }
 function enableChipScroll(){
@@ -2486,6 +2746,11 @@ document.addEventListener('keydown', (e) => {
     return;
   }
   if (e.key === 'Escape') {
+    const drawer = document.getElementById('cmdDrawer');
+    if (drawer && drawer.classList.contains('open')) {
+      closeCmdDrawer();
+      return;
+    }
     const sidebar = document.getElementById('sidebar');
     if (sidebar && sidebar.classList.contains('open')) {
       closeSidebar();
@@ -2583,6 +2848,13 @@ document.addEventListener('click', (e) => {
     toggleCmdCat(cat);
     return;
   }
+  if (a === 'toggle-cmd-diff') { toggleCmdDiff(btn.dataset.diff); return; }
+  if (a === 'set-cmd-view') { setCmdView(btn.dataset.view); return; }
+  if (a === 'toggle-fav') { toggleFav(btn.dataset.cmd, event); return; }
+  if (a === 'open-cmd') { openCmdDrawer(btn.dataset.cmd); return; }
+  if (a === 'close-drawer') { closeCmdDrawer(); return; }
+  if (a === 'toggle-fav-filter') { toggleFavFilter(); return; }
+  if (a === 'clear-cmd-term') { clearCmdTerm(); return; }
   if (a === 'clear-cmd-filters') { clearCmdFilters(); return; }
   if (a === 'clear-search') {
     const gi = document.getElementById('searchInput');

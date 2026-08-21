@@ -1230,6 +1230,2359 @@
         "add",
         "admin"
       ]
+    },
+    {
+      "command": "lsblk",
+      "category": "Disk Management",
+      "briefDescription": "Lists block devices and partitions in a tree view.",
+      "keywords": [
+        "disk",
+        "block",
+        "partition",
+        "list"
+      ],
+      "flags": [
+        {
+          "flag": "-f",
+          "desc": "Show filesystem types"
+        },
+        {
+          "flag": "-o",
+          "desc": "Custom columns"
+        }
+      ],
+      "examples": [
+        {
+          "code": "lsblk",
+          "desc": "Tree of disks/partitions"
+        },
+        {
+          "code": "lsblk -f",
+          "desc": "With FS and UUID"
+        },
+        {
+          "code": "lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT",
+          "desc": "Custom output"
+        }
+      ],
+      "pitfall": "lsblk without -f hides FS type — beginners think disk is empty",
+      "related": [
+        "blkid",
+        "fdisk",
+        "mount"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "blkid",
+      "category": "Disk Management",
+      "briefDescription": "Shows block device UUID, TYPE and attributes.",
+      "keywords": [
+        "uuid",
+        "filesystem",
+        "blkid"
+      ],
+      "flags": [
+        {
+          "flag": "-o",
+          "desc": "Output format list/device"
+        }
+      ],
+      "examples": [
+        {
+          "code": "blkid",
+          "desc": "All devices"
+        },
+        {
+          "code": "blkid /dev/sda1",
+          "desc": "Single partition"
+        }
+      ],
+      "pitfall": "Needs sudo for some devices",
+      "related": [
+        "lsblk",
+        "ls -l /dev/disk/by-uuid"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "fdisk",
+      "category": "Disk Management",
+      "briefDescription": "Partitions a disk (MBR/GPT).",
+      "keywords": [
+        "partition",
+        "fdisk",
+        "disk"
+      ],
+      "flags": [
+        {
+          "flag": "-l",
+          "desc": "List partitions"
+        },
+        {
+          "flag": "-u",
+          "desc": "Units"
+        }
+      ],
+      "examples": [
+        {
+          "code": "sudo fdisk -l",
+          "desc": "List all"
+        },
+        {
+          "code": "sudo fdisk /dev/sda",
+          "desc": "Interactive"
+        }
+      ],
+      "pitfall": "Writes immediately — double-check device",
+      "related": [
+        "parted",
+        "lsblk"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "command": "parted",
+      "category": "Disk Management",
+      "briefDescription": "Advanced partition editor (supports GPT).",
+      "keywords": [
+        "partition",
+        "parted",
+        "gpt"
+      ],
+      "flags": [
+        {
+          "flag": "-l",
+          "desc": "List"
+        }
+      ],
+      "examples": [
+        {
+          "code": "sudo parted -l",
+          "desc": "List"
+        }
+      ],
+      "pitfall": "parted mklabel wipes table",
+      "related": [
+        "fdisk"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "command": "mkfs.ext4",
+      "category": "Disk Management",
+      "briefDescription": "Creates an ext4 filesystem.",
+      "keywords": [
+        "format",
+        "mkfs",
+        "ext4"
+      ],
+      "flags": [
+        {
+          "flag": "-L",
+          "desc": "Label"
+        },
+        {
+          "flag": "-F",
+          "desc": "Force"
+        }
+      ],
+      "examples": [
+        {
+          "code": "sudo mkfs.ext4 -L data /dev/sdb1",
+          "desc": "Format with label"
+        }
+      ],
+      "pitfall": "Formats — destroys data",
+      "related": [
+        "mkfs",
+        "fdisk",
+        "mount"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "command": "mount",
+      "category": "Disk Management",
+      "briefDescription": "Mounts a filesystem.",
+      "keywords": [
+        "mount",
+        "filesystem"
+      ],
+      "flags": [
+        {
+          "flag": "-t",
+          "desc": "Type"
+        },
+        {
+          "flag": "-o",
+          "desc": "Options"
+        }
+      ],
+      "examples": [
+        {
+          "code": "mount | column -t",
+          "desc": "Show mounts"
+        },
+        {
+          "code": "sudo mount /dev/sdb1 /mnt",
+          "desc": "Mount"
+        }
+      ],
+      "pitfall": "Mount point must exist",
+      "related": [
+        "umount",
+        "findmnt"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "umount",
+      "category": "Disk Management",
+      "briefDescription": "Unmounts a filesystem.",
+      "keywords": [
+        "unmount",
+        "umount"
+      ],
+      "flags": [
+        {
+          "flag": "-l",
+          "desc": "Lazy"
+        },
+        {
+          "flag": "-f",
+          "desc": "Force"
+        }
+      ],
+      "examples": [
+        {
+          "code": "sudo umount /mnt",
+          "desc": "Unmount"
+        },
+        {
+          "code": "sudo umount -l /mnt",
+          "desc": "Lazy"
+        }
+      ],
+      "pitfall": "Device busy? Use lsof",
+      "related": [
+        "mount",
+        "lsof"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "findmnt",
+      "category": "Disk Management",
+      "briefDescription": "Finds and lists mounted filesystems.",
+      "keywords": [
+        "findmnt",
+        "mount"
+      ],
+      "flags": [
+        {
+          "flag": "-T",
+          "desc": "Target file"
+        }
+      ],
+      "examples": [
+        {
+          "code": "findmnt",
+          "desc": "Tree"
+        },
+        {
+          "code": "findmnt -T /home",
+          "desc": "For path"
+        }
+      ],
+      "related": [
+        "mount",
+        "df"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "stat",
+      "category": "File System",
+      "briefDescription": "Shows detailed file status (inode, times).",
+      "keywords": [
+        "stat",
+        "inode",
+        "metadata"
+      ],
+      "flags": [
+        {
+          "flag": "-c",
+          "desc": "Format"
+        },
+        {
+          "flag": "-f",
+          "desc": "Filesystem"
+        }
+      ],
+      "examples": [
+        {
+          "code": "stat file.txt",
+          "desc": "File info"
+        },
+        {
+          "code": "stat -c '%a %n' file",
+          "desc": "Perms"
+        }
+      ],
+      "pitfall": "stat vs ls -l: stat shows all three times",
+      "related": [
+        "ls",
+        "ls -i"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "file",
+      "category": "File System",
+      "briefDescription": "Determines file type by content.",
+      "keywords": [
+        "file",
+        "type",
+        "magic"
+      ],
+      "flags": [
+        {
+          "flag": "-b",
+          "desc": "Brief"
+        },
+        {
+          "flag": "-i",
+          "desc": "MIME"
+        }
+      ],
+      "examples": [
+        {
+          "code": "file /bin/ls",
+          "desc": "ELF binary"
+        },
+        {
+          "code": "file -i image.png",
+          "desc": "MIME"
+        }
+      ],
+      "related": [
+        "stat",
+        "ls"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "ncdu",
+      "category": "Disk Management",
+      "briefDescription": "Interactive disk usage analyzer (ncurses).",
+      "keywords": [
+        "ncdu",
+        "disk",
+        "usage"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "ncdu /",
+          "desc": "Scan root"
+        },
+        {
+          "code": "ncdu -x /home",
+          "desc": "Stay on FS"
+        }
+      ],
+      "pitfall": "Needs install: sudo apt install ncdu",
+      "related": [
+        "du",
+        "df"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "free",
+      "category": "System Info",
+      "briefDescription": "Already in bank but enriched — displays RAM/swap.",
+      "keywords": [
+        "free",
+        "memory",
+        "ram"
+      ],
+      "flags": [
+        {
+          "flag": "-h",
+          "desc": "Human"
+        },
+        {
+          "flag": "-m",
+          "desc": "MB"
+        }
+      ],
+      "examples": [
+        {
+          "code": "free -h",
+          "desc": "Human readable"
+        }
+      ],
+      "pitfall": "free vs available — use available column",
+      "related": [
+        "vmstat",
+        "top"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "vmstat",
+      "category": "System Monitoring",
+      "briefDescription": "Reports virtual memory, processes, CPU.",
+      "keywords": [
+        "vmstat",
+        "memory",
+        "cpu"
+      ],
+      "flags": [
+        {
+          "flag": "-s",
+          "desc": "Stats"
+        }
+      ],
+      "examples": [
+        {
+          "code": "vmstat 1 5",
+          "desc": "5 samples 1s"
+        }
+      ],
+      "related": [
+        "free",
+        "iostat"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "command": "iostat",
+      "category": "System Monitoring",
+      "briefDescription": "CPU and I/O statistics.",
+      "keywords": [
+        "iostat",
+        "io",
+        "cpu"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "iostat -x 1",
+          "desc": "Extended"
+        }
+      ],
+      "related": [
+        "vmstat",
+        "sar"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "command": "mpstat",
+      "category": "System Monitoring",
+      "briefDescription": "Per-CPU statistics.",
+      "keywords": [
+        "mpstat",
+        "cpu"
+      ],
+      "flags": [
+        {
+          "flag": "-P",
+          "desc": "CPU"
+        }
+      ],
+      "examples": [
+        {
+          "code": "mpstat -P ALL 1",
+          "desc": "All CPUs"
+        }
+      ],
+      "related": [
+        "iostat"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "command": "dmesg",
+      "category": "System Info",
+      "briefDescription": "Kernel ring buffer messages.",
+      "keywords": [
+        "dmesg",
+        "kernel",
+        "log"
+      ],
+      "flags": [
+        {
+          "flag": "-H",
+          "desc": "Human"
+        },
+        {
+          "flag": "-T",
+          "desc": "Time"
+        }
+      ],
+      "examples": [
+        {
+          "code": "dmesg | tail",
+          "desc": "Recent"
+        },
+        {
+          "code": "dmesg --level=err",
+          "desc": "Errors"
+        }
+      ],
+      "pitfall": "Needs sudo on some distros",
+      "related": [
+        "journalctl"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "hostnamectl",
+      "category": "System Info",
+      "briefDescription": "Controls system hostname.",
+      "keywords": [
+        "hostname",
+        "hostnamectl"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "hostnamectl",
+          "desc": "Status"
+        },
+        {
+          "code": "sudo hostnamectl set-hostname web01",
+          "desc": "Set"
+        }
+      ],
+      "related": [
+        "hostname",
+        "uname"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "timedatectl",
+      "category": "System Info",
+      "briefDescription": "Controls time, date, timezone, NTP.",
+      "keywords": [
+        "time",
+        "date",
+        "timedatectl"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "timedatectl",
+          "desc": "Status"
+        },
+        {
+          "code": "sudo timedatectl set-timezone UTC",
+          "desc": "Set TZ"
+        }
+      ],
+      "related": [
+        "date"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "lsmod",
+      "category": "System Info",
+      "briefDescription": "Lists loaded kernel modules.",
+      "keywords": [
+        "lsmod",
+        "module",
+        "kernel"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "lsmod | grep kvm",
+          "desc": "Search KVM"
+        }
+      ],
+      "related": [
+        "modprobe",
+        "dmesg"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "modprobe",
+      "category": "System Info",
+      "briefDescription": "Adds/removes kernel modules.",
+      "keywords": [
+        "modprobe",
+        "module"
+      ],
+      "flags": [
+        {
+          "flag": "-r",
+          "desc": "Remove"
+        }
+      ],
+      "examples": [
+        {
+          "code": "sudo modprobe -r kvm_intel",
+          "desc": "Remove"
+        }
+      ],
+      "related": [
+        "lsmod"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "command": "lspci",
+      "category": "System Info",
+      "briefDescription": "Lists PCI devices.",
+      "keywords": [
+        "lspci",
+        "pci",
+        "hardware"
+      ],
+      "flags": [
+        {
+          "flag": "-k",
+          "desc": "Kernel driver"
+        }
+      ],
+      "examples": [
+        {
+          "code": "lspci -k",
+          "desc": "With drivers"
+        }
+      ],
+      "related": [
+        "lsusb",
+        "lshw"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "lsusb",
+      "category": "System Info",
+      "briefDescription": "Lists USB devices.",
+      "keywords": [
+        "lsusb",
+        "usb"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "lsusb",
+          "desc": "USB list"
+        }
+      ],
+      "related": [
+        "lspci"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "id",
+      "category": "User Management",
+      "briefDescription": "Prints user and group IDs.",
+      "keywords": [
+        "id",
+        "user",
+        "group"
+      ],
+      "flags": [
+        {
+          "flag": "-u",
+          "desc": "UID"
+        },
+        {
+          "flag": "-g",
+          "desc": "GID"
+        }
+      ],
+      "examples": [
+        {
+          "code": "id",
+          "desc": "Current"
+        },
+        {
+          "code": "id www-data",
+          "desc": "Specific user"
+        }
+      ],
+      "related": [
+        "whoami",
+        "groups"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "groups",
+      "category": "User Management",
+      "briefDescription": "Shows groups for a user.",
+      "keywords": [
+        "groups",
+        "group"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "groups",
+          "desc": "My groups"
+        },
+        {
+          "code": "groups alice",
+          "desc": "Alice"
+        }
+      ],
+      "related": [
+        "id",
+        "usermod"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "who",
+      "category": "User Management",
+      "briefDescription": "Shows logged-in users.",
+      "keywords": [
+        "who",
+        "login"
+      ],
+      "flags": [
+        {
+          "flag": "-a",
+          "desc": "All"
+        }
+      ],
+      "examples": [
+        {
+          "code": "who",
+          "desc": "Logged in"
+        }
+      ],
+      "related": [
+        "w",
+        "last"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "w",
+      "category": "User Management",
+      "briefDescription": "Shows logged-in users and activity.",
+      "keywords": [
+        "w",
+        "who"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "w",
+          "desc": "Users + load"
+        }
+      ],
+      "related": [
+        "who",
+        "uptime"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "last",
+      "category": "User Management",
+      "briefDescription": "Shows last logins from wtmp.",
+      "keywords": [
+        "last",
+        "login",
+        "wtmp"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "last | head",
+          "desc": "Recent"
+        }
+      ],
+      "related": [
+        "who",
+        "lastlog"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "lastlog",
+      "category": "User Management",
+      "briefDescription": "Reports most recent login per user.",
+      "keywords": [
+        "lastlog"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "lastlog",
+          "desc": "All users"
+        }
+      ],
+      "related": [
+        "last"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "userdel",
+      "category": "User Management",
+      "briefDescription": "Deletes a user account.",
+      "keywords": [
+        "userdel",
+        "delete",
+        "user"
+      ],
+      "flags": [
+        {
+          "flag": "-r",
+          "desc": "Remove home"
+        }
+      ],
+      "examples": [
+        {
+          "code": "sudo userdel -r olduser",
+          "desc": "Delete + home"
+        }
+      ],
+      "pitfall": "Without -r leaves home",
+      "related": [
+        "useradd",
+        "usermod"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "command": "groupdel",
+      "category": "User Management",
+      "briefDescription": "Deletes a group.",
+      "keywords": [
+        "groupdel",
+        "group"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "sudo groupdel devs",
+          "desc": "Delete"
+        }
+      ],
+      "related": [
+        "groupadd"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "command": "chage",
+      "category": "User Management",
+      "briefDescription": "Changes password expiry info.",
+      "keywords": [
+        "chage",
+        "password",
+        "expiry"
+      ],
+      "flags": [
+        {
+          "flag": "-l",
+          "desc": "List"
+        },
+        {
+          "flag": "-E",
+          "desc": "Expire date"
+        }
+      ],
+      "examples": [
+        {
+          "code": "chage -l alice",
+          "desc": "List"
+        }
+      ],
+      "related": [
+        "passwd",
+        "usermod"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "command": "chsh",
+      "category": "User Management",
+      "briefDescription": "Changes login shell.",
+      "keywords": [
+        "chsh",
+        "shell"
+      ],
+      "flags": [
+        {
+          "flag": "-s",
+          "desc": "Shell"
+        }
+      ],
+      "examples": [
+        {
+          "code": "chsh -s /bin/zsh",
+          "desc": "To zsh"
+        }
+      ],
+      "related": [
+        "usermod",
+        "echo $SHELL"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "umask",
+      "category": "Permissions",
+      "briefDescription": "Sets default creation permissions mask.",
+      "keywords": [
+        "umask",
+        "permission",
+        "mask"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "umask",
+          "desc": "Show"
+        },
+        {
+          "code": "umask 022",
+          "desc": "Set"
+        }
+      ],
+      "pitfall": "022 → 755/644 ; 027 → 750/640",
+      "related": [
+        "chmod"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "command": "getfacl",
+      "category": "Permissions",
+      "briefDescription": "Gets file ACLs.",
+      "keywords": [
+        "getfacl",
+        "acl"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "getfacl file.txt",
+          "desc": "Show ACL"
+        }
+      ],
+      "related": [
+        "setfacl",
+        "chmod"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "command": "setfacl",
+      "category": "Permissions",
+      "briefDescription": "Sets file ACLs.",
+      "keywords": [
+        "setfacl",
+        "acl"
+      ],
+      "flags": [
+        {
+          "flag": "-m",
+          "desc": "Modify"
+        },
+        {
+          "flag": "-x",
+          "desc": "Remove"
+        }
+      ],
+      "examples": [
+        {
+          "code": "setfacl -m u:alice:rwx file",
+          "desc": "Grant alice"
+        }
+      ],
+      "related": [
+        "getfacl"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "command": "chgrp",
+      "category": "Permissions",
+      "briefDescription": "Changes group ownership.",
+      "keywords": [
+        "chgrp",
+        "group",
+        "permission"
+      ],
+      "flags": [
+        {
+          "flag": "-R",
+          "desc": "Recursive"
+        }
+      ],
+      "examples": [
+        {
+          "code": "chgrp devs file.txt",
+          "desc": "Change group"
+        }
+      ],
+      "related": [
+        "chown",
+        "chmod"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "pgrep",
+      "category": "Process Management",
+      "briefDescription": "Finds PIDs by name.",
+      "keywords": [
+        "pgrep",
+        "process",
+        "pid"
+      ],
+      "flags": [
+        {
+          "flag": "-a",
+          "desc": "Full"
+        },
+        {
+          "flag": "-u",
+          "desc": "User"
+        }
+      ],
+      "examples": [
+        {
+          "code": "pgrep -a python",
+          "desc": "Find python"
+        }
+      ],
+      "related": [
+        "ps",
+        "pkill"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "pkill",
+      "category": "Process Management",
+      "briefDescription": "Signals processes by name.",
+      "keywords": [
+        "pkill",
+        "kill",
+        "process"
+      ],
+      "flags": [
+        {
+          "flag": "-f",
+          "desc": "Full"
+        }
+      ],
+      "examples": [
+        {
+          "code": "pkill -f 'python app.py'",
+          "desc": "Kill by full"
+        }
+      ],
+      "pitfall": "pkill without -f matches only name",
+      "related": [
+        "pgrep",
+        "kill"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "pidof",
+      "category": "Process Management",
+      "briefDescription": "Finds PID of program.",
+      "keywords": [
+        "pidof",
+        "pid"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "pidof nginx",
+          "desc": "PID"
+        }
+      ],
+      "related": [
+        "pgrep"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "pstree",
+      "category": "Process Management",
+      "briefDescription": "Shows processes as a tree.",
+      "keywords": [
+        "pstree",
+        "process",
+        "tree"
+      ],
+      "flags": [
+        {
+          "flag": "-p",
+          "desc": "PIDs"
+        }
+      ],
+      "examples": [
+        {
+          "code": "pstree -p",
+          "desc": "With PIDs"
+        }
+      ],
+      "related": [
+        "ps",
+        "top"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "jobs",
+      "category": "Process Management",
+      "briefDescription": "Lists active jobs.",
+      "keywords": [
+        "jobs",
+        "job",
+        "background"
+      ],
+      "flags": [
+        {
+          "flag": "-l",
+          "desc": "PID"
+        }
+      ],
+      "examples": [
+        {
+          "code": "jobs -l",
+          "desc": "List"
+        }
+      ],
+      "related": [
+        "bg",
+        "fg"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "bg",
+      "category": "Process Management",
+      "briefDescription": "Resumes job in background.",
+      "keywords": [
+        "bg",
+        "background",
+        "job"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "bg %1",
+          "desc": "Background job 1"
+        }
+      ],
+      "related": [
+        "fg",
+        "jobs"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "fg",
+      "category": "Process Management",
+      "briefDescription": "Brings job to foreground.",
+      "keywords": [
+        "fg",
+        "foreground"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "fg %1",
+          "desc": "Foreground"
+        }
+      ],
+      "related": [
+        "bg",
+        "jobs"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "nohup",
+      "category": "Process Management",
+      "briefDescription": "Runs command immune to hangup.",
+      "keywords": [
+        "nohup",
+        "hangup",
+        "background"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "nohup ./long.sh &",
+          "desc": "Persist after logout"
+        }
+      ],
+      "pitfall": "Output goes to nohup.out",
+      "related": [
+        "tmux",
+        "screen"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "tmux",
+      "category": "Process Management",
+      "briefDescription": "Terminal multiplexer.",
+      "keywords": [
+        "tmux",
+        "multiplexer",
+        "session"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "tmux",
+          "desc": "New session"
+        },
+        {
+          "code": "tmux ls",
+          "desc": "List"
+        }
+      ],
+      "related": [
+        "screen",
+        "nohup"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "command": "screen",
+      "category": "Process Management",
+      "briefDescription": "Terminal multiplexer (legacy).",
+      "keywords": [
+        "screen",
+        "multiplexer"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "screen -S work",
+          "desc": "Named session"
+        }
+      ],
+      "related": [
+        "tmux"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "command": "nice",
+      "category": "Process Management",
+      "briefDescription": "Runs command with priority.",
+      "keywords": [
+        "nice",
+        "priority",
+        "niceness"
+      ],
+      "flags": [
+        {
+          "flag": "-n",
+          "desc": "Value -20..19"
+        }
+      ],
+      "examples": [
+        {
+          "code": "nice -n 10 ./heavy.sh",
+          "desc": "Low priority"
+        }
+      ],
+      "related": [
+        "renice",
+        "top"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "command": "renice",
+      "category": "Process Management",
+      "briefDescription": "Alters priority of running process.",
+      "keywords": [
+        "renice",
+        "priority"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "renice -n 10 -p 1234",
+          "desc": "Change PID"
+        }
+      ],
+      "related": [
+        "nice",
+        "ps"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "command": "traceroute",
+      "category": "Networking",
+      "briefDescription": "Traces route to host.",
+      "keywords": [
+        "traceroute",
+        "route",
+        "hop"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "traceroute 8.8.8.8",
+          "desc": "Trace"
+        }
+      ],
+      "related": [
+        "mtr",
+        "ping"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "mtr",
+      "category": "Networking",
+      "briefDescription": "Combines ping + traceroute live.",
+      "keywords": [
+        "mtr",
+        "ping",
+        "trace"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "mtr 8.8.8.8",
+          "desc": "Live"
+        }
+      ],
+      "related": [
+        "traceroute",
+        "ping"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "dig",
+      "category": "Networking",
+      "briefDescription": "DNS lookup utility.",
+      "keywords": [
+        "dig",
+        "dns",
+        "lookup"
+      ],
+      "flags": [
+        {
+          "flag": "+short",
+          "desc": "Short"
+        }
+      ],
+      "examples": [
+        {
+          "code": "dig example.com",
+          "desc": "A record"
+        },
+        {
+          "code": "dig +short google.com",
+          "desc": "Short"
+        }
+      ],
+      "related": [
+        "host",
+        "nslookup"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "nslookup",
+      "category": "Networking",
+      "briefDescription": "Interactive DNS query (legacy).",
+      "keywords": [
+        "nslookup",
+        "dns"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "nslookup example.com",
+          "desc": "Query"
+        }
+      ],
+      "related": [
+        "dig",
+        "host"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "host",
+      "category": "Networking",
+      "briefDescription": "Simple DNS lookup.",
+      "keywords": [
+        "host",
+        "dns",
+        "lookup"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "host example.com",
+          "desc": "Lookup"
+        }
+      ],
+      "related": [
+        "dig",
+        "nslookup"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "nc",
+      "category": "Networking",
+      "briefDescription": "Netcat — reads/writes TCP/UDP.",
+      "keywords": [
+        "nc",
+        "netcat",
+        "tcp",
+        "udp"
+      ],
+      "flags": [
+        {
+          "flag": "-l",
+          "desc": "Listen"
+        },
+        {
+          "flag": "-v",
+          "desc": "Verbose"
+        }
+      ],
+      "examples": [
+        {
+          "code": "nc -zv example.com 80",
+          "desc": "Port check"
+        }
+      ],
+      "pitfall": "Different nc variants (openbsd vs traditional)",
+      "related": [
+        "nmap",
+        "ss"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "command": "nmap",
+      "category": "Networking",
+      "briefDescription": "Network scanner.",
+      "keywords": [
+        "nmap",
+        "scan",
+        "port"
+      ],
+      "flags": [
+        {
+          "flag": "-p",
+          "desc": "Ports"
+        },
+        {
+          "flag": "-sV",
+          "desc": "Version"
+        }
+      ],
+      "examples": [
+        {
+          "code": "nmap -F 192.168.1.0/24",
+          "desc": "Fast scan"
+        }
+      ],
+      "pitfall": "Scanning without permission is illegal",
+      "related": [
+        "nc",
+        "ss"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "command": "ufw",
+      "category": "Networking",
+      "briefDescription": "Uncomplicated Firewall.",
+      "keywords": [
+        "ufw",
+        "firewall",
+        "ubuntu"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "sudo ufw status",
+          "desc": "Status"
+        },
+        {
+          "code": "sudo ufw allow 22",
+          "desc": "Allow SSH"
+        }
+      ],
+      "related": [
+        "iptables",
+        "firewall-cmd"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "iptables",
+      "category": "Networking",
+      "briefDescription": "Netfilter firewall rules.",
+      "keywords": [
+        "iptables",
+        "firewall",
+        "netfilter"
+      ],
+      "flags": [
+        {
+          "flag": "-L",
+          "desc": "List"
+        },
+        {
+          "flag": "-A",
+          "desc": "Append"
+        }
+      ],
+      "examples": [
+        {
+          "code": "sudo iptables -L -n",
+          "desc": "List"
+        }
+      ],
+      "pitfall": "Rules lost on reboot unless saved",
+      "related": [
+        "ufw",
+        "firewall-cmd"
+      ],
+      "difficulty": "advanced"
+    },
+    {
+      "command": "firewall-cmd",
+      "category": "Networking",
+      "briefDescription": "Firewalld control.",
+      "keywords": [
+        "firewall-cmd",
+        "firewalld",
+        "firewall"
+      ],
+      "flags": [
+        {
+          "flag": "--list-all",
+          "desc": "List"
+        }
+      ],
+      "examples": [
+        {
+          "code": "sudo firewall-cmd --list-all",
+          "desc": "All zones"
+        }
+      ],
+      "related": [
+        "iptables",
+        "ufw"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "command": "ssh-keygen",
+      "category": "Networking",
+      "briefDescription": "Generates SSH key pair.",
+      "keywords": [
+        "ssh-keygen",
+        "ssh",
+        "key"
+      ],
+      "flags": [
+        {
+          "flag": "-t",
+          "desc": "Type"
+        },
+        {
+          "flag": "-b",
+          "desc": "Bits"
+        }
+      ],
+      "examples": [
+        {
+          "code": "ssh-keygen -t ed25519",
+          "desc": "Ed25519"
+        }
+      ],
+      "pitfall": "Don't overwrite existing id_ed25519",
+      "related": [
+        "ssh",
+        "ssh-copy-id"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "ssh-copy-id",
+      "category": "Networking",
+      "briefDescription": "Installs SSH key on remote.",
+      "keywords": [
+        "ssh-copy-id",
+        "ssh",
+        "key"
+      ],
+      "flags": [
+        {
+          "flag": "-i",
+          "desc": "Identity"
+        }
+      ],
+      "examples": [
+        {
+          "code": "ssh-copy-id user@host",
+          "desc": "Install"
+        }
+      ],
+      "related": [
+        "ssh",
+        "ssh-keygen"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "sftp",
+      "category": "Networking",
+      "briefDescription": "Interactive SFTP session.",
+      "keywords": [
+        "sftp",
+        "ftp",
+        "secure"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "sftp user@host",
+          "desc": "Connect"
+        }
+      ],
+      "related": [
+        "scp",
+        "ssh"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "bzip2",
+      "category": "Archiving",
+      "briefDescription": "Compresses with bzip2.",
+      "keywords": [
+        "bzip2",
+        "compress",
+        "bzip"
+      ],
+      "flags": [
+        {
+          "flag": "-k",
+          "desc": "Keep"
+        }
+      ],
+      "examples": [
+        {
+          "code": "bzip2 -k file",
+          "desc": "Keep original"
+        }
+      ],
+      "related": [
+        "gzip",
+        "xz"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "xz",
+      "category": "Archiving",
+      "briefDescription": "Compresses with LZMA (high ratio).",
+      "keywords": [
+        "xz",
+        "compress",
+        "lzma"
+      ],
+      "flags": [
+        {
+          "flag": "-k",
+          "desc": "Keep"
+        }
+      ],
+      "examples": [
+        {
+          "code": "xz -k file",
+          "desc": "Compress"
+        }
+      ],
+      "related": [
+        "gzip",
+        "bzip2"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "7z",
+      "category": "Archiving",
+      "briefDescription": "7-Zip archiver (high compression).",
+      "keywords": [
+        "7z",
+        "7zip",
+        "compress"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "7z a archive.7z folder/",
+          "desc": "Create"
+        },
+        {
+          "code": "7z x archive.7z",
+          "desc": "Extract"
+        }
+      ],
+      "pitfall": "Needs p7zip-full",
+      "related": [
+        "zip",
+        "tar"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "dd",
+      "category": "Disk Management",
+      "briefDescription": "Copies and converts raw data.",
+      "keywords": [
+        "dd",
+        "copy",
+        "raw",
+        "disk"
+      ],
+      "flags": [
+        {
+          "flag": "if=",
+          "desc": "Input"
+        },
+        {
+          "flag": "of=",
+          "desc": "Output"
+        },
+        {
+          "flag": "bs=",
+          "desc": "Block size"
+        }
+      ],
+      "examples": [
+        {
+          "code": "dd if=/dev/zero of=file bs=1M count=100",
+          "desc": "100M file"
+        },
+        {
+          "code": "dd if=/dev/sda of=disk.img bs=4M",
+          "desc": "Clone disk"
+        }
+      ],
+      "pitfall": "dd nickname 'disk destroyer' — triple-check of=",
+      "related": [
+        "cp",
+        "cat"
+      ],
+      "difficulty": "advanced"
+    },
+    {
+      "command": "tee",
+      "category": "Text Processing",
+      "briefDescription": "Splits output to file + stdout.",
+      "keywords": [
+        "tee",
+        "pipe",
+        "split"
+      ],
+      "flags": [
+        {
+          "flag": "-a",
+          "desc": "Append"
+        }
+      ],
+      "examples": [
+        {
+          "code": "echo hi | tee file.txt",
+          "desc": "Write + print"
+        },
+        {
+          "code": "make | tee build.log",
+          "desc": "Log build"
+        }
+      ],
+      "related": [
+        "xargs",
+        "tr"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "xargs",
+      "category": "Text Processing",
+      "briefDescription": "Builds and executes commands from stdin.",
+      "keywords": [
+        "xargs",
+        "execute",
+        "stdin"
+      ],
+      "flags": [
+        {
+          "flag": "-I",
+          "desc": "Replace"
+        },
+        {
+          "flag": "-n",
+          "desc": "Args per"
+        }
+      ],
+      "examples": [
+        {
+          "code": "find . -name '*.log' | xargs rm",
+          "desc": "Delete found"
+        },
+        {
+          "code": "echo a b | xargs -n1 echo",
+          "desc": "One per line"
+        }
+      ],
+      "pitfall": "Filenames with spaces break xargs — use -0 + find -print0",
+      "related": [
+        "find",
+        "tee"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "command": "tr",
+      "category": "Text Processing",
+      "briefDescription": "Translates/deletes characters.",
+      "keywords": [
+        "tr",
+        "translate",
+        "delete"
+      ],
+      "flags": [
+        {
+          "flag": "-d",
+          "desc": "Delete"
+        }
+      ],
+      "examples": [
+        {
+          "code": "echo HELLO | tr 'A-Z' 'a-z'",
+          "desc": "Lowercase"
+        },
+        {
+          "code": "tr -d '\r' < dos.txt",
+          "desc": "Strip CR"
+        }
+      ],
+      "related": [
+        "sed",
+        "awk"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "column",
+      "category": "Text Processing",
+      "briefDescription": "Formats input into columns.",
+      "keywords": [
+        "column",
+        "table",
+        "format"
+      ],
+      "flags": [
+        {
+          "flag": "-t",
+          "desc": "Table"
+        }
+      ],
+      "examples": [
+        {
+          "code": "mount | column -t",
+          "desc": "Align"
+        }
+      ],
+      "related": [
+        "printf",
+        "cat"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "diff",
+      "category": "Text Processing",
+      "briefDescription": "Compares files line by line.",
+      "keywords": [
+        "diff",
+        "compare",
+        "patch"
+      ],
+      "flags": [
+        {
+          "flag": "-u",
+          "desc": "Unified"
+        }
+      ],
+      "examples": [
+        {
+          "code": "diff -u a.txt b.txt",
+          "desc": "Unified diff"
+        }
+      ],
+      "related": [
+        "cmp",
+        "patch"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "cmp",
+      "category": "Text Processing",
+      "briefDescription": "Compares files byte by byte.",
+      "keywords": [
+        "cmp",
+        "compare"
+      ],
+      "flags": [
+        {
+          "flag": "-l",
+          "desc": "Verbose"
+        }
+      ],
+      "examples": [
+        {
+          "code": "cmp file1 file2",
+          "desc": "Compare"
+        }
+      ],
+      "related": [
+        "diff"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "patch",
+      "category": "Text Processing",
+      "briefDescription": "Applies diff patch to file.",
+      "keywords": [
+        "patch",
+        "diff",
+        "apply"
+      ],
+      "flags": [
+        {
+          "flag": "-p1",
+          "desc": "Strip"
+        }
+      ],
+      "examples": [
+        {
+          "code": "patch < fix.patch",
+          "desc": "Apply"
+        }
+      ],
+      "related": [
+        "diff"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "command": "od",
+      "category": "Text Processing",
+      "briefDescription": "Octal dump of file.",
+      "keywords": [
+        "od",
+        "dump",
+        "octal"
+      ],
+      "flags": [
+        {
+          "flag": "-c",
+          "desc": "Chars"
+        }
+      ],
+      "examples": [
+        {
+          "code": "od -c file",
+          "desc": "Chars"
+        }
+      ],
+      "related": [
+        "hexdump",
+        "xxd"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "command": "hexdump",
+      "category": "Text Processing",
+      "briefDescription": "Hex dump of file.",
+      "keywords": [
+        "hexdump",
+        "hex",
+        "dump"
+      ],
+      "flags": [
+        {
+          "flag": "-C",
+          "desc": "Canonical"
+        }
+      ],
+      "examples": [
+        {
+          "code": "hexdump -C file",
+          "desc": "Hex+ASCII"
+        }
+      ],
+      "related": [
+        "od",
+        "xxd"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "command": "strings",
+      "category": "Text Processing",
+      "briefDescription": "Prints printable strings in file.",
+      "keywords": [
+        "strings",
+        "binary",
+        "text"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "strings /bin/ls | grep GLIBC",
+          "desc": "Find strings"
+        }
+      ],
+      "related": [
+        "hexdump",
+        "file"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "env",
+      "category": "Shell & Scripting",
+      "briefDescription": "Runs program with modified environment.",
+      "keywords": [
+        "env",
+        "environment",
+        "variable"
+      ],
+      "flags": [
+        {
+          "flag": "-i",
+          "desc": "Clean"
+        }
+      ],
+      "examples": [
+        {
+          "code": "env | sort",
+          "desc": "List env"
+        },
+        {
+          "code": "env -i bash",
+          "desc": "Clean shell"
+        }
+      ],
+      "related": [
+        "export",
+        "printenv"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "export",
+      "category": "Shell & Scripting",
+      "briefDescription": "Exports variable to child processes.",
+      "keywords": [
+        "export",
+        "variable",
+        "environment"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "export EDITOR=nano",
+          "desc": "Set editor"
+        }
+      ],
+      "pitfall": "export without value just marks existing",
+      "related": [
+        "env",
+        "source"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "source",
+      "category": "Shell & Scripting",
+      "briefDescription": "Executes file in current shell.",
+      "keywords": [
+        "source",
+        "dot",
+        ". ",
+        "bash"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "source ~/.bashrc",
+          "desc": "Reload"
+        },
+        {
+          "code": ". ./vars.sh",
+          "desc": "Dot"
+        }
+      ],
+      "related": [
+        "bash",
+        "export"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "type",
+      "category": "Shell & Scripting",
+      "briefDescription": "Describes how command would be interpreted.",
+      "keywords": [
+        "type",
+        "command",
+        "builtin"
+      ],
+      "flags": [
+        {
+          "flag": "-a",
+          "desc": "All"
+        }
+      ],
+      "examples": [
+        {
+          "code": "type ls",
+          "desc": "ls is aliased"
+        },
+        {
+          "code": "type -a python",
+          "desc": "All python"
+        }
+      ],
+      "related": [
+        "which",
+        "whereis"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "which",
+      "category": "Shell & Scripting",
+      "briefDescription": "Locates a command in PATH.",
+      "keywords": [
+        "which",
+        "path",
+        "locate"
+      ],
+      "flags": [
+        {
+          "flag": "-a",
+          "desc": "All"
+        }
+      ],
+      "examples": [
+        {
+          "code": "which python",
+          "desc": "Path"
+        },
+        {
+          "code": "which -a python",
+          "desc": "All matches"
+        }
+      ],
+      "pitfall": "which doesn't see shell functions — use type",
+      "related": [
+        "whereis",
+        "type"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "whereis",
+      "category": "Shell & Scripting",
+      "briefDescription": "Locates binary/source/man for command.",
+      "keywords": [
+        "whereis",
+        "binary",
+        "man"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "whereis python",
+          "desc": "All paths"
+        }
+      ],
+      "related": [
+        "which",
+        "type"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "whatis",
+      "category": "Shell & Scripting",
+      "briefDescription": "Displays one-line manual description.",
+      "keywords": [
+        "whatis",
+        "man",
+        "description"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "whatis ls",
+          "desc": "One line"
+        }
+      ],
+      "related": [
+        "man",
+        "apropos"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "man",
+      "category": "Shell & Scripting",
+      "briefDescription": "Displays manual page.",
+      "keywords": [
+        "man",
+        "manual",
+        "help"
+      ],
+      "flags": [
+        {
+          "flag": "-k",
+          "desc": "Apropos"
+        }
+      ],
+      "examples": [
+        {
+          "code": "man ls",
+          "desc": "Manual"
+        },
+        {
+          "code": "man -k copy",
+          "desc": "Search"
+        }
+      ],
+      "related": [
+        "whatis",
+        "info"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "help",
+      "category": "Shell & Scripting",
+      "briefDescription": "Shows help for shell builtin.",
+      "keywords": [
+        "help",
+        "builtin",
+        "bash"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "help cd",
+          "desc": "Help for cd"
+        }
+      ],
+      "related": [
+        "man",
+        "type"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "date",
+      "category": "System Info",
+      "briefDescription": "Shows or sets date/time.",
+      "keywords": [
+        "date",
+        "time",
+        "clock"
+      ],
+      "flags": [
+        {
+          "flag": "+%Y-%m-%d",
+          "desc": "Format"
+        }
+      ],
+      "examples": [
+        {
+          "code": "date",
+          "desc": "Now"
+        },
+        {
+          "code": "date '+%F %T'",
+          "desc": "Format"
+        },
+        {
+          "code": "date -d '2 days ago'",
+          "desc": "Relative"
+        }
+      ],
+      "related": [
+        "timedatectl",
+        "cal"
+      ],
+      "difficulty": "beginner"
+    },
+    {
+      "command": "cal",
+      "category": "System Info",
+      "briefDescription": "Shows calendar.",
+      "keywords": [
+        "cal",
+        "calendar",
+        "date"
+      ],
+      "flags": [],
+      "examples": [
+        {
+          "code": "cal",
+          "desc": "This month"
+        },
+        {
+          "code": "cal 2026",
+          "desc": "Year"
+        }
+      ],
+      "related": [
+        "date"
+      ],
+      "difficulty": "beginner"
     }
   ]
 }
