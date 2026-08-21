@@ -4105,8 +4105,105 @@ const DATA = {
         }
       ]
     }
-  ]
-};
+]
+},
+  content: {
+    sections: [
+      {
+        "id": "bash-scripting",
+        "title": "Bash Scripting Deep Dive",
+        "icon": "terminal",
+        "category": "development",
+        "preview": "Functions, arrays, loops, and error handling for writing robust bash scripts."
+      },
+      {
+        "id": "disk-storage",
+        "title": "Disk Storage Management",
+        "icon": "hard-drive",
+        "category": "storage",
+        "preview": "Understanding disk layout, management, and storage operations in Linux."
+      },
+      {
+        "id": "firewall",
+        "title": "Firewall Deep Dive",
+        "icon": "shield",
+        "category": "security",
+        "preview": "Comprehensive guide to Linux firewall configuration and management."
+      },
+      {
+        "id": "important-files",
+        "title": "Important Files to Generate",
+        "icon": "file",
+        "category": "configuration",
+        "preview": "Key files that should be generated and maintained in Linux systems."
+      },
+      {
+        "id": "linux-boot",
+        "title": "Linux Boot Process",
+        "icon": "-boot",
+        "category": "system",
+        "preview": "Understanding how Linux boots from BIOS/UEFI to running system."
+      },
+      {
+        "id": "failure-scenarios",
+        "title": "Linux Failure Scenarios",
+        "icon": "alert-triangle",
+        "category": "troubleshooting",
+        "preview": "Common failure scenarios and how to resolve them in Linux."
+      },
+      {
+        "id": "linux-rules",
+        "title": "Linux Rules Reference",
+        "icon": "gavel",
+        "category": "reference",
+        "preview": "Reference guide to Linux rules and best practices."
+      },
+      {
+        "id": "log-management",
+        "title": "Log Management",
+        "icon": "message-circle",
+        "category": "monitoring",
+        "preview": "Managing and troubleshooting Linux system logs."
+      },
+      {
+        "id": "network-troubleshooting",
+        "title": "Networking Troubleshooting Toolkit",
+        "icon": "globe",
+        "category": "networking",
+        "preview": "Tools and techniques for troubleshooting network issues in Linux."
+      },
+      {
+        "id": "data-engineers",
+        "title": "Linux for Data Engineers",
+        "icon": "trending-up",
+        "category": "data",
+        "preview": "Comprehensive Linux content for data engineering workflows."
+      },
+      {
+        "id": "process-monitoring",
+        "title": "Process Performance Monitoring",
+        "icon": "cpu",
+        "category": "performance",
+        "preview": "Monitoring and optimizing process performance in Linux."
+      },
+      {
+        "id": "ssh-guide",
+        "title": "SSH Remote Access Guide",
+        "icon": "network",
+        "category": "networking",
+        "preview": "Guide to SSH configuration and remote access in Linux."
+      },
+      {
+        "id": "vim-nano",
+        "title": "Vim & Nano Complete Guide",
+        "icon": "edit",
+        "category": "editor",
+        "preview": "Comprehensive guide to vim and nano text editors."
+      }
+    ]
+  }
+
+const ICONS = {
 
 const ICONS = {
   folder: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>',

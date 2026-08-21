@@ -936,6 +936,30 @@ function renderTopicIndex() {
   return html;
 }
 
+function renderContentLibrary() {
+  const contentData = DATA.content || {};
+  let html = breadcrumbs([{label:'Linux101', tab:'content'}, {label:'Linux 101 Content'}]);
+  html += `<h1 class="view-title">Linux 101 Content Library</h1>`;
+  html += `<p class="view-subtitle">Browse comprehensive Linux 101 topics and guides.</p>`;
+  html += `<div class="content-library-grid">`;
+  contentData.sections.forEach(section => {
+    html += `
+      <div class="content-library-card" data-section="${section.id}">
+        <div class="content-library-icon">${ICONS[section.icon] || ICONS.folder}</div>
+        <div class="content-library-info">
+          <div class="content-library-title">${section.title}</div>
+          <div class="content-library-preview">${section.preview}</div>
+        </div>
+        <div class="content-library-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </div>
+      </div>
+    `;
+  });
+  html += `</div>`;
+  return html;
+}
+
 function toggleTopicPopover(i, btn) {
   const box = document.getElementById('topicPopover');
   if (!box) return;
@@ -994,7 +1018,10 @@ const TABS = [
     { id: 'day4', label: 'Day 4', icon: 'file' },
     { id: 'day5', label: 'Day 5', icon: 'file' }
   ]},
-  { id: 'quiz', label: 'Practice Lab', views: [ { id: 'quiz', label: 'Drill & Quiz', icon: 'zap' } ] }
+  { id: 'quiz', label: 'Practice Lab', views: [ { id: 'quiz', label: 'Drill & Quiz', icon: 'zap' } ] },
+  { id: 'content', label: 'Linux 101 Content', icon: 'folder', views: [
+    { id: 'library', label: 'Library', icon: 'folder' }
+  ]}
 ];
 const LEGACY_TABS = ['general', 'links'];
 const VIEW_MAP = {
@@ -1014,7 +1041,9 @@ const VIEW_MAP = {
   'notes-tarek': { tab: 'course', view: 'day2-notes-tarek' },
   'lab': { tab: 'course', view: 'day1-lab' },
   'lab2': { tab: 'course', view: 'day2-lab' },
-  'quiz': { tab: 'quiz', view: 'quiz' }
+  'quiz': { tab: 'quiz', view: 'quiz' },
+  'content': { tab: 'content', view: 'library' },
+  'content-library': { tab: 'content', view: 'library' }
 };
 
 // ===== HASH ROUTER (GitHub Pages deep-link support) =====
@@ -2581,6 +2610,7 @@ async function render() {
     else if (state.view === 'exercises') html = renderExercises();
     else if (state.view === 'roadmap7') html = renderCourse();
     else if (state.view === 'resources') html = renderHelpfulLinks();
+    else if (state.view === 'content-library') html = renderContentLibrary();
     else html = renderMergedCheatSheet();
   } else if (state.tab === 'course') {
     const fn = COURSE_RENDER[state.view];
@@ -2708,6 +2738,11 @@ document.getElementById('searchInput').addEventListener('input', (e) => {
   const input = document.getElementById('searchInput');
   const wrap = document.getElementById('searchWrapper');
   if (!box || !input || !wrap) return;
+  // Ensure tap target is at least 48px (the box + button area)
+  box.style.minHeight = '48px';
+  box.style.display = 'flex';
+  box.style.alignItems = 'center';
+  box.style.justifyContent = 'center';
   box.addEventListener('click', (e) => {
     if (wrap.classList.contains('search-expanded')) return;
     if (e.target === input) return;
@@ -2716,6 +2751,23 @@ document.getElementById('searchInput').addEventListener('input', (e) => {
   });
   input.addEventListener('blur', () => {
     if (!input.value.trim()) wrap.classList.remove('search-expanded');
+  });
+})();
+
+// Ensure search-trigger has accessible tap target on mobile
+(function setupMobileSearchTrigger() {
+  const trig = document.getElementById('searchTrigger');
+  if (!trig) return;
+  // Make the whole button a 48px tap target
+  trig.style.minHeight = '48px';
+  trig.style.minWidth = '48px';
+  // Announce search opening for screen readers
+  trig.setAttribute('aria-pressed', 'false');
+  trig.addEventListener('click', (e) => {
+    e.stopPropagation();
+    // Toggle aria-pressed state
+    const newState = trig.getAttribute('aria-pressed') === 'true';
+    trig.setAttribute('aria-pressed', String(!newState));
   });
 })();
 
@@ -2785,11 +2837,20 @@ function openSidebar() {
   const overlay = document.getElementById('overlay');
   const btn = document.getElementById('menuBtn');
   if (!sidebar || !overlay) return;
+  const isMobile = window.innerWidth <= 860;
   sidebar.classList.add('open');
   overlay.classList.add('show');
   overlay.setAttribute('aria-hidden','false');
   if (btn) btn.setAttribute('aria-expanded','true');
   document.body.style.overflow = 'hidden';
+  if (isMobile) {
+    // mobile: bottom drawer - no overflow hidden, just reveal
+    sidebar.style.transform = 'translateY(0)';
+    overlay.style.display = 'none';
+  } else {
+    // desktop: overlay behavior
+    overlay.style.display = '';
+  }
   // focus first item in sidebar
   const first = sidebar.querySelector('button, a, [tabindex]:not([tabindex="-1"])');
   if (first) setTimeout(()=>first.focus(), 50);
@@ -2799,14 +2860,29 @@ function closeSidebar() {
   const overlay = document.getElementById('overlay');
   const btn = document.getElementById('menuBtn');
   if (!sidebar || !overlay) return;
-  sidebar.classList.remove('open');
-  overlay.classList.remove('show');
-  overlay.setAttribute('aria-hidden','true');
-  if (btn) btn.setAttribute('aria-expanded','false');
-  document.body.style.overflow = '';
+  const isMobile = window.innerWidth <= 860;
+  if (isMobile) {
+    // mobile: bottom drawer - hide
+    sidebar.style.transform = 'translateY(100%)';
+    overlay.style.display = '';
+  } else {
+    // desktop: overlay behavior
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+    overlay.setAttribute('aria-hidden','true');
+    if (btn) btn.setAttribute('aria-expanded','false');
+    document.body.style.overflow = '';
+  }
 }
 document.getElementById('menuBtn').addEventListener('click', openSidebar);
 document.getElementById('overlay').addEventListener('click', closeSidebar);
+// Close on ESC
+document.addEventListener('keydown', (e)=>{
+  if(e.key==='Escape'){
+    const sd = document.getElementById('sidebar');
+    if(sd && sd.classList.contains('open')) closeSidebar();
+  }
+});
 // Spotlight trigger & input wiring
 const _searchTrig = document.getElementById('searchTrigger');
 if(_searchTrig) _searchTrig.addEventListener('click', openSpotlight);
@@ -3035,6 +3111,28 @@ document.addEventListener('click', (e) => {
     const sw = document.getElementById('searchWrapper');
     if(sw) new ResizeObserver(updateStickyHeights).observe(sw);
   }
+  // Auto-switch command view between grid and list based on viewport
+  function updateCmdView(){
+    const isMobile = window.innerWidth <= 860;
+    const grid = document.querySelector('.cmd-grid');
+    if(!grid) return;
+    if(isMobile){
+      // force list view on mobile for responsive wrapping
+      state.cmdView = 'list';
+      grid.classList.add('is-list');
+    } else {
+      // restore saved preference on desktop
+      if(state.cmdView !== 'list'){
+        grid.classList.remove('is-list');
+      }
+    }
+    // update button states
+    const btns = document.querySelectorAll('.cmd-view-btn');
+    btns.forEach(b=> b.classList.toggle('is-active', state.cmdView===b.dataset.view));
+    updateStickyHeights();
+  }
+  updateCmdView();
+  window.addEventListener('resize', updateCmdView);
   const _oldSetView = setView;
   setView = function(tab, view){
     const res = _oldSetView.apply(this, arguments);
