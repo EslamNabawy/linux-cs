@@ -919,21 +919,21 @@ function toggleLabTask(id, el) {
 
 const TABS = [
   { id: 'linux101', label: 'Linux101', views: [
-    { id: 'cheatsheet', label: 'Commands' },
-    { id: 'topicindex', label: 'Topic Index' },
-    { id: 'exercises', label: 'Exercises' },
-    { id: 'roadmap7', label: 'Roadmap' },
-    { id: 'resources', label: 'Resources' }
+    { id: 'cheatsheet', label: 'Commands', icon: 'terminal' },
+    { id: 'topicindex', label: 'Topic Index', icon: 'hash' },
+    { id: 'exercises', label: 'Exercises', icon: 'clipboard' },
+    { id: 'roadmap7', label: 'Roadmap', icon: 'map' },
+    { id: 'resources', label: 'Resources', icon: 'link' }
   ]},
   { id: 'course', label: 'NTI Linux', views: [
-    { id: 'roadmap', label: 'Roadmap' },
-    { id: 'day1', label: 'Day 1' },
-    { id: 'day2', label: 'Day 2' },
-    { id: 'day3', label: 'Day 3' },
-    { id: 'day4', label: 'Day 4' },
-    { id: 'day5', label: 'Day 5' }
+    { id: 'roadmap', label: 'Roadmap', icon: 'map' },
+    { id: 'day1', label: 'Day 1', icon: 'file' },
+    { id: 'day2', label: 'Day 2', icon: 'file' },
+    { id: 'day3', label: 'Day 3', icon: 'file' },
+    { id: 'day4', label: 'Day 4', icon: 'file' },
+    { id: 'day5', label: 'Day 5', icon: 'file' }
   ]},
-  { id: 'quiz', label: 'Practice Lab', views: [ { id: 'quiz', label: 'Drill & Quiz' } ] }
+  { id: 'quiz', label: 'Practice Lab', views: [ { id: 'quiz', label: 'Drill & Quiz', icon: 'zap' } ] }
 ];
 const LEGACY_TABS = ['general', 'links'];
 const VIEW_MAP = {
@@ -1237,7 +1237,8 @@ function renderSubNav() {
   if (!tab) return;
   nav.innerHTML = tab.views.map(v => {
     const active = v.id === state.view;
-    return `<button class="subnav-item ${active ? 'active' : ''}" data-action="set-view" data-tab="${escapeHtml(tab.id)}" data-view="${escapeHtml(v.id)}" ${active ? 'aria-current="page"' : ''}>${escapeHtml(v.label)}</button>`;
+    const icon = v.icon && typeof ICONS !== 'undefined' && ICONS[v.icon] ? `<span class="subnav-icon" aria-hidden="true">${ICONS[v.icon]}</span>` : '';
+    return `<button class="subnav-item ${active ? 'active' : ''}" data-action="set-view" data-tab="${escapeHtml(tab.id)}" data-view="${escapeHtml(v.id)}" ${active ? 'aria-current="page"' : ''}>${icon}${escapeHtml(v.label)}</button>`;
   }).join('');
 }
 

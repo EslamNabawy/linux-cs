@@ -1106,6 +1106,7 @@ mark {
 /* Tabs */
 .tabs { display: flex; gap: 4px; flex: 1; overflow-x: auto; }
 .tab {
+  display: inline-flex; align-items: center; gap: 6px;
   padding: 8px 14px; border-radius: 999px; cursor: pointer;
   color: var(--text-muted); font-size: 13px; font-weight: 600;
   border: 1px solid transparent; background: none; white-space: nowrap;
@@ -1114,6 +1115,11 @@ mark {
 .tab:hover { background: var(--bg-hover); color: var(--text); }
 .tab.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
 .tab-short { display: none; }
+.tab-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.tab-icon svg { width: 14px; height: 14px; display: block; }
+@media (max-width: 860px) {
+  .tab-icon svg { width: 13px; height: 13px; }
+}
 
 /* Layout grid */
 .layout { display: grid; grid-template-columns: 260px 1fr; align-items: start; flex: 1; }
@@ -1131,8 +1137,12 @@ mark {
   color: var(--text-muted); font-size: 13px; font-weight: 500;
   border: none; background: none; width: 100%; text-align: left;
   font-family: var(--font-sans); transition: all var(--transition);
-  min-height: 44px; display: flex; align-items: center;
+  min-height: 44px; display: flex; align-items: center; gap: 10px;
 }
+.subnav-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--text-dim); }
+.subnav-icon svg { width: 15px; height: 15px; display: block; }
+.subnav-item.active .subnav-icon { color: var(--accent); }
+.subnav-item:hover .subnav-icon { color: var(--text); }
 .subnav-item:hover { background: var(--bg-hover); color: var(--text); }
 .subnav-item.active { background: var(--accent-dim); color: var(--accent); }
 
