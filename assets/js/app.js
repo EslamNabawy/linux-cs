@@ -178,14 +178,26 @@ async function ensureNtiReady() {
 
 // ===== SYNTAX HIGHLIGHTING =====
 function highlightCode(code) {
-  let s = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  s = s.replace(/(#.*$)/gm, '<span class="comment-token">$1</span>');
-  s = s.replace(/"([^"]*)"/g, '<span class="str-token">"$1"</span>');
-  // Paths: handle ~/ first, then absolute paths without double-wrapping or matching </span>
-  s = s.replace(/(~\/[^\s<>"'|]*)/g, '<span class="path-token">$1</span>');
-  s = s.replace(/(?<![~\w"'>])(\/[^\s<>"'|]*)/g, '<span class="path-token">$1</span>');
-  // Flags: avoid matching inside already-created spans (starts with <)
-  s = s.replace(/(\s)(-{1,2}[a-zA-Z][\w-]*)/g, '$1<span class="flag-token">$2</span>');
+  let s = String(code == null ? '' : code).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // Tokenize: each rule wraps its match in a placeholder so later rules
+  // can't re-match the HTML we generate (the old impl matched the '/' in
+  // its own </span> closers and shredded the markup).
+  const spans = [];
+  const keep = (cls, txt) => { spans.push(`<span class="${cls}">${txt}</span>`); return '\u0000' + (spans.length - 1) + '\u0000'; };
+  // Comments: '#' starts a comment only at line start or after whitespace/;/|/&/( —
+  // NOT inside parameter expansions like ${#arr[@]}
+  s = s.replace(/(^|[\s;&|(])(#.*)$/gm, (m, pre, cmt) => pre + keep('comment-token', cmt));
+  // Strings: single line only, so an unmatched quote can't swallow the rest of the block
+  s = s.replace(/"[^\n"]*"/g, m => keep('str-token', m));
+  s = s.replace(/~\/[^\s\u0000"'|]*/g, m => keep('path-token', m));
+  s = s.replace(/(^|[=(\[{:\s])(\/[^\s\u0000"'|]*)/g, (m, pre, path) => pre + keep('path-token', path));
+  s = s.replace(/(\s)(-{1,2}[a-zA-Z][\w-]*)/g, (m, ws, flag) => ws + keep('flag-token', flag));
+  // Restore nested placeholders too (a kept span may contain earlier placeholders)
+  while (s.indexOf('\u0000') !== -1) {
+    const next = s.replace(/\u0000(\d+)\u0000/g, (m, i) => spans[+i]);
+    if (next === s) break;
+    s = next;
+  }
   return s;
 }
 
@@ -242,7 +254,7 @@ function renderCheatSheet() {
             <div>
               <div class="cmd-desc">${highlightMatch(escapeHtml(cmd.description), state.searchTerm)}</div>
               <div class="cmd-example">
-                <code>${highlightMatch(highlightCode(escapeHtml(cmd.example)), state.searchTerm)}</code>
+                <code>${highlightMatch(highlightCode(cmd.example), state.searchTerm)}</code>
                 <button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(cmd.example)}" title="Copy" aria-label="Copy code">
                   ${ICONS.copy}
                 </button>
@@ -335,7 +347,7 @@ function renderCommandsBank() {
               <div>
                 <div class="cmd-desc">${highlightMatch(escapeHtml(cmd.briefDescription), state.searchTerm)}</div>
                 <div class="cmd-example">
-                  <code>${highlightMatch(highlightCode(escapeHtml(example)), state.searchTerm)}</code>
+                  <code>${highlightMatch(highlightCode(example), state.searchTerm)}</code>
                   <button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(example)}" title="Copy" aria-label="Copy code">
                     ${ICONS.copy}
                   </button>
@@ -382,7 +394,7 @@ function renderExercises() {
       ex.code.forEach(c => {
         bodyHtml += `
           <div class="exercise-code">
-            <code>${highlightCode(escapeHtml(c))}</code>
+            <code>${highlightCode(c)}</code>
             <button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(c)}">${ICONS.copy}</button>
           </div>
         `;
@@ -397,7 +409,7 @@ function renderExercises() {
             <p class="exercise-text">${step.text}</p>
             ${step.code.map(c => `
               <div class="exercise-code">
-                <code>${highlightCode(escapeHtml(c))}</code>
+                <code>${highlightCode(c)}</code>
                 <button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(c)}">${ICONS.copy}</button>
               </div>
             `).join('')}
@@ -651,8 +663,8 @@ function renderLinksBody() {
       <div class="link-card">
         <p>${soft.definition}</p>
         <ul>${soft.properties.map(p => `<li>${p}</li>`).join('')}</ul>
-        <div class="link-code"><code>${highlightCode(escapeHtml(soft.syntax))}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(soft.syntax)}">${ICONS.copy}</button></div>
-        <div class="link-code"><code>${highlightCode(escapeHtml(soft.example))}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(soft.example)}">${ICONS.copy}</button></div>
+        <div class="link-code"><code>${highlightCode(soft.syntax)}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(soft.syntax)}">${ICONS.copy}</button></div>
+        <div class="link-code"><code>${highlightCode(soft.example)}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(soft.example)}">${ICONS.copy}</button></div>
       </div>
     </div>
   `;
@@ -663,8 +675,8 @@ function renderLinksBody() {
       <div class="link-card">
         <p>${hard.definition}</p>
         <ul>${hard.properties.map(p => `<li>${p}</li>`).join('')}</ul>
-        <div class="link-code"><code>${highlightCode(escapeHtml(hard.syntax))}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(hard.syntax)}">${ICONS.copy}</button></div>
-        <div class="link-code"><code>${highlightCode(escapeHtml(hard.example))}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(hard.example)}">${ICONS.copy}</button></div>
+        <div class="link-code"><code>${highlightCode(hard.syntax)}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(hard.syntax)}">${ICONS.copy}</button></div>
+        <div class="link-code"><code>${highlightCode(hard.example)}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(hard.example)}">${ICONS.copy}</button></div>
       </div>
     </div>
   `;
@@ -792,7 +804,7 @@ function renderBlock(b) {
     case 'code': {
       const code = b.code;
       const lang = b.lang || 'bash';
-      return `<div class="cmd-example"><span class="code-label" aria-hidden="true">${escapeHtml(lang)}</span><code>${highlightCode(escapeHtml(code))}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(code)}" title="Copy" aria-label="Copy code">${ICONS.copy}</button></div>`;
+      return `<div class="cmd-example"><span class="code-label" aria-hidden="true">${escapeHtml(lang)}</span><code>${highlightCode(code)}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(code)}" title="Copy" aria-label="Copy code">${ICONS.copy}</button></div>`;
     }
     case 'callout': {
       const kind = b.kind || 'info';
@@ -1621,7 +1633,7 @@ function renderSearchResults() {
     const pops = popular.map(p => {
       const c = DATA.commandsBank.find(x => x.command === p);
       if (!c) return '';
-      return `<div class="cmd-row"><div class="cmd-grid"><div class="cmd-name">${escapeHtml(c.command)}</div><div><div class="cmd-desc">${escapeHtml(c.briefDescription)}</div><div class="cmd-example"><code>${highlightCode(escapeHtml(c.command))}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(c.command)}">${ICONS.copy}</button></div></div></div></div>`;
+      return `<div class="cmd-row"><div class="cmd-grid"><div class="cmd-name">${escapeHtml(c.command)}</div><div><div class="cmd-desc">${escapeHtml(c.briefDescription)}</div><div class="cmd-example"><code>${highlightCode(c.command)}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(c.command)}">${ICONS.copy}</button></div></div></div></div>`;
     }).join('');
     const recent = state.recentViews.length
       ? `<div class="links-section"><h3>Recently viewed</h3><div class="topic-links">${state.recentViews.slice(0, 5).map(v => `<button class="topic-link" data-action="go-view" data-view="${escapeHtml(v)}">${escapeHtml(v.replace('notes-', ''))}</button>`).join('')}</div></div>`
@@ -1654,7 +1666,7 @@ function renderSearchResults() {
 }
 
 function searchRow(r, t) {
-  return `<div class="cmd-row"><div class="cmd-grid"><div class="cmd-name">${highlightMatch(escapeHtml(r.title), t)}</div><div>${r.desc ? `<div class="cmd-desc">${highlightMatch(escapeHtml(r.desc), t)}</div>` : ''}${r.example ? `<div class="cmd-example"><code>${highlightMatch(highlightCode(escapeHtml(r.example)), t)}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(r.example)}" aria-label="Copy code">${ICONS.copy}</button></div>` : ''}</div></div><span class="source-badge search-badge">${escapeHtml(r.section)}</span></div>`;
+  return `<div class="cmd-row"><div class="cmd-grid"><div class="cmd-name">${highlightMatch(escapeHtml(r.title), t)}</div><div>${r.desc ? `<div class="cmd-desc">${highlightMatch(escapeHtml(r.desc), t)}</div>` : ''}${r.example ? `<div class="cmd-example"><code>${highlightMatch(highlightCode(r.example), t)}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(r.example)}" aria-label="Copy code">${ICONS.copy}</button></div>` : ''}</div></div><span class="source-badge search-badge">${escapeHtml(r.section)}</span></div>`;
 }
 
 function escId(s) { return String(s).replace(/[^a-zA-Z0-9_-]/g, '_'); }
@@ -2260,7 +2272,7 @@ function openCmdDrawer(cmd){
   const panel = document.getElementById('cmdDrawerPanel');
   if(!drawer || !panel) return;
   const flagsHtml = (c.flags||[]).length ? `<div class="drawer-section"><h4>Flags</h4><div class="table-wrap"><table class="comparison-table"><thead><tr><th>Flag</th><th>Description</th></tr></thead><tbody>${c.flags.map(f=>`<tr><td><code>${escapeHtml(f.flag)}</code></td><td>${escapeHtml(f.desc||'—')}</td></tr>`).join('')}</tbody></table></div></div>` : '';
-  const examplesHtml = (c.examples||[]).map((ex,i)=>`<div class="drawer-example"><div class="drawer-example-head"><span class="drawer-example-num">#${i+1}</span><span class="drawer-example-desc">${escapeHtml(ex.desc||'Example')}</span><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(ex.code)}" aria-label="Copy">${ICONS.copy}</button></div><div class="cmd-example"><span class="code-label">bash</span><code>${highlightCode(escapeHtml(ex.code))}</code></div></div>`).join('');
+  const examplesHtml = (c.examples||[]).map((ex,i)=>`<div class="drawer-example"><div class="drawer-example-head"><span class="drawer-example-num">#${i+1}</span><span class="drawer-example-desc">${escapeHtml(ex.desc||'Example')}</span><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(ex.code)}" aria-label="Copy">${ICONS.copy}</button></div><div class="cmd-example"><span class="code-label">bash</span><code>${highlightCode(ex.code)}</code></div></div>`).join('');
   const relatedHtml = (c.related||[]).length ? `<div class="drawer-related">${c.related.map(r=>`<button class="chip chip--sm" data-action="open-cmd" data-cmd="${escapeHtml(r)}">${escapeHtml(r)}</button>`).join('')}</div>` : '<span style="color:var(--text-dim)">No related</span>';
   panel.innerHTML = `
     <div class="drawer-header">
@@ -2318,7 +2330,7 @@ function cmdCard(c) {
         <span class="cmd-card-count">${(c.examples||[]).length} ex · ${(c.flags||[]).length} flags</span>
       </div>
       <div class="cmd-card-desc">${escapeHtml(c.briefDescription)}</div>
-      ${firstEx ? `<div class="cmd-card-example" onclick="event.stopPropagation()"><span class="code-label">bash</span><code>${highlightCode(escapeHtml(firstEx.code))}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(firstEx.code)}" title="Copy" aria-label="Copy ${escapeHtml(c.command)}">${ICONS.copy}</button></div>` : ''}
+      ${firstEx ? `<div class="cmd-card-example" onclick="event.stopPropagation()"><span class="code-label">bash</span><code>${highlightCode(firstEx.code)}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(firstEx.code)}" title="Copy" aria-label="Copy ${escapeHtml(c.command)}">${ICONS.copy}</button></div>` : ''}
       ${(c.flags||[]).length ? `<div class="cmd-card-flags">${flagChips}${moreFlags}</div>` : ''}
       ${pit}
       ${rel}
@@ -3026,6 +3038,136 @@ if(_spotIn){
       e.preventDefault();
     }
   });
+}
+
+// ===== External resources: man7.org man pages + explainshell.com =====
+// Lazy, on-demand only. No network calls at startup. See EXT modal shell below.
+const MAN_SECTIONS = { useradd:8, usermod:8, userdel:8, groupadd:8, groupmod:8, groupdel:8,
+  mount:8, umount:8, fdisk:8, lsblk:8, ip:8, ifconfig:8, systemctl:1, service:8,
+  crontab:5, fstab:5, passwd:5, shadow:5, hosts:5 };
+function manFirstToken(cmd){
+  const t = (cmd||'').trim().split(/\s+/)[0] || '';
+  return t.split('/').pop().replace(/[^A-Za-z0-9_.+-]/g,'') ;
+}
+function manPageUrl(cmd){
+  const name = manFirstToken(cmd);
+  if(!name) return 'https://man7.org/linux/man-pages/';
+  const sec = MAN_SECTIONS[name.toLowerCase()] || 1;
+  return `https://man7.org/linux/man-pages/man${sec}/${encodeURIComponent(name)}.${sec}.html`;
+}
+function explainShellUrl(cmd){
+  return 'https://explainshell.com/explain?cmd=' + encodeURIComponent((cmd||'').trim());
+}
+const EXTLINK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+const _extModalState = { node:null, trigger:null, prevOverflow:null };
+function ensureExtModal(){
+  if(_extModalState.node) return _extModalState.node;
+  const m = document.createElement('div');
+  m.id = 'extModal'; m.className = 'ext-modal';
+  m.setAttribute('role','dialog'); m.setAttribute('aria-modal','true'); m.setAttribute('aria-labelledby','extModalTitle');
+  m.innerHTML = `
+    <div class="ext-modal-backdrop" data-action="close-ext-modal"></div>
+    <div class="ext-modal-panel" role="document">
+      <div class="ext-modal-header">
+        <h3 class="ext-modal-title" id="extModalTitle"></h3>
+        <button class="spotlight-close ext-modal-close" data-action="close-ext-modal" aria-label="Close dialog">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="ext-modal-body" id="extModalBody"></div>
+    </div>`;
+  document.body.appendChild(m);
+  _extModalState.node = m;
+  return m;
+}
+function openExtModal(titleText, titleMono, bodyHtml, triggerEl){
+  const m = ensureExtModal();
+  _extModalState.trigger = triggerEl || null;
+  _extModalState.prevOverflow = document.body.style.overflow;
+  document.body.style.overflow = 'hidden';
+  m.querySelector('#extModalTitle').innerHTML =
+    (titleMono ? `<code>${escapeHtml(titleText)}</code>` : escapeHtml(titleText));
+  m.querySelector('#extModalBody').innerHTML = bodyHtml;
+  m.classList.add('open'); m.setAttribute('aria-hidden','false');
+  const closeBtn = m.querySelector('.ext-modal-close');
+  if(closeBtn) try{ closeBtn.focus(); }catch(e){}
+}
+function closeExtModal(){
+  const m = _extModalState.node;
+  if(!m || !m.classList.contains('open')) return;
+  m.classList.remove('open'); m.setAttribute('aria-hidden','true');
+  m.querySelector('#extModalBody').innerHTML = ''; // drop iframe/fetch content
+  const drawerOpen = (()=>{ const d=document.getElementById('cmdDrawer'); return !!(d && d.classList.contains('open')); })();
+  document.body.style.overflow = drawerOpen ? 'hidden' : (_extModalState.prevOverflow || '');
+  if(_extModalState.trigger){ try{ _extModalState.trigger.focus(); }catch(e){} }
+  _extModalState.trigger = null;
+}
+// --- man7.org: CORS-blocked for fetch; try ONCE per session, else styled fallback ---
+let _man7FetchBlocked = false;
+async function fetchManPageHtml(url){
+  const ctrl = ('AbortController' in window) ? new AbortController() : null;
+  const timer = ctrl ? setTimeout(()=>ctrl.abort(), 7000) : null;
+  try {
+    const r = await fetch(url, ctrl ? {signal: ctrl.signal} : {});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return await r.text();
+  } finally { if(timer) clearTimeout(timer); }
+}
+function manFallbackBody(cmd, url){
+  return `
+    <div class="ext-modal-note">${ICONS.alert}<span>Direct in-site reading is blocked by man7.org's cross-origin policy (CORS).</span></div>
+    <p class="ext-modal-text">The official Linux manual page for <code>${escapeHtml(manFirstToken(cmd))}</code> lives at:</p>
+    <div class="ext-modal-url"><code>${escapeHtml(url)}</code></div>
+    <a class="toggle-complete ext-modal-cta" href="${escapeAttrHtml(url)}" target="_blank" rel="noopener">${EXTLINK_SVG} Read Official Man Page ↗</a>
+    <p class="ext-modal-hint">Opens in a new tab · official man-pages project rendering</p>`;
+}
+async function openManPage(cmd, triggerEl){
+  const url = manPageUrl(cmd);
+  openExtModal('Man Page', true, `
+    <div class="ext-modal-loading"><span class="ext-spinner"></span> Fetching manual page…</div>
+    <div class="ext-modal-alt"><a href="${escapeAttrHtml(url)}" target="_blank" rel="noopener">${EXTLINK_SVG} Open in new tab instead</a></div>
+  `, triggerEl);
+  if(_man7FetchBlocked){ // known blocked this session — go straight to fallback, no retry
+    _extModalState.node.querySelector('#extModalBody').innerHTML = manFallbackBody(cmd, url);
+    return;
+  }
+  try {
+    const html = await fetchManPageHtml(url);
+    // If the modal was closed/replaced meanwhile, bail out.
+    const body = _extModalState.node && _extModalState.node.querySelector('#extModalBody');
+    if(!body || !body.querySelector('.ext-spinner')) return;
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    let text = (doc.body ? doc.body.innerText : '').trim();
+    if(!text) throw new Error('empty');
+    text = text.replace(/top\s*\n/g, '').slice(0, 60000);
+    body.innerHTML = `<pre class="ext-modal-pre">${escapeHtml(text)}</pre>
+      <div class="ext-modal-footnote"><a href="${escapeAttrHtml(url)}" target="_blank" rel="noopener">${EXTLINK_SVG} Source: man7.org</a></div>`;
+  } catch(e) {
+    _man7FetchBlocked = true; // never silently retry this session
+    const body = _extModalState.node && _extModalState.node.querySelector('#extModalBody');
+    if(body) body.innerHTML = manFallbackBody(cmd, url);
+  }
+}
+// --- explainshell.com: allows framing today; iframe-first + permanent escape hatch ---
+function openExplainShell(cmd, triggerEl){
+  const url = explainShellUrl(cmd);
+  openExtModal(cmd, true, `
+    <div class="ext-modal-frame-wrap">
+      <div class="ext-modal-loading ext-frame-loading"><span class="ext-spinner"></span> Loading explanation…</div>
+      <iframe class="ext-modal-frame" src="${escapeAttrHtml(url)}"
+        title="explainshell.com breakdown of the command"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+        referrerpolicy="no-referrer"></iframe>
+    </div>
+    <div class="ext-modal-altbar">
+      <span class="ext-modal-hint">Not loading? Some browsers/extensions block third-party frames.</span>
+      <a class="toggle-complete" href="${escapeAttrHtml(url)}" target="_blank" rel="noopener">${EXTLINK_SVG} Open Interactive Explanation in New Tab ↗</a>
+    </div>
+  `, triggerEl);
+  const wrap = _extModalState.node;
+  const frame = wrap.querySelector('.ext-modal-frame');
+  const loading = wrap.querySelector('.ext-frame-loading');
+  frame.addEventListener('load', () => { if(loading) loading.style.display = 'none'; });
 }
 
 // ===== DELEGATED ACTIONS (central, replaces inline onclick/escapeAttr) =====
