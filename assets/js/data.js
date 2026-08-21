@@ -1476,7 +1476,102 @@ const DATA = {
     {q:"Why is `sudo visudo` safer than `vim /etc/sudoers` and how to check syntax without editing?", a:"`visudo` locks and syntax-checks before saving — a typo with plain `vim` can lock all sudo. Check without editing via `sudo visudo -c` and view filtered rules with `grep -vE '^[[:space:]]*(#|$)' /etc/sudoers`."},
     {q:"What does `chmod 644` mean and how does `umask 022` affect new files?", a:"`644` = `rw-r--r--` (owner rw, group r, other r). `umask 022` subtracts `w` for group/other, so `touch` creates `644` and `mkdir` `755`. Never `777` on web roots."},
     {q:"How does `grep -F` differ from `grep -E` and which is faster?", a:"`grep -F` treats pattern as fixed string (no regex) and is ~10× faster; use `-F` for literals like `error.log`. `grep -E` enables extended regex (`^`, `+`, `|`)."}
-]
+],
+  content: {
+    sections: [
+      {
+        "id": "bash-scripting",
+        "title": "Bash Scripting Deep Dive",
+        "icon": "terminal",
+        "category": "development",
+        "preview": "Functions, arrays, loops, and error handling for writing robust bash scripts."
+      },
+      {
+        "id": "disk-storage",
+        "title": "Disk Storage Management",
+        "icon": "hard-drive",
+        "category": "storage",
+        "preview": "Understanding disk layout, management, and storage operations in Linux."
+      },
+      {
+        "id": "firewall",
+        "title": "Firewall Deep Dive",
+        "icon": "shield",
+        "category": "security",
+        "preview": "Comprehensive guide to Linux firewall configuration and management."
+      },
+      {
+        "id": "important-files",
+        "title": "Important Files to Generate",
+        "icon": "file",
+        "category": "configuration",
+        "preview": "Key files that should be generated and maintained in Linux systems."
+      },
+      {
+        "id": "linux-boot",
+        "title": "Linux Boot Process",
+        "icon": "boot",
+        "category": "system",
+        "preview": "Understanding how Linux boots from BIOS/UEFI to running system."
+      },
+      {
+        "id": "failure-scenarios",
+        "title": "Linux Failure Scenarios",
+        "icon": "alert-triangle",
+        "category": "troubleshooting",
+        "preview": "Common failure scenarios and how to resolve them in Linux."
+      },
+      {
+        "id": "linux-rules",
+        "title": "Linux Rules Reference",
+        "icon": "gavel",
+        "category": "reference",
+        "preview": "Reference guide to Linux rules and best practices."
+      },
+      {
+        "id": "log-management",
+        "title": "Log Management",
+        "icon": "message-circle",
+        "category": "monitoring",
+        "preview": "Managing and troubleshooting Linux system logs."
+      },
+      {
+        "id": "network-troubleshooting",
+        "title": "Networking Troubleshooting Toolkit",
+        "icon": "globe",
+        "category": "networking",
+        "preview": "Tools and techniques for troubleshooting network issues in Linux."
+      },
+      {
+        "id": "data-engineers",
+        "title": "Linux for Data Engineers",
+        "icon": "trending-up",
+        "category": "data",
+        "preview": "Comprehensive Linux content for data engineering workflows."
+      },
+      {
+        "id": "process-monitoring",
+        "title": "Process Performance Monitoring",
+        "icon": "cpu",
+        "category": "performance",
+        "preview": "Monitoring and optimizing process performance in Linux."
+      },
+      {
+        "id": "ssh-guide",
+        "title": "SSH Remote Access Guide",
+        "icon": "network",
+        "category": "networking",
+        "preview": "Guide to SSH configuration and remote access in Linux."
+      },
+      {
+        "id": "vim-nano",
+        "title": "Vim & Nano Complete Guide",
+        "icon": "edit",
+        "category": "editor",
+        "preview": "Comprehensive guide to vim and nano text editors."
+      }
+    ]
+  }
 };
 
 // ===== ICONS =====

@@ -12,7 +12,8 @@ const lite = {
   links: DATA.links,
   helpfulLinks: DATA.helpfulLinks,
   course: DATA.course,
-  topicIndex: DATA.topicIndex
+  topicIndex: DATA.topicIndex,
+  content: DATA.content
 };
 // Build lite file by stringifying then fixing ICONS manually from original source
 let iconsSrc = src.slice(src.indexOf('const ICONS'));
