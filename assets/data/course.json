@@ -1,0 +1,147 @@
+{
+  "modules": [
+    {
+      "number": 1,
+      "title": "The Basics",
+      "concepts": [
+        "What is Linux?",
+        "Open Source",
+        "Distributions (Ubuntu, CentOS, Debian)"
+      ],
+      "skills": [
+        "Navigating the terminal (cd, ls, pwd)"
+      ],
+      "project": "Install Linux (via WSL or VirtualBox) and navigate the file system without a GUI."
+    },
+    {
+      "number": 2,
+      "title": "File Management & Text Editing",
+      "concepts": [
+        "The Linux File Hierarchy Standard (/etc, /var, /home, /tmp)"
+      ],
+      "skills": [
+        "Creating/moving files (touch, mkdir, cp, mv, rm)",
+        "Using nano and vim",
+        "Reading files (cat, less, tail)"
+      ],
+      "project": "Create a directory structure for a fake project and write a README file using vim."
+    },
+    {
+      "number": 3,
+      "title": "Searching & Filtering",
+      "concepts": [
+        "Regular Expressions (Regex)",
+        "Piping (|)",
+        "Redirection (>, >>)"
+      ],
+      "skills": [
+        "grep",
+        "find",
+        "awk",
+        "sed"
+      ],
+      "project": "Search the /var/log/syslog for 'error' and save those specific lines to a new file called errors.log."
+    },
+    {
+      "number": 4,
+      "title": "User & Permission Management",
+      "concepts": [
+        "Users, Groups",
+        "Root vs. Standard User",
+        "File Permissions (Read/Write/Execute)"
+      ],
+      "skills": [
+        "sudo, su",
+        "useradd, usermod",
+        "chmod (numeric and symbolic)",
+        "chown"
+      ],
+      "project": "Create a new user, add them to a group, and give that group read-only access to a specific directory."
+    },
+    {
+      "number": 5,
+      "title": "Software Installation & Processes",
+      "concepts": [
+        "Package Managers",
+        "Daemons/Services",
+        "PID"
+      ],
+      "skills": [
+        "apt/yum/dnf",
+        "systemctl (start, stop, enable, status)",
+        "ps, top, kill"
+      ],
+      "project": "Install the Nginx web server, start the service, and ensure it restarts automatically on boot."
+    },
+    {
+      "number": 6,
+      "title": "Networking & SSH",
+      "concepts": [
+        "IP Addressing",
+        "Ports",
+        "SSH Keys"
+      ],
+      "skills": [
+        "ip, ping, curl",
+        "netstat / ss",
+        "ssh-keygen, ssh-copy-id"
+      ],
+      "project": "Generate an SSH key pair and set up passwordless SSH login between two Linux machines."
+    },
+    {
+      "number": 7,
+      "title": "Shell Scripting Basics",
+      "concepts": [
+        "Automation",
+        "Variables",
+        "Conditionals",
+        "Loops"
+      ],
+      "skills": [
+        "Writing .sh files",
+        "if statements",
+        "for loops",
+        "cron for scheduling"
+      ],
+      "project": "Write a bash script that checks if Nginx is running. If not, start it and log the event. Schedule via cron every 5 minutes."
+    }
+  ],
+  "days": [
+    {
+      "id": "day1",
+      "title": "Get Started with RHEL & Files",
+      "topics": [
+        "Learning Objectives",
+        "Understanding Linux and Its Origins",
+        "Linux Components",
+        "Virtual Machines & Network Setup",
+        "Minimum Requirements for RHEL 9",
+        "Access the Command Line"
+      ],
+      "content": []
+    },
+    {
+      "id": "day2",
+      "title": "Get Help, Text Files & Users",
+      "topics": [
+        "Learning Objectives",
+        "Get Help in Red Hat Enterprise Linux",
+        "Create, View, and Edit Text Files",
+        "Word Count & Pipelines Deep Dive",
+        "Manage Local Users and Groups",
+        "Key Takeaways"
+      ],
+      "content": []
+    },
+    {
+      "id": "day3",
+      "title": "Coming Soon — Stay Tuned",
+      "topics": [
+        "Permissions & Processes",
+        "SSH, Logs & Networking",
+        "Archiving & Packages"
+      ],
+      "content": []
+    }
+  ]
+}

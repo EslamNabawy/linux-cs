@@ -1,12 +1,28 @@
 // ===== STATE =====
-const STORAGE_KEY = 'linuxcs_state_v1';
+const STORAGE_KEY = 'linuxcs_state_v2';
+const LEGACY_KEY = 'linuxcs_state_v1';
 
 function loadState() {
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    let saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (saved && typeof saved === 'object') return saved;
+    // migration from v1
+    const legacy = JSON.parse(localStorage.getItem(LEGACY_KEY));
+    if (legacy && typeof legacy === 'object') {
+      // prune stale keys that no longer exist in DATA schema
+      try { localStorage.removeItem(LEGACY_KEY); } catch(_e) {}
+      return legacy;
+    }
   } catch (e) { /* ignore */ }
   return {};
+}
+
+function pruneCollapsed(obj, validKeys) {
+  if (!obj || typeof obj !== 'object') return {};
+  const out = {};
+  const set = new Set(validKeys);
+  for (const k of Object.keys(obj)) if (set.has(k)) out[k] = obj[k];
+  return out;
 }
 
 const savedState = loadState();
@@ -68,6 +84,80 @@ function saveState() {
     quizScores: state.quizScores
   };
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(persist)); } catch (e) { /* ignore */ }
+}
+
+// ===== LAZY DATA LOADER (T4: 289KB → 60KB lite + on-demand 225KB) =====
+let _ntiCache = null;
+let _ntiFetch = null;
+async function loadScriptFallback(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = () => resolve();
+    s.onerror = () => reject();
+    document.head.appendChild(s);
+  });
+}
+async function getNti() {
+  if (_ntiCache) return _ntiCache;
+  if (typeof DATA !== 'undefined' && DATA.nti && DATA.nti.days) { _ntiCache = DATA.nti; return _ntiCache; }
+  if (_ntiFetch) return _ntiFetch;
+  _ntiFetch = (async () => {
+    try {
+      const r = await fetch('assets/data/nti.json?v=23');
+      if (r.ok) {
+        const j = await r.json();
+        _ntiCache = j;
+        if (typeof DATA !== 'undefined') {
+          DATA.nti = j;
+          if (j.notes) DATA.notes = j.notes;
+          if (j.flashcards && !DATA.flashcards) DATA.flashcards = j.flashcards;
+          if (j.labs && !DATA.labs) DATA.labs = j.labs;
+        }
+        return _ntiCache;
+      }
+    } catch(_e) {}
+    // Fallback for file:// or fetch fail: load full data.js
+    try {
+      await loadScriptFallback('assets/js/data.js?v=23');
+      if (typeof DATA !== 'undefined' && DATA.nti) { _ntiCache = DATA.nti; return _ntiCache; }
+    } catch(_e) {}
+    return null;
+  })();
+  return _ntiFetch;
+}
+async function getNotesData() {
+  if (typeof DATA !== 'undefined' && DATA.notes && Object.keys(DATA.notes).length) return DATA.notes;
+  try {
+    const r = await fetch('assets/data/nti.json?v=23');
+    if (r.ok) {
+      const j = await r.json();
+      if (j.notes) {
+        if (typeof DATA !== 'undefined') DATA.notes = j.notes;
+        return j.notes;
+      }
+    }
+  } catch(_e) {}
+  try {
+    const idx = await fetch('assets/data/index.json?v=23').then(r=>r.json());
+    const notes = {};
+    await Promise.all((idx.notes||[]).map(async k => {
+      try { const rr = await fetch(`assets/data/notes/${k}.json?v=23`); if(rr.ok) notes[k]=await rr.json(); } catch(_e){}
+    }));
+    if (typeof DATA !== 'undefined') DATA.notes = notes;
+    return notes;
+  } catch(_e) { return (typeof DATA!=='undefined'&&DATA.notes)||{}; }
+}
+async function ensureNtiReady() {
+  const needNti = state.tab === 'course' || state.tab === 'quiz' || !!state.searchTerm.trim();
+  if (!needNti) return;
+  await getNti();
+  // also hydrate flashcard decks if needed via separate file (nti.json already contains them in current build)
+  try {
+    if (_ntiCache && !_ntiCache.flashcards) {
+      const r = await fetch('assets/data/flashcards.json?v=23'); if(r.ok) _ntiCache.flashcards = await r.json();
+    }
+  } catch(_e){}
 }
 
 // ===== SYNTAX HIGHLIGHTING =====
@@ -137,7 +227,7 @@ function renderCheatSheet() {
               <div class="cmd-desc">${highlightMatch(escapeHtml(cmd.description), state.searchTerm)}</div>
               <div class="cmd-example">
                 <code>${highlightMatch(highlightCode(escapeHtml(cmd.example)), state.searchTerm)}</code>
-                <button class="copy-btn" onclick="copyText('${escapeAttr(cmd.example)}', this)" title="Copy" aria-label="Copy code">
+                <button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(cmd.example)}" title="Copy" aria-label="Copy code">
                   ${ICONS.copy}
                 </button>
               </div>
@@ -158,7 +248,7 @@ function renderCheatSheet() {
 
     categoriesHtml += `
       <div class="category ${isCollapsed ? 'collapsed' : ''}" data-cat-id="${cat.id}">
-        <div class="category-header" onclick="toggleCategory('${cat.id}')">
+        <div class="category-header" data-action="toggle-category" data-id="${escapeHtml(cat.id)}" role="button" tabindex="0">
           <div class="category-icon">${ICONS[cat.icon] || ICONS.file}</div>
           <div class="category-title">${cat.title}</div>
           <div class="category-count">${matchCount}</div>
@@ -230,7 +320,7 @@ function renderCommandsBank() {
                 <div class="cmd-desc">${highlightMatch(escapeHtml(cmd.briefDescription), state.searchTerm)}</div>
                 <div class="cmd-example">
                   <code>${highlightMatch(highlightCode(escapeHtml(example)), state.searchTerm)}</code>
-                  <button class="copy-btn" onclick="copyText('${escapeAttr(example)}', this)" title="Copy" aria-label="Copy code">
+                  <button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(example)}" title="Copy" aria-label="Copy code">
                     ${ICONS.copy}
                   </button>
                 </div>
@@ -243,7 +333,7 @@ function renderCommandsBank() {
       const isCollapsed = state.collapsedBank[catName] !== false && !term;
       html += `
         <div class="category ${isCollapsed ? 'collapsed' : ''}" data-cat-id="${catName}">
-          <div class="category-header" onclick="toggleBankCategory('${catName}')">
+          <div class="category-header" data-action="toggle-bank" data-id="${escapeHtml(catName)}" role="button" tabindex="0">
             <div class="category-icon">${ICONS.database}</div>
             <div class="category-title">${catName}</div>
             <div class="category-count">${grouped[catName].length}</div>
@@ -277,7 +367,7 @@ function renderExercises() {
         bodyHtml += `
           <div class="exercise-code">
             <code>${highlightCode(escapeHtml(c))}</code>
-            <button class="copy-btn" onclick="copyText('${escapeAttr(c)}', this)">${ICONS.copy}</button>
+            <button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(c)}">${ICONS.copy}</button>
           </div>
         `;
       });
@@ -292,7 +382,7 @@ function renderExercises() {
             ${step.code.map(c => `
               <div class="exercise-code">
                 <code>${highlightCode(escapeHtml(c))}</code>
-                <button class="copy-btn" onclick="copyText('${escapeAttr(c)}', this)">${ICONS.copy}</button>
+                <button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(c)}">${ICONS.copy}</button>
               </div>
             `).join('')}
           </div>
@@ -304,7 +394,7 @@ function renderExercises() {
       const isDeepDiveExpanded = state.collapsedDeepDives[ex.id] === true;
       bodyHtml += `
         <div class="deep-dive-container ${isDeepDiveExpanded ? 'expanded' : ''}">
-          <div class="deep-dive-header" onclick="toggleDeepDive(${ex.id})">
+          <div class="deep-dive-header" data-action="toggle-deepdive" data-id="${ex.id}" role="button" tabindex="0">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
             <span>Deeper Explanation</span>
           </div>
@@ -317,7 +407,7 @@ function renderExercises() {
 
     html += `
       <div class="exercise-card ${isCollapsed ? 'collapsed' : ''}">
-        <div class="exercise-header" onclick="toggleExercise(${ex.id})">
+        <div class="exercise-header" data-action="toggle-exercise" data-id="${ex.id}" role="button" tabindex="0">
           <div class="exercise-icon">${ICONS.clipboard}</div>
           <div class="exercise-title">${ex.id}. ${ex.title}</div>
           <div class="chevron">${ICONS.chevron}</div>
@@ -480,7 +570,7 @@ function renderRH124Body() {
     const isCollapsed = state.collapsedRH124[sec.id] !== false;
     html += `
       <div class="rh124-card ${isCollapsed ? 'collapsed' : ''}">
-        <div class="rh124-header" onclick="toggleRH124('${sec.id}')">
+        <div class="rh124-header" data-action="toggle-rh124" data-id="${escapeHtml(sec.id)}" role="button" tabindex="0">
           <div class="rh124-icon">${ICONS[sec.icon] || ICONS.file}</div>
           <div class="rh124-title">${sec.title}</div>
           <div class="chevron">${ICONS.chevron}</div>
@@ -547,8 +637,8 @@ function renderLinksBody() {
       <div class="link-card">
         <p>${soft.definition}</p>
         <ul>${soft.properties.map(p => `<li>${p}</li>`).join('')}</ul>
-        <div class="link-code"><code>${highlightCode(escapeHtml(soft.syntax))}</code><button class="copy-btn" onclick="copyText('${escapeAttr(soft.syntax)}', this)">${ICONS.copy}</button></div>
-        <div class="link-code"><code>${highlightCode(escapeHtml(soft.example))}</code><button class="copy-btn" onclick="copyText('${escapeAttr(soft.example)}', this)">${ICONS.copy}</button></div>
+        <div class="link-code"><code>${highlightCode(escapeHtml(soft.syntax))}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(soft.syntax)}">${ICONS.copy}</button></div>
+        <div class="link-code"><code>${highlightCode(escapeHtml(soft.example))}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(soft.example)}">${ICONS.copy}</button></div>
       </div>
     </div>
   `;
@@ -559,8 +649,8 @@ function renderLinksBody() {
       <div class="link-card">
         <p>${hard.definition}</p>
         <ul>${hard.properties.map(p => `<li>${p}</li>`).join('')}</ul>
-        <div class="link-code"><code>${highlightCode(escapeHtml(hard.syntax))}</code><button class="copy-btn" onclick="copyText('${escapeAttr(hard.syntax)}', this)">${ICONS.copy}</button></div>
-        <div class="link-code"><code>${highlightCode(escapeHtml(hard.example))}</code><button class="copy-btn" onclick="copyText('${escapeAttr(hard.example)}', this)">${ICONS.copy}</button></div>
+        <div class="link-code"><code>${highlightCode(escapeHtml(hard.syntax))}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(hard.syntax)}">${ICONS.copy}</button></div>
+        <div class="link-code"><code>${highlightCode(escapeHtml(hard.example))}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(hard.example)}">${ICONS.copy}</button></div>
       </div>
     </div>
   `;
@@ -688,7 +778,7 @@ function renderBlock(b) {
     case 'code': {
       const code = b.code;
       const lang = b.lang || 'bash';
-      return `<div class="cmd-example"><span class="code-label" aria-hidden="true">${escapeHtml(lang)}</span><code>${highlightCode(escapeHtml(code))}</code><button class="copy-btn" onclick="copyText('${escapeAttr(code)}', this)" title="Copy" aria-label="Copy code">${ICONS.copy}</button></div>`;
+      return `<div class="cmd-example"><span class="code-label" aria-hidden="true">${escapeHtml(lang)}</span><code>${highlightCode(escapeHtml(code))}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(code)}" title="Copy" aria-label="Copy code">${ICONS.copy}</button></div>`;
     }
     case 'callout': {
       const kind = b.kind || 'info';
@@ -721,14 +811,14 @@ function renderNotesBody(authorKey) {
     <div class="note-miniheader">
       <div class="mini-avatar">${note.avatar}</div>
       <div class="mini-name">${note.author}</div>
-      <select onchange="if(this.value) goToNoteSection('${authorKey}', this.value)">
+      <select data-action="jump-note" data-author="${escapeHtml(authorKey)}">
         <option value="">Jump to section…</option>
         ${note.sections.map(s => `<option value="${s.id}">${escapeHtml(s.title)}</option>`).join('')}
       </select>
     </div>`;
   html += `<div class="note-layout"><aside class="note-toc">`;
   note.sections.forEach(s => {
-    html += `<a href="#${secId(s.id)}" onclick="event.preventDefault(); goToNoteSection('${authorKey}','${s.id}')">${escapeHtml(s.title)}</a>`;
+    html += `<a href="#${secId(s.id)}" data-action="jump-note-link" data-author="${escapeHtml(authorKey)}" data-sec="${escapeHtml(s.id)}">${escapeHtml(s.title)}</a>`;
   });
   html += `</aside><div class="note-content">`;
   note.sections.forEach(s => {
@@ -758,10 +848,10 @@ function renderLabBody() {
     const done = state.completedLab[task.id];
     html += `
       <div class="task-card ${done ? 'done' : ''}" id="task-${task.id}">
-        <div class="task-header"><span class="source-badge">${task.tag}</span><span class="task-title">${task.title}</span></div>
-        <p class="task-objective">${task.objective}</p>
+        <div class="task-header"><span class="source-badge">${escapeHtml(task.tag)}</span><span class="task-title">${escapeHtml(task.title)}</span></div>
+        <p class="task-objective">${escapeHtml(task.objective)}</p>
         <ol class="task-steps">${task.steps.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ol>
-        <label class="task-checkbox"><input type="checkbox" ${done ? 'checked' : ''} onchange="toggleLabTask('${task.id}', this)"> Mark this task complete</label>
+        <label class="task-checkbox"><input type="checkbox" data-action="toggle-lab-task" data-id="${escapeHtml(task.id)}" ${done ? 'checked' : ''}> Mark this task complete</label>
       </div>`;
   });
   return html;
@@ -775,7 +865,7 @@ function renderTopicIndex() {
   html += `<div class="topic-cloud">`;
   DATA.topicIndex.forEach((t, i) => {
     const size = t.links.length >= 4 ? 'lg' : (t.links.length <= 1 ? 'sm' : '');
-    html += `<button class="topic-pill" data-size="${size}" onclick="toggleTopicPopover(${i}, this)">${escapeHtml(t.title)}</button>`;
+    html += `<button class="topic-pill" data-size="${size}" data-action="toggle-topic" data-index="${i}">${escapeHtml(t.title)}</button>`;
   });
   html += `</div><div id="topicPopover"></div>`;
   return html;
@@ -794,7 +884,7 @@ function toggleTopicPopover(i, btn) {
   btn.parentElement.querySelectorAll('.topic-pill').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
   box.dataset.open = String(i);
-  box.innerHTML = `<div class="topic-popover"><h4>${escapeHtml(t.title)}</h4><div class="topic-desc" style="font-size:12.5px;color:var(--text-dim);margin-bottom:8px">${escapeHtml(t.desc)}</div><div class="topic-links">${t.links.map(l => `<button class="topic-link" onclick="goToView('${l.view}')">${escapeHtml(l.label)}</button>`).join('')}</div></div>`;
+  box.innerHTML = `<div class="topic-popover"><h4>${escapeHtml(t.title)}</h4><div class="topic-desc" style="font-size:12.5px;color:var(--text-dim);margin-bottom:8px">${escapeHtml(t.desc)}</div><div class="topic-links">${t.links.map(l => `<button class="topic-link" data-action="go-view" data-view="${escapeHtml(l.view)}">${escapeHtml(l.label)}</button>`).join('')}</div></div>`;
 }
 
 // ===== TOGGLES & NAV HELPERS =====
@@ -859,6 +949,67 @@ const VIEW_MAP = {
   'quiz': { tab: 'quiz', view: 'quiz' }
 };
 
+// ===== HASH ROUTER (GitHub Pages deep-link support) =====
+function buildHash(tab, view) {
+  // normalize: #tab/view  (e.g. #course/day1-content)
+  const t = encodeURIComponent(tab || 'general');
+  const v = encodeURIComponent(view || 'cheatsheet');
+  return `#${t}/${v}`;
+}
+function parseHash() {
+  const raw = (location.hash || '').replace(/^#\/?/, '');
+  if (!raw) return null;
+  const hashPart = raw.split('?')[0];
+  const slash = hashPart.indexOf('/');
+  if (slash === -1) {
+    const tab = decodeURIComponent(hashPart);
+    if (TABS.find(x => x.id === tab)) return { tab, view: tabDefaultView(tab) };
+    return null;
+  }
+  const tab = decodeURIComponent(hashPart.slice(0, slash));
+  const viewRaw = hashPart.slice(slash + 1);
+  const view = decodeURIComponent(viewRaw.split('#')[0].split('?')[0]);
+  if (!tab || !view) return null;
+  // validate tab/view exists
+  const tabObj = TABS.find(x => x.id === tab);
+  const validView = (tab === 'course' && (COURSE_NAV.some(g => g.id === view || (g.sub && g.sub.some(s => s.id === view))))) ||
+                    (tabObj && tabObj.views.some(v => v.id === view)) ||
+                    Object.values(COURSE_RENDER).length && view in COURSE_RENDER;
+  if (!validView) return null;
+  return { tab, view };
+}
+let _ignoreHash = false;
+function syncHash() {
+  const expected = buildHash(state.tab, state.view);
+  if (location.hash === expected) return;
+  _ignoreHash = true;
+  location.hash = expected;
+  setTimeout(() => { _ignoreHash = false; }, 50);
+}
+function titleForView(tab, view) {
+  const map = {
+    'cheatsheet': 'Cheat Sheet',
+    'topicindex': 'Topic Index',
+    'exercises': 'Practical Exercises',
+    'roadmap7': 'Course Roadmap',
+    'roadmap': 'NTI Roadmap',
+    'day1-content': 'Day 1 — Content',
+    'day1-notes-rahma': "Rahma's Notes",
+    'day1-notes-michael': "Michael's Notes",
+    'day1-notes-hager': "Hager's Notes",
+    'day1-lab': 'Lab 1',
+    'day2-content': 'Day 2 — Content',
+    'day2-notes-sagda': "Sagda's Notes",
+    'day2-notes-tarek': "Tarek's Notes",
+    'day2-lab': 'Lab 2',
+    'day3-content': 'Day 3 — Coming Soon',
+    'quiz': 'Flashcards & Quiz',
+    'links': 'Helpful Links'
+  };
+  const label = map[view] || view;
+  return `${label} — EslamOs`;
+}
+
 // NTI Course sub-navigation: each day splits into Content / Notes / Lab sub-pages.
 // Fully replaced from NTI Course Content Resources (single source of truth)
 const COURSE_NAV = [
@@ -900,11 +1051,10 @@ function breadcrumbs(items) {
   const html = items.map((it, idx) => {
     const isLast = idx === items.length - 1;
     if (isLast || (!it.view && !it.tab)) return `<span class="crumb current" aria-current="page">${escapeHtml(it.label)}</span>`;
-    let onclick = '';
-    if (it.tab && it.view) onclick = `setView('${it.tab}','${it.view}')`;
-    else if (it.view) onclick = `goToView('${it.view}')`;
-    else if (it.tab) onclick = `switchTab('${it.tab}')`;
-    return `<button class="crumb link" onclick="${onclick}">${escapeHtml(it.label)}</button>`;
+    if (it.tab && it.view) return `<button class="crumb link" data-action="breadcrumb" data-tab="${escapeHtml(it.tab)}" data-view="${escapeHtml(it.view)}">${escapeHtml(it.label)}</button>`;
+    if (it.view) return `<button class="crumb link" data-action="go-view" data-view="${escapeHtml(it.view)}">${escapeHtml(it.label)}</button>`;
+    if (it.tab) return `<button class="crumb link" data-action="switch-tab" data-tab="${escapeHtml(it.tab)}">${escapeHtml(it.label)}</button>`;
+    return `<span class="crumb current" aria-current="page">${escapeHtml(it.label)}</span>`;
   }).join('<span class="crumb-sep" aria-hidden="true">›</span>');
   return `<nav class="breadcrumbs" aria-label="Breadcrumb">${html}</nav>`;
 }
@@ -936,15 +1086,15 @@ function renderNTICanonical(dayId){
       html += `<section class="note-section"><h2>${escapeHtml(sec.title)}</h2>${body}</section>`;
     });
     html += `</div></div></div>`;
-    html += `<div class="day-nav-foot" style="display:flex;gap:10px;flex-wrap:wrap"><button class="toggle-complete" onclick="setView('course','day2-content')">Review Day 2</button><button class="chip" onclick="setView('course','roadmap')">Back to Roadmap</button></div>`;
+    html += `<div class="day-nav-foot" style="display:flex;gap:10px;flex-wrap:wrap"><button class="toggle-complete" data-action="set-view" data-tab="course" data-view="day2-content">Review Day 2</button><button class="chip" data-action="set-view" data-tab="course" data-view="roadmap">Back to Roadmap</button></div>`;
     return html;
   }
   // For day1/day2: render with TOC similar to notes
   const secId = (s) => `nti-sec-${dayId}-${s}`;
   html += `<div class="note-page">`;
-  html += `<div class="note-miniheader"><div class="mini-avatar">${dayId==='day1'?'1':'2'}</div><div class="mini-name">${escapeHtml(day.title)}</div><select onchange="if(this.value) document.getElementById('nti-sec-${dayId}-'+this.value)?.scrollIntoView({behavior:'smooth', block:'start'})"><option value="">Jump to section…</option>${day.sections.map(s=>`<option value="${s.id}">${escapeHtml(s.title)}</option>`).join('')}</select></div>`;
+  html += `<div class="note-miniheader"><div class="mini-avatar">${dayId==='day1'?'1':'2'}</div><div class="mini-name">${escapeHtml(day.title)}</div><select data-action="jump-nti" data-day="${escapeHtml(dayId)}"><option value="">Jump to section…</option>${day.sections.map(s=>`<option value="${s.id}">${escapeHtml(s.title)}</option>`).join('')}</select></div>`;
   html += `<div class="note-layout"><aside class="note-toc">`;
-  day.sections.forEach(s=>{ html += `<a href="#${secId(s.id)}" onclick="event.preventDefault(); document.getElementById('${secId(s.id)}')?.scrollIntoView({behavior:'smooth', block:'start'})">${escapeHtml(s.title)}</a>`; });
+  day.sections.forEach(s=>{ html += `<a href="#${secId(s.id)}" data-action="jump-note-link" data-author="${escapeHtml(dayId)}" data-sec="${escapeHtml(s.id)}">${escapeHtml(s.title)}</a>`; });
   html += `</aside><div class="note-content">`;
   day.sections.forEach(s=>{
     const body = s.blocks.map(renderBlock).join('');
@@ -953,9 +1103,9 @@ function renderNTICanonical(dayId){
   html += `</div></div></div>`;
   // Cross-links
   if(dayId==='day1'){
-    html += `<div class="day-nav-foot" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px"><button class="toggle-complete" onclick="setView('course','day1-lab')">Go to Lab 1 →</button><button class="chip" onclick="setView('course','day2-content')">Next: Day 2 →</button></div>`;
+    html += `<div class="day-nav-foot" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px"><button class="toggle-complete" data-action="set-view" data-tab="course" data-view="day1-lab">Go to Lab 1 →</button><button class="chip" data-action="set-view" data-tab="course" data-view="day2-content">Next: Day 2 →</button></div>`;
   } else if(dayId==='day2'){
-    html += `<div class="day-nav-foot" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px"><button class="toggle-complete" onclick="setView('course','day2-lab')">Go to Lab 2 →</button><button class="chip" onclick="setView('course','day1-content')">← Back to Day 1</button><button class="chip" onclick="setView('course','day3-content')">Day 3 (Coming Soon)</button></div>`;
+    html += `<div class="day-nav-foot" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px"><button class="toggle-complete" data-action="set-view" data-tab="course" data-view="day2-lab">Go to Lab 2 →</button><button class="chip" data-action="set-view" data-tab="course" data-view="day1-content">← Back to Day 1</button><button class="chip" data-action="set-view" data-tab="course" data-view="day3-content">Day 3 (Coming Soon)</button></div>`;
   }
   return html;
 }
@@ -977,9 +1127,9 @@ function renderLabBodyForDay(dayId){
   html += `<div class="lab-progress"><span class="lab-count">${doneCount} / ${total} tasks complete</span><div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div></div>`;
   lab.tasks.forEach(task=>{
     const done = state.completedLab[task.id];
-    html += `<div class="task-card ${done?'done':''}" id="task-${task.id}"><div class="task-header"><span class="source-badge">${escapeHtml(task.tag||'Lab')}</span><span class="task-title">${escapeHtml(task.title)}</span></div><p class="task-objective">${escapeHtml(task.objective||'')}</p><ol class="task-steps">${(task.steps||[]).map(s=>`<li>${escapeHtml(s)}</li>`).join('')}</ol><label class="task-checkbox"><input type="checkbox" ${done?'checked':''} onchange="toggleLabTask('${task.id}', this)"> Mark this task complete</label></div>`;
+    html += `<div class="task-card ${done?'done':''}" id="task-${task.id}"><div class="task-header"><span class="source-badge">${escapeHtml(task.tag||'Lab')}</span><span class="task-title">${escapeHtml(task.title)}</span></div><p class="task-objective">${escapeHtml(task.objective||'')}</p><ol class="task-steps">${(task.steps||[]).map(s=>`<li>${escapeHtml(s)}</li>`).join('')}</ol><label class="task-checkbox"><input type="checkbox" data-action="toggle-lab-task" data-id="${escapeHtml(task.id)}" ${done?'checked':''}> Mark this task complete</label></div>`;
   });
-  html += `<div class="day-nav-foot" style="display:flex;gap:10px;flex-wrap:wrap"><button class="toggle-complete" onclick="setView('course','${dayId}-content')">← Back to Content</button>${dayId==='day1'?`<button class="chip" onclick="setView('course','day2-content')">Next: Day 2 →</button>`:''}${dayId==='day2'?`<button class="chip" onclick="setView('course','day3-content')">Day 3 (Coming Soon)</button>`:''}</div>`;
+  html += `<div class="day-nav-foot" style="display:flex;gap:10px;flex-wrap:wrap"><button class="toggle-complete" data-action="set-view" data-tab="course" data-view="${dayId}-content">← Back to Content</button>${dayId==='day1'?`<button class="chip" data-action="set-view" data-tab="course" data-view="day2-content">Next: Day 2 →</button>`:''}${dayId==='day2'?`<button class="chip" data-action="set-view" data-tab="course" data-view="day3-content">Day 3 (Coming Soon)</button>`:''}</div>`;
   return html;
 }
 
@@ -988,7 +1138,7 @@ function goToView(view) {
   setView(m.tab, m.view);
 }
 
-function setView(tab, view) {
+async function setView(tab, view) {
   state.tab = tab;
   state.view = view;
   state.searchTerm = '';
@@ -1003,7 +1153,9 @@ function setView(tab, view) {
   });
   scrollActiveTabIntoView();
   renderSubNav();
-  render(); saveState(); closeSidebar();
+  await render(); saveState(); closeSidebar();
+  try { syncHash(); } catch(_e) {}
+  try { document.title = titleForView(tab, view); } catch(_e) {}
   // Move focus to content for screen readers
   const contentEl = document.getElementById('content');
   if (contentEl) contentEl.focus({preventScroll:true});
@@ -1034,19 +1186,19 @@ function renderSubNav() {
     COURSE_NAV.forEach(group => {
       if (!group.sub) {
         const active = group.id === state.view;
-        html += `<button class="subnav-item ${active ? 'active' : ''}" data-view="${group.id}" onclick="setView('course','${group.id}')" ${active ? 'aria-current="page"' : ''}>${escapeHtml(group.label)}</button>`;
+        html += `<button class="subnav-item ${active ? 'active' : ''}" data-action="set-view" data-tab="course" data-view="${escapeHtml(group.id)}" ${active ? 'aria-current="page"' : ''}>${escapeHtml(group.label)}</button>`;
         return;
       }
       html += `
         <div class="nav-group nav-group-day">
-          <div class="nav-group-header" onclick="setView('course','${group.sub[0].id}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ') {event.preventDefault(); setView('course','${group.sub[0].id}')}">
+          <div class="nav-group-header" data-action="set-view" data-tab="course" data-view="${escapeHtml(group.sub[0].id)}" role="button" tabindex="0">
             <span>${escapeHtml(group.label)}</span>
             <svg class="group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
           </div>
           <div class="nav-group-items">
             ${group.sub.map(s => {
               const active = s.id === state.view;
-              return `<button class="subnav-item ${active ? 'active' : ''}" data-view="${s.id}" onclick="setView('course','${s.id}')" ${active ? 'aria-current="page"' : ''}>${escapeHtml(s.label)}</button>`;
+              return `<button class="subnav-item ${active ? 'active' : ''}" data-action="set-view" data-tab="course" data-view="${escapeHtml(s.id)}" ${active ? 'aria-current="page"' : ''}>${escapeHtml(s.label)}</button>`;
             }).join('')}
           </div>
         </div>`;
@@ -1059,7 +1211,7 @@ function renderSubNav() {
   if (!tab) return;
   nav.innerHTML = tab.views.map(v => {
     const active = v.id === state.view;
-    return `<button class="subnav-item ${active ? 'active' : ''}" data-view="${v.id}" onclick="setView('${tab.id}','${v.id}')" ${active ? 'aria-current="page"' : ''}>${escapeHtml(v.label)}</button>`;
+    return `<button class="subnav-item ${active ? 'active' : ''}" data-action="set-view" data-tab="${escapeHtml(tab.id)}" data-view="${escapeHtml(v.id)}" ${active ? 'aria-current="page"' : ''}>${escapeHtml(v.label)}</button>`;
   }).join('');
 }
 
@@ -1099,9 +1251,9 @@ function renderCourse() {
           ${isCompleted ? ICONS.check : `<span style="font-size:11px;font-family:var(--font-mono);color:var(--text-dim);">${mod.number}</span>`}
         </div>
         <div class="module-card">
-          <div class="module-header" onclick="toggleModule(${mod.number})">
+          <div class="module-header" data-action="toggle-module" data-num="${mod.number}" role="button" tabindex="0">
             <span class="module-number">M${mod.number}</span>
-            <span class="module-title">${mod.title}</span>
+            <span class="module-title">${escapeHtml(mod.title)}</span>
             <span class="module-chevron">${ICONS.chevron}</span>
           </div>
           <div class="module-body">
@@ -1115,10 +1267,10 @@ function renderCourse() {
             </div>
             <div class="project-box">
               <h5>Project</h5>
-              <p>${mod.project}</p>
+              <p>${escapeHtml(mod.project)}</p>
             </div>
             <div class="module-actions">
-              <button class="toggle-complete" onclick="toggleComplete(${mod.number})">
+              <button class="toggle-complete" data-action="toggle-complete" data-num="${mod.number}">
                 ${ICONS.check}
                 ${isCompleted ? 'Completed' : 'Mark as Complete'}
               </button>
@@ -1140,7 +1292,7 @@ function renderSearchResults() {
   let html = `
     ${breadcrumbs([{label:'Search', view:'cheatsheet'}, {label:`“${escapeHtml(t)}”`}])}
     <h1 class="view-title">Search results</h1>
-    <p class="view-subtitle">Matches for "${escapeHtml(t)}" across all sections. <button class="topic-link" onclick="document.getElementById('searchInput').value=''; state.searchTerm=''; render()" style="margin-left:8px">Clear search ✕</button></p>
+    <p class="view-subtitle">Matches for "${escapeHtml(t)}" across all sections. <button class="topic-link" data-action="clear-search" style="margin-left:8px">Clear search ✕</button></p>
   `;
 
   const results = [];
@@ -1226,10 +1378,10 @@ function renderSearchResults() {
     const pops = popular.map(p => {
       const c = DATA.commandsBank.find(x => x.command === p);
       if (!c) return '';
-      return `<div class="cmd-row"><div class="cmd-grid"><div class="cmd-name">${escapeHtml(c.command)}</div><div><div class="cmd-desc">${escapeHtml(c.briefDescription)}</div><div class="cmd-example"><code>${highlightCode(escapeHtml(c.command))}</code><button class="copy-btn" onclick="copyText('${escapeAttr(c.command)}', this)">${ICONS.copy}</button></div></div></div></div>`;
+      return `<div class="cmd-row"><div class="cmd-grid"><div class="cmd-name">${escapeHtml(c.command)}</div><div><div class="cmd-desc">${escapeHtml(c.briefDescription)}</div><div class="cmd-example"><code>${highlightCode(escapeHtml(c.command))}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(c.command)}">${ICONS.copy}</button></div></div></div></div>`;
     }).join('');
     const recent = state.recentViews.length
-      ? `<div class="links-section"><h3>Recently viewed</h3><div class="topic-links">${state.recentViews.slice(0, 5).map(v => `<button class="topic-link" onclick="goToView('${v}')">${escapeHtml(v.replace('notes-', ''))}</button>`).join('')}</div></div>`
+      ? `<div class="links-section"><h3>Recently viewed</h3><div class="topic-links">${state.recentViews.slice(0, 5).map(v => `<button class="topic-link" data-action="go-view" data-view="${escapeHtml(v)}">${escapeHtml(v.replace('notes-', ''))}</button>`).join('')}</div></div>`
       : '';
     return html + `<div class="no-results">${ICONS.search}<h3>No matches found</h3><p>Try a different search term or synonym.</p></div><div class="links-section"><h3>Popular commands</h3>${pops}</div>${recent}`;
   }
@@ -1242,7 +1394,7 @@ function renderSearchResults() {
     const shown = items.slice(0, 4);
     const extra = items.slice(4);
     const extraHtml = extra.length
-      ? `<div class="search-group-extra" id="sgex-${escId(sec)}" style="display:none">${extra.map(r => searchRow(r, t)).join('')}</div><button class="topic-link" style="margin-top:8px" onclick="toggleSearchGroup('${escId(sec)}')">See all ${items.length} results</button>`
+      ? `<div class="search-group-extra" id="sgex-${escId(sec)}" style="display:none">${extra.map(r => searchRow(r, t)).join('')}</div><button class="topic-link" style="margin-top:8px" data-action="toggle-search-group" data-sec="${escId(sec)}">See all ${items.length} results</button>`
       : '';
     html += `
       <div class="category">
@@ -1259,7 +1411,7 @@ function renderSearchResults() {
 }
 
 function searchRow(r, t) {
-  return `<div class="cmd-row"><div class="cmd-grid"><div class="cmd-name">${highlightMatch(escapeHtml(r.title), t)}</div><div>${r.desc ? `<div class="cmd-desc">${highlightMatch(escapeHtml(r.desc), t)}</div>` : ''}${r.example ? `<div class="cmd-example"><code>${highlightMatch(highlightCode(escapeHtml(r.example)), t)}</code><button class="copy-btn" onclick="copyText('${escapeAttr(r.example)}', this)" aria-label="Copy code">${ICONS.copy}</button></div>` : ''}</div></div><span class="source-badge search-badge">${escapeHtml(r.section)}</span></div>`;
+  return `<div class="cmd-row"><div class="cmd-grid"><div class="cmd-name">${highlightMatch(escapeHtml(r.title), t)}</div><div>${r.desc ? `<div class="cmd-desc">${highlightMatch(escapeHtml(r.desc), t)}</div>` : ''}${r.example ? `<div class="cmd-example"><code>${highlightMatch(highlightCode(escapeHtml(r.example)), t)}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(r.example)}" aria-label="Copy code">${ICONS.copy}</button></div>` : ''}</div></div><span class="source-badge search-badge">${escapeHtml(r.section)}</span></div>`;
 }
 
 function escId(s) { return String(s).replace(/[^a-zA-Z0-9_-]/g, '_'); }
@@ -1309,7 +1461,7 @@ function renderQuiz() {
   html += `<div class="links-section"><h3>Flashcards <span class="badge">${total} cards</span></h3><div class="flashcard-grid">`;
   deck.forEach((card, i) => {
     html += `
-      <button class="flashcard" onclick="this.classList.toggle('flipped')" title="Click to flip" aria-label="Flashcard ${escapeHtml(card.front)}: press to reveal" aria-pressed="false" onkeydown="if(event.key==='Enter'||event.key===' ') {event.preventDefault(); this.classList.toggle('flipped'); this.setAttribute('aria-pressed', this.classList.contains('flipped'))}" onClick="this.setAttribute('aria-pressed', this.classList.contains('flipped') ? 'true':'false')">
+      <button class="flashcard" data-action="flip-flashcard" data-index="${i}" title="Click to flip" aria-label="Flashcard ${escapeHtml(card.front)}: press to reveal" aria-pressed="false">
         <div class="flashcard-inner">
           <div class="flashcard-front">
             <span class="flashcard-cat">${escapeHtml(card.category)}</span>
@@ -1330,7 +1482,7 @@ function renderQuiz() {
     <div class="links-section">
       <h3>Multiple Choice Quiz</h3>
       <div class="quiz-box" id="quizBox">
-        <button class="toggle-complete" onclick="startQuiz()">${ICONS.check} Start Quiz</button>
+        <button class="toggle-complete" data-action="start-quiz">${ICONS.check} Start Quiz</button>
       </div>
     </div>
   `;
@@ -1388,7 +1540,7 @@ function quizAccItem(q, i) {
   let body = '';
   if (open) {
     if (!a) {
-      body = `<div class="quiz-options">${q.options.map(opt => `<button class="quiz-option" onclick="answerQuiz(${i}, '${escapeAttr(opt)}', this)">${escapeHtml(opt)}</button>`).join('')}</div>`;
+      body = `<div class="quiz-options">${q.options.map(opt => `<button class="quiz-option" data-action="answer-quiz" data-i="${i}" data-opt="${escapeHtml(opt)}">${escapeHtml(opt)}</button>`).join('')}</div>`;
     } else {
       body = `<div class="quiz-feedback-inline">
         <span class="quiz-answered ${a.correct ? 'correct' : 'wrong'}">${a.correct ? ICONS.check + ' Correct' : ICONS.alert + ' Incorrect'}</span>
@@ -1399,7 +1551,7 @@ function quizAccItem(q, i) {
   const status = a ? (a.correct ? '✓' : '✗') : (open ? '' : ICONS.chevron);
   return `
     <div class="quiz-acc-item ${open ? 'open' : ''} ${a ? (a.correct ? 'done-correct' : 'done-wrong') : ''}">
-      <div class="quiz-acc-header" onclick="toggleQuizAcc(${i})">
+      <div class="quiz-acc-header" data-action="toggle-quiz-acc" data-i="${i}" role="button" tabindex="0">
         <span class="quiz-acc-q">Q${i + 1}. What does <code>${escapeHtml(q.command)}</code> do?</span>
         <span class="quiz-acc-status">${status}</span>
       </div>
@@ -1424,8 +1576,8 @@ function renderQuizQuestions() {
       <div class="no-results">
         <h3>Quiz complete!</h3>
         <p>You scored <strong>${quizState.score} / ${total}</strong>.</p>
-        ${missed.length ? `<button class="toggle-complete" onclick="startQuiz(_lastMissed)">${ICONS.check} Retry ${missed.length} missed</button>` : ''}
-        <button class="toggle-complete" onclick="startQuiz()">${ICONS.check} Try Again</button>
+        ${missed.length ? `<button class="toggle-complete" data-action="retry-missed">${ICONS.check} Retry ${missed.length} missed</button>` : ''}
+        <button class="toggle-complete" data-action="start-quiz">${ICONS.check} Try Again</button>
       </div>` : ''}
   `;
 }
@@ -1447,6 +1599,7 @@ function escapeAttr(s) {
            .replace(/\n/g, '\\n');
 }
 function escapeAttrHtml(s) { return escapeHtml(s); }
+function escapeCopyAttr(s) { return escapeHtml(s).replace(/\n/g, '&#10;').replace(/\r/g, ''); }
 function stripHtml(s) { return s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(); }
 function getNoteText(blocks) {
   return blocks.map(b => {
@@ -1542,7 +1695,9 @@ function deriveFlags(example, notes, brief) {
   return flags.slice(0, 6);
 }
 
+let _cmdIndex = null;
 function buildCommandIndex() {
+  if (_cmdIndex) return _cmdIndex;
   const map = {};
   const add = (cmd) => {
     const key = cmd.command.trim();
@@ -1554,7 +1709,8 @@ function buildCommandIndex() {
   (DATA.categories || []).forEach(cat => cat.commands.forEach(c => add({ command: c.command, category: cat.title, briefDescription: c.description, example: c.example, notes: c.notes || '' })));
   (DATA.commandsBank || []).forEach(c => add({ command: c.command, category: c.category, briefDescription: c.briefDescription, example: c.command, notes: c.notes || '', keywords: c.keywords }));
   Object.values(map).forEach(c => { c.flags = deriveFlags(c.example, c.notes, c.briefDescription); });
-  return Object.values(map);
+  _cmdIndex = Object.values(map);
+  return _cmdIndex;
 }
 
 function getCmds() {
@@ -1571,7 +1727,7 @@ function cmdCard(c) {
     <div class="cmd-card ${catClass}">
       <div class="cmd-card-name">${escapeHtml(c.command)}</div>
       <div class="cmd-card-desc">${escapeHtml(c.briefDescription)}</div>
-      ${c.example ? `<div class="cmd-card-example"><code>${highlightCode(escapeHtml(c.example))}</code><button class="copy-btn" onclick="copyText('${escapeAttr(c.example)}', this)" title="Copy ${escapeAttr(c.command)}" aria-label="Copy ${escapeAttr(c.command)}">${ICONS.copy}</button></div>` : ''}
+      ${c.example ? `<div class="cmd-card-example"><code>${highlightCode(escapeHtml(c.example))}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(c.example)}" title="Copy ${escapeHtml(c.command)}" aria-label="Copy ${escapeHtml(c.command)}">${ICONS.copy}</button></div>` : ''}
       ${c.flags.length ? `<div class="cmd-card-flags">${c.flags.map(f => `<span class="flag-chip">${escapeHtml(f)}</span>`).join('')}</div>` : ''}
       ${c.notes ? `<div class="cmd-card-note">${ICONS.alert}<span>${escapeHtml(c.notes)}</span></div>` : ''}
     </div>`;
@@ -1592,10 +1748,10 @@ function renderMergedCheatSheet() {
     <div class="cmd-filterbar">
       <div class="cmd-search-box">
         <span class="cmd-search-icon">${ICONS.search}</span>
-        <input id="cmdSearch" class="cmd-search-input" type="text" placeholder="Filter commands (name, flag, description)…" value="${escapeAttr(state.cmdTerm)}" aria-label="Filter commands by name or description">
+        <input id="cmdSearch" class="cmd-search-input" type="text" placeholder="Filter commands (name, flag, description)…" value="${escapeHtml(state.cmdTerm)}" aria-label="Filter commands by name or description">
       </div>
       <div class="cmd-chips" role="toolbar" aria-label="Filter by category">
-        ${cats.map(cat => `<button class="chip ${state.cmdCats.includes(cat) ? 'active' : ''}" data-cat="${escapeAttr(cat)}" onclick="toggleCmdCat('${escapeAttr(cat)}')" aria-pressed="${state.cmdCats.includes(cat) ? 'true' : 'false'}">${escapeHtml(cat)}</button>`).join('')}
+        ${cats.map(cat => `<button class="chip ${state.cmdCats.includes(cat) ? 'active' : ''}" data-cat="${escapeHtml(cat)}" data-action="toggle-cmd-cat" data-catval="${escapeHtml(cat)}" aria-pressed="${state.cmdCats.includes(cat) ? 'true' : 'false'}">${escapeHtml(cat)}</button>`).join('')}
       </div>
     </div>
     <div class="cmd-results-meta" role="status" aria-live="polite">${cmds.length} command${cmds.length !== 1 ? 's' : ''} shown${term ? ` for “${escapeHtml(term)}”` : ''}${state.cmdCats.length ? ` · ${state.cmdCats.length} filter${state.cmdCats.length!==1?'s':''}` : ''}</div>
@@ -1616,7 +1772,7 @@ function renderCmdResults() {
   const cmds = getCmds();
   const newHtml = cmds.length
     ? `<div id="cmdResults" class="cmd-grid">${cmds.map(cmdCard).join('')}</div>`
-    : `<div id="cmdResults"><div class="no-results">${ICONS.search}<h3>No commands match</h3><p>Try clearing the filters or search term.</p><button class="toggle-complete" onclick="clearCmdFilters()">Clear filters</button></div></div>`;
+    : `<div id="cmdResults"><div class="no-results">${ICONS.search}<h3>No commands match</h3><p>Try clearing the filters or search term.</p><button class="toggle-complete" data-action="clear-cmd-filters">Clear filters</button></div></div>`;
   wrap.outerHTML = newHtml;
   updateCmdMeta();
 }
@@ -1736,7 +1892,7 @@ function renderNTIRoadmap() {
         <div class="roadmap-day">${escapeHtml(label)}</div>
         <div class="roadmap-title">${escapeHtml(d.title)}</div>
         <ul class="roadmap-list">${d.topics.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>
-        <button class="roadmap-go" onclick="setView('course','${d.id}-content')">Open ${escapeHtml(label)} →</button>
+        <button class="roadmap-go" data-action="set-view" data-tab="course" data-view="${escapeHtml(d.id+'-content')}">Open ${escapeHtml(label)} →</button>
       </div>`;
   });
   html += `</div>`;
@@ -1761,8 +1917,8 @@ function renderDayPlaceholder(view) {
       <p>Day 1 is fully populated. Day ${dayNum} will cover:</p>
       ${topics.length ? `<ul class="topic-list" style="text-align:left;max-width:480px;margin:12px auto">${topics.map(t=>`<li>${escapeHtml(t)}</li>`).join('')}</ul>` : ''}
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px">
-        <button class="toggle-complete" onclick="setView('course','day1-content')">${ICONS.chevron} Go to Day 1</button>
-        <button class="chip" onclick="setView('course','roadmap')">Back to Roadmap</button>
+        <button class="toggle-complete" data-action="set-view" data-tab="course" data-view="day1-content">${ICONS.chevron} Go to Day 1</button>
+        <button class="chip" data-action="set-view" data-tab="course" data-view="roadmap">Back to Roadmap</button>
       </div>
       <p style="font-size:12px;color:var(--text-dim);margin-top:14px">Want this sooner? Check the 7-module Practical Track in General Knowledge.</p>
     </div>`;
@@ -1801,7 +1957,7 @@ function renderCourseDayContent(dayId) {
     if (sec.note) html += `<p class="section-note">${escapeHtml(sec.note)}</p>`;
     html += '</div>';
   });
-  html += `<div class="day-nav-foot"><button class="toggle-complete" onclick="setView('course','${dayId}-lab')">${ICONS.chevron} Go to Lab Task</button></div>`;
+  html += `<div class="day-nav-foot"><button class="toggle-complete" data-action="set-view" data-tab="course" data-view="${dayId}-lab">${ICONS.chevron} Go to Lab Task</button></div>`;
   return html;
 }
 
@@ -1818,7 +1974,7 @@ function renderCourseDayLab(dayId) {
     html += '</ul>';
   }
   html += `<p class="task-objective">Detailed step-by-step lab instructions will be added here.</p></div>`;
-  html += `<div class="day-nav-foot"><button class="toggle-complete" onclick="setView('course','${dayId}-content')">${ICONS.chevron} Back to Content</button></div>`;
+  html += `<div class="day-nav-foot"><button class="toggle-complete" data-action="set-view" data-tab="course" data-view="${dayId}-content">${ICONS.chevron} Back to Content</button></div>`;
   return html;
 }
 
@@ -1834,7 +1990,7 @@ function renderHelpfulLinks() {
   `;
   links.forEach(l => {
     html += `
-      <a class="ext-link-card" href="${escapeAttr(l.url)}" target="_blank" rel="noopener noreferrer">
+      <a class="ext-link-card" href="${escapeHtml(l.url)}" target="_blank" rel="noopener noreferrer">
         <div class="ext-link-icon">${ICONS.link}</div>
         <div class="ext-link-body">
           <div class="ext-link-title">${escapeHtml(l.title)}</div>
@@ -1849,9 +2005,16 @@ function renderHelpfulLinks() {
 }
 
 // ===== RENDER DISPATCHER =====
-function render() {
+async function render() {
   const content = document.getElementById('content');
   let html;
+
+  // Lazy-load NTI data only when needed (saves 225KB for cheat-sheet-only users)
+  const needsNti = state.tab === 'course' || state.tab === 'quiz' || !!state.searchTerm.trim();
+  if (needsNti && (typeof DATA === 'undefined' || !DATA.nti || !DATA.nti.days)) {
+    content.innerHTML = `<div class="no-results"><p>Loading…</p></div>`;
+    try { await ensureNtiReady(); } catch(_e) {}
+  }
 
   // Global search: any non-empty term searches across ALL sections.
   if (state.searchTerm.trim()) {
@@ -1881,10 +2044,10 @@ function render() {
   postRender();
 
   const sw = document.getElementById('searchWrapper');
-  // The merged Cheat Sheet has its own search + filter cluster, so the
-  // universal search bar is hidden there to avoid two stacked search bars.
-  const onMergedCheatSheet = state.tab === 'general' && state.view === 'cheatsheet' && !state.searchTerm.trim();
-  sw.style.display = onMergedCheatSheet ? 'none' : 'block';
+  // Always show global search; merged sheet has its own local filter as secondary
+  if (sw) sw.style.display = 'block';
+  // keep title in sync on every render (e.g. back/forward via hash)
+  try { document.title = titleForView(state.tab, state.view); } catch(_e) {}
 }
 
 function postRender() {
@@ -2047,8 +2210,122 @@ function closeSidebar() {
 document.getElementById('menuBtn').addEventListener('click', openSidebar);
 document.getElementById('overlay').addEventListener('click', closeSidebar);
 
+// ===== DELEGATED ACTIONS (central, replaces inline onclick/escapeAttr) =====
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const a = btn.dataset.action;
+  // copy
+  if (a === 'copy') {
+    const raw = btn.getAttribute('data-copy') || btn.dataset.copy || '';
+    // browser decodes entities in data-*; ensure we get raw text
+    // dataset already decoded from &quot; etc, so use it
+    const text = btn.dataset.copy != null ? btn.dataset.copy : raw;
+    copyText(text, btn);
+    e.preventDefault();
+    return;
+  }
+  if (a === 'toggle-category') { toggleCategory(btn.dataset.id); return; }
+  if (a === 'toggle-bank') { toggleBankCategory(btn.dataset.id); return; }
+  if (a === 'toggle-exercise') { toggleExercise(btn.dataset.id); return; }
+  if (a === 'toggle-deepdive') { toggleDeepDive(btn.dataset.id); return; }
+  if (a === 'toggle-rh124') { toggleRH124(btn.dataset.id); return; }
+  if (a === 'toggle-module') { toggleModule(btn.dataset.num); return; }
+  if (a === 'toggle-complete') { toggleComplete(btn.dataset.num); return; }
+  if (a === 'toggle-cmd-cat') {
+    const cat = btn.dataset.catval || btn.dataset.cat;
+    toggleCmdCat(cat);
+    return;
+  }
+  if (a === 'clear-cmd-filters') { clearCmdFilters(); return; }
+  if (a === 'clear-search') {
+    const gi = document.getElementById('searchInput');
+    if (gi) gi.value = '';
+    state.searchTerm = '';
+    syncHash();
+    render();
+    return;
+  }
+  if (a === 'set-view') { setView(btn.dataset.tab, btn.dataset.view); return; }
+  if (a === 'go-view') { goToView(btn.dataset.view); return; }
+  if (a === 'breadcrumb') { setView(btn.dataset.tab, btn.dataset.view); return; }
+  if (a === 'switch-tab') { switchTab(btn.dataset.tab); return; }
+  if (a === 'toggle-topic') {
+    const idx = parseInt(btn.dataset.index, 10);
+    toggleTopicPopover(idx, btn);
+    e.stopPropagation();
+    return;
+  }
+  if (a === 'toggle-search-group') { toggleSearchGroup(btn.dataset.sec); return; }
+  if (a === 'toggle-quiz-acc') { toggleQuizAcc(parseInt(btn.dataset.i,10)); return; }
+  if (a === 'answer-quiz') {
+    const i = parseInt(btn.dataset.i,10);
+    const opt = btn.dataset.opt;
+    answerQuiz(i, opt, btn);
+    return;
+  }
+  if (a === 'start-quiz') { startQuiz(); return; }
+  if (a === 'retry-missed') { startQuiz(_lastMissed); return; }
+  if (a === 'flip-flashcard') {
+    btn.classList.toggle('flipped');
+    const flipped = btn.classList.contains('flipped');
+    btn.setAttribute('aria-pressed', flipped ? 'true' : 'false');
+    return;
+  }
+});
+
+document.addEventListener('change', (e) => {
+  const el = e.target;
+  if (el.matches('[data-action=\"toggle-lab-task\"]')) {
+    toggleLabTask(el.dataset.id, el);
+  } else if (el.matches('[data-action=\"jump-note\"]')) {
+    const val = el.value;
+    if (val) goToNoteSection(el.dataset.author, val);
+  } else if (el.matches('[data-action=\"jump-nti\"]')) {
+    const val = el.value;
+    if (val) {
+      const target = document.getElementById('nti-sec-' + el.dataset.day + '-' + val);
+      if (target) target.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+  }
+});
+
+// keyboard activation for role=button headers
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const hdr = e.target.closest('[data-action=\"toggle-category\"],[data-action=\"toggle-bank\"],[data-action=\"toggle-exercise\"],[data-action=\"toggle-deepdive\"],[data-action=\"toggle-rh124\"],[data-action=\"toggle-module\"],[data-action=\"toggle-quiz-acc\"]');
+  if (!hdr) return;
+  // avoid double handling for native buttons (they already handle)
+  if (hdr.tagName === 'BUTTON') return;
+  e.preventDefault();
+  hdr.click();
+});
+
+// also support delegated jump-note-link (TOC) without inline
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a[data-action=\"jump-note-link\"]');
+  if (!a) return;
+  e.preventDefault();
+  const author = a.dataset.author;
+  const sec = a.dataset.sec;
+  if (author && sec) {
+    // decide if it's NTI or note
+    if (author === 'day1' || author === 'day2' || author === 'day3') {
+      const target = document.getElementById('nti-sec-' + author + '-' + sec) || document.getElementById('note-sec-' + author + '-' + sec);
+      if (target) target.scrollIntoView({behavior:'smooth', block:'start'});
+    } else {
+      goToNoteSection(author, sec);
+    }
+  }
+});
+
 // ===== INIT =====
 (function init() {
+  // hash routing overrides savedState (shareable links)
+  try {
+    const parsed = parseHash();
+    if (parsed) { state.tab = parsed.tab; state.view = parsed.view; }
+  } catch(_e) {}
   document.documentElement.dataset.theme = state.theme;
   document.getElementById('themeIcon').outerHTML = themeIconSvg(state.theme);
   const tbtn = document.getElementById('themeToggle');
@@ -2056,6 +2333,16 @@ document.getElementById('overlay').addEventListener('click', closeSidebar);
     tbtn.setAttribute('title', THEME_LABELS[state.theme] + ' — click to switch (right-click previous)');
     tbtn.setAttribute('aria-label', 'Theme: ' + THEME_LABELS[state.theme] + ' (click to change, right-click previous)');
   }
+  try { document.title = titleForView(state.tab, state.view); } catch(_e) {}
+  // prune stale collapsed keys from v1 migration / old categories
+  try {
+    if (typeof DATA !== 'undefined') {
+      const validCats = (DATA.categories||[]).map(c=>c.id);
+      state.collapsedCategories = pruneCollapsed(state.collapsedCategories, validCats);
+      const validBanks = Array.from(new Set((DATA.commandsBank||[]).map(c=>c.category)));
+      state.collapsedBank = pruneCollapsed(state.collapsedBank, validBanks);
+    }
+  } catch(_e) {}
   document.querySelectorAll('.tab').forEach(t => {
     const isActive = t.dataset.tab === state.tab;
     t.classList.toggle('active', isActive);
@@ -2064,6 +2351,31 @@ document.getElementById('overlay').addEventListener('click', closeSidebar);
   });
   renderSubNav();
   render();
+  // Do NOT auto-force hash on first load without hash — keep clean URL for fresh visits.
+  // Hash will be set on first user navigation via syncHash() in setView().
+  // Only sync if hash already exists to normalize it.
+  try { if (location.hash) { const p = parseHash(); if (!p || p.tab !== state.tab || p.view !== state.view) syncHash(); } } catch(_e) {}
+  // hashchange listener for back/forward & direct links
+  window.addEventListener('hashchange', async () => {
+    if (_ignoreHash) return;
+    const p = parseHash();
+    if (!p) return;
+    if (p.tab === state.tab && p.view === state.view) return;
+    state.tab = p.tab; state.view = p.view;
+    state.searchTerm = '';
+    const inp = document.getElementById('searchInput');
+    if (inp) inp.value = '';
+    document.querySelectorAll('.tab').forEach(t => {
+      const isActive = t.dataset.tab === state.tab;
+      t.classList.toggle('active', isActive);
+      t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      t.tabIndex = isActive ? 0 : -1;
+    });
+    scrollActiveTabIntoView();
+    renderSubNav();
+    await render(); saveState(); closeSidebar();
+    try { document.title = titleForView(state.tab, state.view); } catch(_e) {}
+  });
   // close popover on outside click
   document.addEventListener('click', (e) => {
     const pop = document.getElementById('topicPopover');

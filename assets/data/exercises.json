@@ -1,0 +1,170 @@
+[
+  {
+    "id": 1,
+    "title": "Difference between less and more",
+    "text": "The <strong>more</strong> command is a legacy pager that allows you to view text files one screen at a time. However, it only allows forward navigation (scrolling down). The <strong>less</strong> command was created as a modern replacement (playfully named 'less is more') that allows both forward and backward navigation, searching, and doesn't need to read the entire file before starting.",
+    "deepDive": [
+      "<strong>Memory Efficiency:</strong> <code>less</code> does not have to read the entire input file before starting, making it significantly faster and more memory-efficient for massive log files.",
+      "<strong>Navigation Shortcuts:</strong> Use <code>Space</code> or <code>Page Down</code> to move forward, <code>b</code> or <code>Page Up</code> to move backward. <code>g</code> jumps to the beginning, <code>G</code> jumps to the end.",
+      "<strong>Searching:</strong> Press <code>/</code> followed by your search term, then <code>n</code> to go to the next match and <code>N</code> to go back to the previous match."
+    ]
+  },
+  {
+    "id": 2,
+    "title": "Difference between cat and more",
+    "text": "The <strong>cat</strong> (concatenate) command reads files sequentially and writes them to standard output. If a file is large, it will scroll past your screen instantly. <strong>more</strong> solves this by pausing the output at the bottom of your terminal screen, allowing you to press <code>Space</code> to continue reading.",
+    "code": [
+      "cat filename",
+      "more filename"
+    ],
+    "deepDive": [
+      "<strong>True Purpose of cat:</strong> <code>cat</code> is actually designed to join (concatenate) multiple files together into a single output stream, e.g., <code>cat file1.txt file2.txt > combined.txt</code>.",
+      "<strong>Piping Output:</strong> You can pipe the output of any command into a pager: <code>dmesg | less</code> allows you to read kernel messages comfortably.",
+      "<strong>Alternatives:</strong> If you only want to view a file, using <code>less</code> is almost always preferred over <code>cat</code> or <code>more</code>."
+    ]
+  },
+  {
+    "id": 3,
+    "title": "Difference between rm and rmdir (using man)",
+    "text": "The differences can be checked using the man pages. <strong>rm</strong> is used to remove files. It can also remove directories and their contents when used with the <strong>-r</strong> (recursive) option. <strong>rmdir</strong> is specifically used to remove empty directories and will fail if the directory contains any files.",
+    "code": [
+      "man rm",
+      "man rmdir",
+      "rm filename",
+      "rm -r directory",
+      "rmdir directory"
+    ],
+    "deepDive": [
+      "<strong>Safety First:</strong> You can use <code>rm -ri</code> to prompt for confirmation before deleting every single file inside a directory, which is highly recommended when running as root.",
+      "<strong>Under the Hood:</strong> <code>rm</code> doesn't actually securely erase data from the disk; it simply removes the link (filename) pointing to the inode (data block). The space is then marked as available by the filesystem.",
+      "<strong>Force Deletion:</strong> The <code>-f</code> (force) flag ignores nonexistent files and never prompts. <code>rm -rf</code> is powerful and dangerous—always verify the path before hitting Enter."
+    ]
+  },
+  {
+    "id": 4,
+    "title": "Create and manipulate directory hierarchy",
+    "text": "Creating a structured directory tree requires understanding absolute paths, relative paths, and the <strong>-p</strong> (parents) flag. The <strong>-p</strong> flag tells <code>mkdir</code> to create all missing parent directories in a path.",
+    "steps": [
+      {
+        "subtitle": "Initial Hierarchy Setup",
+        "text": "Create the directories and file as specified.",
+        "code": [
+          "cd ~",
+          "mkdir -p dir1/dir11 dir1/dir12 docs",
+          "touch dir1/dir12/file1",
+          "touch docs/mycv"
+        ]
+      },
+      {
+        "subtitle": "a. Remove dir11 in one step",
+        "text": "Using <strong>rm dir1/dir11</strong> produces an error because rm does not remove directories without an appropriate option. The problem can be solved using the recursive option:",
+        "code": [
+          "rm -r dir1/dir11"
+        ]
+      },
+      {
+        "subtitle": "b. Remove dir12 using rmdir -p",
+        "text": "Since dir12 contains file1, the file must first be removed. Then run <strong>rmdir -p</strong>. The -p option removes the specified directory and then attempts to remove its parent directory if the parent is empty. Since dir1 is also empty after removing dir12, both dir12 and dir1 are removed.",
+        "code": [
+          "rm dir1/dir12/file1",
+          "rmdir -p dir1/dir12"
+        ]
+      },
+      {
+        "subtitle": "c. Absolute and relative paths for mycv",
+        "text": "Assuming the output of pwd is /home/user:",
+        "code": [
+          "# Absolute path: /home/user/docs/mycv",
+          "# Relative path: docs/mycv"
+        ]
+      }
+    ],
+    "deepDive": [
+      "<strong>Absolute vs Relative:</strong> An absolute path starts from the root directory <code>/</code> (e.g., <code>/home/user/docs</code>). A relative path starts from your current working directory (e.g., <code>docs/mycv</code>).",
+      "<strong>The '.' and '..' directories:</strong> Every directory contains a hidden <code>.</code> (current directory) and <code>..</code> (parent directory). You can use <code>cd ..</code> to go up one level.",
+      "<strong>Why use rmdir -p?</strong> It is safer than <code>rm -r</code> because it strictly checks that directories are empty before removing them, preventing accidental data loss."
+    ]
+  },
+  {
+    "id": 5,
+    "title": "Copy /etc/passwd to home directory",
+    "text": "The <strong>cp</strong> command copies files. The first argument is the source, the second is the destination. Here, we copy the system file <code>/etc/passwd</code> to the home directory (<code>~</code>) and rename it to <code>mypasswd</code> in the same action.",
+    "code": [
+      "cp /etc/passwd ~/mypasswd"
+    ],
+    "deepDive": [
+      "<strong>Understanding /etc/passwd:</strong> This file stores essential user account information (username, UID, GID, home directory, shell). It is world-readable, so you don't need <code>sudo</code> to copy it.",
+      "<strong>Copying Directories:</strong> If you are copying a directory, you must use the recursive flag: <code>cp -r source_dir/ dest_dir/</code>.",
+      "<strong>Preserving Attributes:</strong> Use <code>cp -p</code> to preserve the original file's mode, ownership, and timestamps."
+    ]
+  },
+  {
+    "id": 6,
+    "title": "Rename mypasswd to oldpasswd",
+    "text": "In Linux, there is no dedicated 'rename' command for a single file. The <strong>mv</strong> (move) command handles renaming. When the source and destination are on the same filesystem, <code>mv</code> simply updates the inode pointer with the new filename—it does not physically move data on the disk.",
+    "code": [
+      "mv ~/mypasswd ~/oldpasswd"
+    ],
+    "deepDive": [
+      "<strong>Silent Overwriting:</strong> <code>mv</code> will silently overwrite a file if the destination name already exists. Use <code>mv -i</code> to get an interactive prompt before overwriting.",
+      "<strong>Moving across filesystems:</strong> If you move a file to a different partition or drive, <code>mv</code> will actually copy the data to the new drive and delete the original, which takes longer.",
+      "<strong>Bulk Renaming:</strong> For renaming multiple files at once (e.g., changing all .txt to .md), look into the <code>rename</code> command or a bash <code>for</code> loop."
+    ]
+  },
+  {
+    "id": 7,
+    "title": "Four ways to go to your home directory",
+    "text": "There are multiple ways to navigate to your home directory depending on whether you use shell expansions, environment variables, or absolute paths.",
+    "code": [
+      "cd ~",
+      "cd",
+      "cd $HOME",
+      "cd /home/user"
+    ],
+    "deepDive": [
+      "<strong>cd ~:</strong> The tilde (<code>~</code>) is a shell expansion that the terminal translates into your home directory path before executing the command.",
+      "<strong>cd:</strong> By default, if you type <code>cd</code> without any arguments, the shell assumes you mean your home directory.",
+      "<strong>cd $HOME:</strong> <code>$HOME</code> is an environment variable that stores your home directory path. This is the most script-safe method.",
+      "<strong>cd /home/user:</strong> A literal absolute path. Useful in scripts where environment variables might not be set, but requires hardcoding the username."
+    ]
+  },
+  {
+    "id": 8,
+    "title": "List commands in /usr/bin starting with 'w'",
+    "text": "Bash shell expansions (globs) allow you to match filenames using wildcards. The asterisk (<strong>*</strong>) matches any string of characters (including zero characters).",
+    "code": [
+      "ls /usr/bin/w*"
+    ],
+    "deepDive": [
+      "<strong>How Globbing Works:</strong> The shell itself expands <code>/usr/bin/w*</code> into a list of matching files before passing them to <code>ls</code>. If no files match, <code>ls</code> might throw an error.",
+      "<strong>The '?' wildcard:</strong> The question mark matches exactly one character. e.g., <code>ls /usr/bin/w?</code> matches <code>wc</code> but not <code>wget</code>.",
+      "<strong>Character classes:</strong> <code>[w-z]*</code> matches files starting with w, x, y, or z. <code>[!w]*</code> matches files NOT starting with w."
+    ]
+  },
+  {
+    "id": 9,
+    "title": "Display the first four lines of /etc/passwd",
+    "text": "The <strong>head</strong> command outputs the first part of a file. By default, it shows the first 10 lines, but you can specify exactly how many with the <strong>-n</strong> flag.",
+    "code": [
+      "head -n 4 /etc/passwd"
+    ],
+    "deepDive": [
+      "<strong>Byte limit:</strong> Use <code>head -c 100 filename</code> to output the first 100 bytes instead of lines.",
+      "<strong>Multiple files:</strong> <code>head</code> can take multiple files: <code>head file1.txt file2.txt</code> will show the head of both with headers labeling them.",
+      "<strong>Negative lines:</strong> <code>head -n -5 file.txt</code> outputs the whole file *except* the last 5 lines."
+    ]
+  },
+  {
+    "id": 10,
+    "title": "Display the last seven lines of /etc/passwd",
+    "text": "The <strong>tail</strong> command outputs the last part of a file. It is most commonly used with the <strong>-f</strong> flag to follow live logs in real-time.",
+    "code": [
+      "tail -n 7 /etc/passwd"
+    ],
+    "deepDive": [
+      "<strong>Live Monitoring:</strong> <code>tail -f /var/log/syslog</code> keeps the file open and displays new lines as they are written by the system.",
+      "<strong>How -f works:</strong> Under the hood, <code>tail -f</code> uses the <code>inotify</code> (inode notify) Linux subsystem to receive instant updates when the file changes on disk.",
+      "<strong>Starting from a pattern:</strong> <code>tail -n +5 file.txt</code> outputs the file starting from the 5th line to the end."
+    ]
+  }
+]

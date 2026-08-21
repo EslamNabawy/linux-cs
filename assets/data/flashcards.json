@@ -1,0 +1,434 @@
+[
+  {
+    "q": "What's the key difference between monolithic and microservices architecture when one service fails?",
+    "a": "In a monolithic architecture, if one service fails, all services go down. In microservices, if one service goes down, the rest of the services remain up."
+  },
+  {
+    "q": "What role does a Load Balancer play, and what does RabbitMQ do?",
+    "a": "A Load Balancer balances traffic across services, while RabbitMQ acts as a queue for services."
+  },
+  {
+    "q": "Why would you activate Swap (Virtual Memory), and give an example?",
+    "a": "To avoid system crashes — for example, activating Swap when uploading on AWS."
+  },
+  {
+    "q": "What's the core difference between Linux and Unix in terms of source model?",
+    "a": "Linux is open source — customizable (including UI), no license, open to the public, and free (though some editions are licensed with nuances). Unix is closed source — private to its developers and not customizable."
+  },
+  {
+    "q": "Who is the GPL (General Public License) associated with?",
+    "a": "Richard Stallman."
+  },
+  {
+    "q": "What network type should you choose when setting up VMware, per these notes?",
+    "a": "NAT."
+  },
+  {
+    "q": "What does `ifconfig` do, and is it needed on Ubuntu?",
+    "a": "It returns the IP address; this step can be skipped for Ubuntu."
+  },
+  {
+    "q": "What is the correct way to combine CLI options, and which format is incorrect?",
+    "a": "`-l -d` and `-ld` are both correct ways to combine options; `-l d` is incorrect."
+  },
+  {
+    "q": "What do `Ctrl+U` and `Ctrl+K` do in the terminal?",
+    "a": "`Ctrl+U` deletes the part of the command before the cursor; `Ctrl+K` deletes the part of the command after the cursor."
+  },
+  {
+    "q": "What do `!500` and `!!` do in shell history?",
+    "a": "`!500` runs command number 500 from history; `!!` runs the last command in history."
+  },
+  {
+    "q": "What's the difference between `/bin` and `/sbin` per these notes?",
+    "a": "`/bin` is regular user data related (\"shortcut\"/\"symbolic link\"), while `/sbin` is super user data related (\"shortcut\"/\"soft link\")."
+  },
+  {
+    "q": "How often do `/tmp` and `/var/tmp` clear, and what do they have in common?",
+    "a": "`/tmp` clears every 10 days, and `/var/tmp` clears every 30 days; both are caches."
+  },
+  {
+    "q": "What does `~` refer to in the shell prompt, for a regular user vs. root?",
+    "a": "`~` refers to the home directory — `/home/regularuser` for a regular user, and `/root` for the root user."
+  },
+  {
+    "q": "What's the difference between `cd -` and `cd ..`?",
+    "a": "`cd -` moves one step backwards to the previous directory; `cd ..` moves up one level in the directory tree (relative path)."
+  },
+  {
+    "q": "What does `ls -lthr` do?",
+    "a": "Produces a long-format, human-readable listing sorted by time, in reversed order."
+  },
+  {
+    "q": "What's the difference between `rm -r dir1` and `rm -fr dir1`?",
+    "a": "`rm -r dir1` removes a directory recursively but asks to verify first; `rm -fr dir1` removes it recursively without asking for confirmation."
+  },
+  {
+    "q": "What's the difference between `cat` and `less` for viewing file content?",
+    "a": "`cat` lists the full content of the file at once, while `less` is more organized and allows scrolling, using `Space` to move to the next page."
+  },
+  {
+    "q": "What's the difference between a soft link and a hard link in terms of inode and size?",
+    "a": "A soft link has a different inode from the source and is just a pointer, so its size is unrelated to the original file's size. A hard link shares the same inode as the source, and its file size matches the source file's size."
+  },
+  {
+    "q": "What does `ls -i` show?",
+    "a": "It displays the inode numbers of files."
+  },
+  {
+    "q": "What does `grep -l Karim /etc/passwd` return if \"Karim\" is not found in the file?",
+    "a": "It returns nothing (no output), since `-l` only returns the file path when a match is found."
+  },
+  {
+    "q": "What does the pattern `grep ^c..t$ /etc/passwd` match?",
+    "a": "Lines that start with 'c' and end with 't', with exactly 2 letters in between."
+  },
+  {
+    "q": "What's the difference between an absolute path and a relative path?",
+    "a": "An absolute path is defined from the root directory `/` (e.g., `/usr/share/doc/`), while a relative path is defined relative to the current directory (e.g., `..`, `doc/`)."
+  },
+  {
+    "q": "What's the difference between `~` and `/home/`?",
+    "a": "`~` represents the home directory of the currently logged-in user (e.g., `/home/omar` or `/root`), while `/home/` is the base directory housing all individual user home folders."
+  },
+  {
+    "q": "What does `cd -` do?",
+    "a": "Switches back to the previous working directory."
+  },
+  {
+    "q": "How do you identify a directory, a regular file, and a symbolic link in `ls -l` output?",
+    "a": "`d` marks a directory, `-` marks a regular file, and `l` marks a symbolic link."
+  },
+  {
+    "q": "What does `ls -li` show that plain `ls -l` doesn't?",
+    "a": "It additionally displays the inode numbers of the files."
+  },
+  {
+    "q": "What does `mkdir -p dir1/dir2/dir3` do differently from plain `mkdir`?",
+    "a": "The `-p` (parent) flag creates the full nested directory structure recursively, creating any missing parent directories along the way."
+  },
+  {
+    "q": "What's the difference between `cp -r /etc/ /home/` and `cp -r /etc/* /home/`?",
+    "a": "`cp -r /etc/ /home/` copies the `/etc/` directory itself (with its contents) into `/home/`, while `cp -r /etc/* /home/` copies only the contents inside `/etc/` into `/home/`."
+  },
+  {
+    "q": "What is the danger of running `rm -rf /`?",
+    "a": "It forcefully and recursively deletes the entire system, and this action is irreversible."
+  },
+  {
+    "q": "What does `alias rm='rm -i'` do, and why does root use it by default?",
+    "a": "It makes `rm` prompt for confirmation before deleting each file. The root user defaults to this for safety, since root has permission to delete anything without restriction."
+  },
+  {
+    "q": "What is an inode?",
+    "a": "An index node storing metadata about a file, such as file size, permissions, owner, timestamps, and block pointers, stored in the Inode Table."
+  },
+  {
+    "q": "What's the difference between a hard link and a soft link if the source file is deleted?",
+    "a": "A hard link still works because it points to the same inode as the source file, so the data remains accessible. A soft link breaks because it only points to the target filename/path, producing an error when accessed."
+  },
+  {
+    "q": "Can hard links be created for directories or across different filesystems?",
+    "a": "No — hard links cannot link directories and cannot be created across different filesystems/partitions. Soft links support both."
+  },
+  {
+    "q": "What does `grep -v nologin /etc/passwd` do?",
+    "a": "Prints only the lines that do NOT contain \"nologin\" (inverted match)."
+  },
+  {
+    "q": "What's the difference between `grep -A 2` and `grep -B 2`?",
+    "a": "`-A 2` shows the matching line plus 2 lines after it; `-B 2` shows the matching line plus 2 lines before it."
+  },
+  {
+    "q": "What does `grep -w shut /etc/passwd` match that plain `grep shut` would not?",
+    "a": "It matches only the whole word `shut`, not `shut` as a substring inside a longer word."
+  },
+  {
+    "q": "What does `grep -e omar -e root /etc/passwd` do?",
+    "a": "Searches for multiple patterns simultaneously — lines containing `omar` OR `root`."
+  },
+  {
+    "q": "What does the regex `grep '^c[aou]t$' /usr/share/dict/words` match?",
+    "a": "Exact 3-letter words starting with `c`, followed by `a`, `o`, or `u`, and ending with `t` — e.g. `cat`, `cot`, `cut`."
+  },
+  {
+    "q": "What does `cut -d : -f 1,7 /etc/passwd` extract?",
+    "a": "Using `:` as the delimiter, it extracts fields 1 and 7 from each line — the username and the login shell."
+  },
+  {
+    "q": "What's the difference between `cut -c 1-5` and `cut -c 5-`?",
+    "a": "`cut -c 1-5` extracts characters from position 1 to 5, while `cut -c 5-` extracts characters from position 5 to the end of the line."
+  },
+  {
+    "q": "What are the three checked advantages of Linux over Windows in this sheet?",
+    "a": "Security, Stability, and Maintenance (Linux also runs on different hardware, is free & open source, easy to customize, has community support, and offers a different UI experience)."
+  },
+  {
+    "q": "What are the roles of the Kernel and the Shell in Linux architecture?",
+    "a": "The Kernel works directly with the hardware, while the Shell is the interface for interacting with the system through commands."
+  },
+  {
+    "q": "What is Swap used for?",
+    "a": "It uses part of the storage as additional memory when needed."
+  },
+  {
+    "q": "What do the `$` and `#` prompt symbols indicate?",
+    "a": "`$` indicates a regular user, and `#` indicates a superuser."
+  },
+  {
+    "q": "What is the basic command syntax in Linux, and can options be combined?",
+    "a": "`command option argument`, with spaces required between each part. Options can be combined, e.g. `ls -ld` is equivalent to `ls -l -d`."
+  },
+  {
+    "q": "What's the difference between `cd`, `cd ~`, `cd $HOME`, and `cd -`?",
+    "a": "`cd`, `cd ~`, and `cd $HOME` all go to the home directory; `cd -` goes back to the previous directory."
+  },
+  {
+    "q": "What does `ls -ltr` do compared to `ls -lt`?",
+    "a": "`ls -lt` sorts by time; `ls -ltr` sorts by time in reverse order."
+  },
+  {
+    "q": "How are hidden files identified in Linux?",
+    "a": "Files and directories starting with `.` are hidden."
+  },
+  {
+    "q": "What does the wildcard pattern `[!a-c]*` match?",
+    "a": "Files that do not start with `a`, `b`, or `c`."
+  },
+  {
+    "q": "What's the difference between `head -n N file` and `tail -n N file`?",
+    "a": "`head -n N file` shows the first N lines of a file, while `tail -n N file` shows the last N lines."
+  },
+  {
+    "q": "What do the `-r`/`-R` and `-f` options mean when used with commands like `cp` or `rm`?",
+    "a": "`-r`/`-R` means recursive (applies to directories and their contents), and `-f` means force (skips confirmation)."
+  },
+  {
+    "q": "What does `grep -B 2 hager dir` do?",
+    "a": "Shows the match for \"hager\" along with the 2 lines before each match."
+  },
+  {
+    "q": "What's the difference between `grep -i` and `grep -l`?",
+    "a": "`grep -i` makes the search case-insensitive; `grep -l` shows only the names of files containing the pattern, not the matching lines."
+  },
+  {
+    "q": "What is an inode, and how does it relate to hard links?",
+    "a": "An inode is allocated to every file or directory to store its metadata/data location. A hard link refers to the same inode as the original file — they share the same data."
+  },
+  {
+    "q": "Can a hard link point to a directory?",
+    "a": "No, a hard link cannot link directories."
+  },
+  {
+    "q": "When does the data of a hard-linked file actually get deleted?",
+    "a": "The data remains as long as at least one hard link to it still exists."
+  },
+  {
+    "q": "What does a soft link point to, as opposed to a hard link?",
+    "a": "A soft link points to a path, whereas a hard link points to the same inode/data as the original."
+  },
+  {
+    "q": "Is `/root` the same as `/home/root`?",
+    "a": "No — `/root` is the home directory of the superuser, and it is explicitly not the same as `/home/root`."
+  },
+  {
+    "q": "What is the purpose of `/etc` and `/var`?",
+    "a": "`/etc` holds configuration files; `/var` holds variable data, such as `/var/tmp`."
+  },
+  {
+    "q": "What do `Ctrl+K` and `Ctrl+U` do in the terminal?",
+    "a": "`Ctrl+K` cuts from the cursor to the end of the line; `Ctrl+U` cuts from the cursor to the beginning of the line."
+  },
+  {
+    "q": "Why do man pages have numbered sections, and what do sections 1, 5, and 8 document?",
+    "a": "Because some words (like \"passwd\") refer to more than one thing. Section 1 documents executable programs/user commands, section 5 documents file formats and configuration file structure, and section 8 documents system administration commands (root-level)."
+  },
+  {
+    "q": "What does `man passwd` show by default if you don't specify a section number?",
+    "a": "It shows the lowest-numbered match it finds, usually the command page (section 1)."
+  },
+  {
+    "q": "What's the difference between `man`, `whatis`, and `command --help`?",
+    "a": "`man command` gives full details, `whatis command` gives a one-line description, and `command --help` prints a condensed list of that command's available options."
+  },
+  {
+    "q": "What does `man -k \"keyword\"` do, and what does it rely on behind the scenes?",
+    "a": "It searches the short description line of every installed man page for the keyword and lists matching commands. It relies on the `mandb` search database, which may need to be built with `mandb` on a fresh system."
+  },
+  {
+    "q": "What does `whereis useradd` tell you?",
+    "a": "Whether the command exists on the machine and where its files are stored (binary, man page, and sometimes source files)."
+  },
+  {
+    "q": "What are the three data channels (streams) every Linux command is connected to, and their File Descriptor numbers?",
+    "a": "Standard Input (stdin, FD 0), Standard Output (stdout, FD 1), and Standard Error (stderr, FD 2)."
+  },
+  {
+    "q": "What's the difference between `>` and `>>`?",
+    "a": "`>` overwrites the target file's contents completely with no warning; `>>` appends new output to the end of the file without touching existing content."
+  },
+  {
+    "q": "What does `find / -name passwd 2> /dev/null` do?",
+    "a": "It searches the entire filesystem for \"passwd\" and discards only the error messages (like \"Permission denied\") by sending them to `/dev/null`, while successful results still print normally to the screen."
+  },
+  {
+    "q": "What's the difference between `&>` and `2>&1`?",
+    "a": "`&>` is a modern shorthand that sends both stdout and stderr into one file in a single symbol. `2>&1` is the traditional method that must come after a `>` redirection and works by pointing stderr (Channel 2) to wherever stdout (Channel 1) is already going."
+  },
+  {
+    "q": "What does the pipeline `ls -l | grep ^-` do?",
+    "a": "It lists files in long format, then filters to show only lines starting with `-`, which represents regular files (as opposed to `d` for directories or `l` for symbolic links)."
+  },
+  {
+    "q": "What three things does `wc` count, and in what order does it print them?",
+    "a": "Lines, words, and characters, always in that order."
+  },
+  {
+    "q": "What does `ls -R /etc | wc -l` tell you?",
+    "a": "The total number of files and folders inside `/etc` and all its subfolders combined, since `-R` makes the listing recursive and `wc -l` counts the resulting lines."
+  },
+  {
+    "q": "What are the four main modes in vim, and how do you enter each?",
+    "a": "Normal mode (default, entered by pressing `Esc`), Insert mode (press `i` from Normal mode), Visual mode (press `v` from Normal mode), and Command mode (press `:` from Normal mode)."
+  },
+  {
+    "q": "What's the difference between `:wq` and `:q!` in vim?",
+    "a": "`:wq` saves your changes and quits; `:q!` quits without saving, discarding all changes made since opening the file."
+  },
+  {
+    "q": "What's the difference between a shell variable and a user-defined variable in Bash?",
+    "a": "Shell variables (like `$PATH`, `$HOME`, `$USER`) are built into Bash automatically for configuration purposes. User-defined variables are ones you create yourself to temporarily store values during your session."
+  },
+  {
+    "q": "What does `export` do to a variable, and what happens without it?",
+    "a": "`export` makes a variable visible to any sub-shell opened afterward, with the same name and value. Without `export`, the variable stays trapped only in the current shell and sub-shells have no knowledge of it."
+  },
+  {
+    "q": "What are the three UID categories in Linux, and their ranges?",
+    "a": "Super user (root) is UID 0; system users are UID 1–999 (1–200 statically reserved, 201–999 dynamically assigned); regular users are UID 1000 and above."
+  },
+  {
+    "q": "What's the difference between `su - username` and `su username`?",
+    "a": "`su - username` fully loads that user's environment as if they logged in directly (home directory, shell config, PATH, last-login display). `su username` is a lighter switch that keeps your own current environment and directory."
+  },
+  {
+    "q": "Why should you use `visudo` instead of editing `/etc/sudoers` directly with vim?",
+    "a": "`visudo` opens the file in a protected session that checks syntax for errors before saving, refusing to save a broken version. Editing directly with vim risks a typo silently breaking the entire permissions system and locking out all administrators."
+  },
+  {
+    "q": "What does `find / -name <option>` do?",
+    "a": "Searches the entire system starting from root for files matching the given name."
+  },
+  {
+    "q": "What's the difference between FD1 and FD2?",
+    "a": "FD1 is standard output (std output), and FD2 is standard error (std Error)."
+  },
+  {
+    "q": "How do you redirect only the error output of a command, and how do you get both output and error separately?",
+    "a": "Use `2>` to redirect only the error stream; without specifying, a command's normal output goes to std output and only one stream is captured unless you redirect explicitly (e.g. `2>` for errors)."
+  },
+  {
+    "q": "What's the difference between `>` and `>>`?",
+    "a": "`>` overrides the destination file's contents, while `>>` appends to it instead of overwriting."
+  },
+  {
+    "q": "What is `/dev/null`?",
+    "a": "A special virtual device file that acts like a black hole for data — anything written to it disappears."
+  },
+  {
+    "q": "What are the main manual page sections mentioned?",
+    "a": "Section 1 is User Commands (regular page), Section 5 is Configuration files, and Section 8 is System Administrator commands."
+  },
+  {
+    "q": "What's the difference between `man -k passwd` and `man -w passwd`?",
+    "a": "`man -k passwd` searches man page descriptions for \"passwd\" as a keyword, while `man -w passwd` shows the location/path of the passwd man page."
+  },
+  {
+    "q": "What does `Command --help` return compared to `man Command`?",
+    "a": "`--help` returns only the options for the command, while `man` acts as full documentation/description."
+  },
+  {
+    "q": "What are the four Vim modes?",
+    "a": "Command Mode (default), Insert Mode (update), Visual Mode (select), and Ex/Command Line Mode."
+  },
+  {
+    "q": "How do you enter Insert Mode in Vim, and how do you exit any mode?",
+    "a": "Press `i` to enter Insert Mode; press `ESC` to exit back to Command Mode."
+  },
+  {
+    "q": "What's the difference between `:w`, `:wq`, `:q!`, and `:q`?",
+    "a": "`:w` saves and keeps the file open, `:wq` saves and quits, `:q!` quits without saving, and `:q` quits only if there are no unsaved changes (otherwise it prompts)."
+  },
+  {
+    "q": "What do `dd`, `yy`/`gy`, `p`, and `u` do in Vim?",
+    "a": "`dd` cuts/deletes a line, `yy` or `gy` copies a line, `p` pastes, and `u` undoes the last action."
+  },
+  {
+    "q": "What's the difference between `v`, `Shift+V`, and `Ctrl+v` in Vim's visual modes?",
+    "a": "`v` enters character-wise Visual Mode, `Shift+V` selects entire lines, and `Ctrl+v` selects a block/column *(لعمود)*."
+  },
+  {
+    "q": "What does the Vim command `:%s/login/nologin/g` do?",
+    "a": "It performs a global find-and-replace across the file, replacing every occurrence of \"login\" with \"nologin\"."
+  },
+  {
+    "q": "What does `:.! date` do in Vim?",
+    "a": "It runs the external `date` command and inserts its output, then returns to the same place in the file *(خارج ولكن يعود للمكان مره ثانيه)*."
+  },
+  {
+    "q": "What is a pipeline in Bash, and what does `ls -l | grep ^-` do?",
+    "a": "A pipeline passes the output of one command as input to another command. `ls -l | grep ^-` filters the long listing to show only regular files (lines starting with `-`)."
+  },
+  {
+    "q": "What do `wc -l`, `wc -w`, and `wc -c` count?",
+    "a": "`wc -l` counts lines only, `wc -w` counts words only, and `wc -c` counts characters only."
+  },
+  {
+    "q": "What does the search pattern `\\<th` match?",
+    "a": "Any word containing \"th\" (word-boundary search for \"th\")."
+  },
+  {
+    "q": "What does `whereis Command` do?",
+    "a": "Shows where a command's binary, source, and man page files are located."
+  },
+  {
+    "q": "What does `ls -li` add vs `ls -l`, and why use `stat file`?",
+    "a": "`ls -li` shows inode numbers (first column) via `l`+`i`; `stat file` shows inode, size, blocks, and all three timestamps (Access/Modify/Change) plus `df -i` for inode exhaustion."
+  },
+  {
+    "q": "Why does `rm -- -f` use `--` and what does `touch \"my file\"` fix?",
+    "a": "`--` ends option parsing so `-f` is treated as filename, not flag. Spaces split arguments — quote `\"my file\"` or escape `my\\ file` to keep it one name."
+  },
+  {
+    "q": "When does `df -h` lie and `df -i` matter? Give an example.",
+    "a": "`df -h` shows bytes; `df -i` shows inodes. A disk can be “No space left” with free GB if inodes are 100% — check `df -i` and `du --maxdepth=1` vs `ncdu` for hogs."
+  },
+  {
+    "q": "What is the difference between `cp -r` and `cp -a`, and when to use `mv -i`?",
+    "a": "`cp -a` = archive (preserves perms/symlinks/xattrs) better than `-r` for backups. `mv -i` prompts before silently overwriting the destination."
+  },
+  {
+    "q": "Explain `> file 2>&1` order vs `&> file` and `PIPESTATUS`.",
+    "a": "`> file 2>&1` must have `2>&1` last — it points stderr to where stdout now goes. `&> file` is shorthand for the same. `echo ${PIPESTATUS[@]}` shows each pipe stage exit code, not just last."
+  },
+  {
+    "q": "Why does `man -k` sometimes return nothing and how to fix?",
+    "a": "`man -k` searches the `mandb` index. On fresh/minimal systems the DB may be empty — run `sudo mandb` once to build it, then `apropos`/`man -k` works."
+  },
+  {
+    "q": "In vim, what does `:%s/old/new/gc` do and how to recover from a swap file?",
+    "a": "`%` whole file, `s` substitute, `g` global, `c` confirm each. If vim warns about `.swp`, check `ls -la .*.swp` and recover with `vim -r file` then `rm .file.swp` after."
+  },
+  {
+    "q": "Why is `sudo visudo` safer than `vim /etc/sudoers` and how to check syntax without editing?",
+    "a": "`visudo` locks and syntax-checks before saving — a typo with plain `vim` can lock all sudo. Check without editing via `sudo visudo -c` and view filtered rules with `grep -vE '^[[:space:]]*(#|$)' /etc/sudoers`."
+  },
+  {
+    "q": "What does `chmod 644` mean and how does `umask 022` affect new files?",
+    "a": "`644` = `rw-r--r--` (owner rw, group r, other r). `umask 022` subtracts `w` for group/other, so `touch` creates `644` and `mkdir` `755`. Never `777` on web roots."
+  },
+  {
+    "q": "How does `grep -F` differ from `grep -E` and which is faster?",
+    "a": "`grep -F` treats pattern as fixed string (no regex) and is ~10× faster; use `-F` for literals like `error.log`. `grep -E` enables extended regex (`^`, `+`, `|`)."
+  }
+]

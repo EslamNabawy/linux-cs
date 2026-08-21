@@ -1,0 +1,628 @@
+{
+  "author": "Rahma",
+  "day": 1,
+  "subtitle": "Linux Administration & Fundamentals",
+  "avatar": "R",
+  "sections": [
+    {
+      "id": "system-architecture-concepts",
+      "title": "System Architecture & Concepts",
+      "icon": "cpu",
+      "blocks": [
+        {
+          "t": "list",
+          "items": [
+            "<strong>Monolithic vs Microservices</strong>: If one service fails in a monolithic architecture, all services are down. In microservices, if one service goes down, the rest of the services remain up.",
+            "<strong>Load Balancer</strong>: Works on balancing traffic across the services.",
+            "<strong>RabbitMQ</strong>: Acts as a queue for services.",
+            "<strong>Virtual Memory (Swap)</strong>: Avoids system crashes. Example: Activate Swap when uploading on AWS."
+          ]
+        },
+        {
+          "t": "text",
+          "html": "<h6>Linux vs Unix</h6>"
+        },
+        {
+          "t": "table",
+          "head": [
+            "Aspect",
+            "Linux (Open Source)",
+            "Unix (Closed Source)"
+          ],
+          "rows": [
+            [
+              "Origin",
+              "Came after Unix; contains around 400 distributions",
+              "Came first"
+            ],
+            [
+              "Customization",
+              "Customized (including UI)",
+              "Couldn't be customized"
+            ],
+            [
+              "License",
+              "No license, open for everybody (public), and free (some are licensed but with nuances)",
+              "Private for the developers"
+            ],
+            [
+              "Example",
+              "—",
+              "Unix is an example of a closed-source system"
+            ]
+          ]
+        },
+        {
+          "t": "list",
+          "items": [
+            "<strong>Enterprise Revenue</strong>: Money comes from certifications and subscription fees for enterprise editions."
+          ]
+        },
+        {
+          "t": "text",
+          "html": "<h6>Distributions Comparison</h6>"
+        },
+        {
+          "t": "list",
+          "items": [
+            "Differences between Fedora vs RedHat: Number of versions and releases from each version.",
+            "Ubuntu vs RedHat: You can use Ubuntu on VMware; the difference is mainly in the packages, but the command lines are the same.",
+            "CentOS: Noted for having \"no security\" (EOL)."
+          ]
+        },
+        {
+          "t": "list",
+          "items": [
+            "<strong>GPL (General Public License)</strong>: Associated with Richard Stallman."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "virtual-machine-network-setup",
+      "title": "Virtual Machine & Network Setup",
+      "icon": "network",
+      "blocks": [
+        {
+          "t": "list",
+          "items": [
+            "<strong>Creating a VM</strong>: <code>File</code> -> <code>New VM</code> -> <code>Installing Redhat on VMware</code> (Recommended: 2 processors, 2 cores).",
+            "<strong>Network Types</strong>: Bridged, NAT, Host-only (chosen according to the IP range).",
+            "Choose <strong>NAT</strong> when setting up VMware.",
+            "<strong>Redhat Developer Account</strong>: You can use developer account credentials to log in to a Redhat server with a GUI on VMware."
+          ]
+        },
+        {
+          "t": "text",
+          "html": "<h6>Getting IP & SSH</h6>"
+        },
+        {
+          "t": "code",
+          "code": "ifconfig",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Returns the IP address (Skip this step for Ubuntu).</p>"
+        },
+        {
+          "t": "code",
+          "code": "ssh root@ipaddress",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Connects to the server.</p>"
+        }
+      ]
+    },
+    {
+      "id": "shell-prompt-basic-cli-syntax",
+      "title": "Shell Prompt & Basic CLI Syntax",
+      "icon": "eye",
+      "blocks": [
+        {
+          "t": "list",
+          "items": [
+            "<strong>Default Shell in Redhat</strong>: Bash",
+            "<strong>CLI (Command Line Interface)</strong> syntax: <code>Command [Option] [Argument]</code>",
+            "Dash <code>[option]</code> has \"no spaces\" (e.g., <code>-V</code>).",
+            "You must have a space after the <code>[command]</code>.",
+            "There could be no <code>[argument]</code> in CLI (used for modification/determining action)."
+          ]
+        },
+        {
+          "t": "text",
+          "html": "<h6>Combining Options</h6>"
+        },
+        {
+          "t": "text",
+          "html": "<p>Options can be combined.</p>"
+        },
+        {
+          "t": "list",
+          "items": [
+            "Example: <code>-l -d</code> (Correct), <code>-ld</code> (Correct), <code>-l d</code> (Incorrect)."
+          ]
+        },
+        {
+          "t": "text",
+          "html": "<h6>Terminal Shortcuts</h6>"
+        },
+        {
+          "t": "table",
+          "head": [
+            "Shortcut",
+            "Description"
+          ],
+          "rows": [
+            [
+              "Win + ↑",
+              "Maximize terminal"
+            ],
+            [
+              "Ctrl + U",
+              "Delete all the part of the command before the cursor"
+            ],
+            [
+              "Ctrl + K",
+              "Delete all the part of the command after the cursor"
+            ],
+            [
+              "cd [tab][tab]",
+              "Displays all files with the same initial"
+            ],
+            [
+              "cd [tab]",
+              "Auto-completes file name initial"
+            ]
+          ]
+        },
+        {
+          "t": "text",
+          "html": "<h6>History Commands</h6>"
+        },
+        {
+          "t": "table",
+          "head": [
+            "Command",
+            "Description"
+          ],
+          "rows": [
+            [
+              "!500",
+              "Runs command number 500 in history"
+            ],
+            [
+              "!!",
+              "Runs the last command in history"
+            ]
+          ]
+        },
+        {
+          "t": "text",
+          "html": "<h6>Switching Users</h6>"
+        },
+        {
+          "t": "code",
+          "code": "su - username",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Switches user (prompts for password).</p>"
+        }
+      ]
+    },
+    {
+      "id": "file-system-hierarchy",
+      "title": "File System Hierarchy",
+      "icon": "folder",
+      "blocks": [
+        {
+          "t": "table",
+          "head": [
+            "Directory",
+            "Description"
+          ],
+          "rows": [
+            [
+              "/",
+              "Root file system (like Local Disk C). Contains everything underneath it *(تحته)*"
+            ],
+            [
+              "root",
+              "System user (Admin). /root contains the Super user profile"
+            ],
+            [
+              "home",
+              "Contains any regular user profile"
+            ],
+            [
+              "bin",
+              "Regular user data related (\"shortcut\" / \"symbolic link\")"
+            ],
+            [
+              "sbin",
+              "Super user data related (\"shortcut\" / \"soft link\")"
+            ],
+            [
+              "boot",
+              "Booting OS files"
+            ],
+            [
+              "etc",
+              "All config files"
+            ],
+            [
+              "dev",
+              "All hardware components"
+            ],
+            [
+              "run",
+              "Any files related to services (\"not shortcut\", \"different\")"
+            ],
+            [
+              "var",
+              "Any variable in the system. Contains a tmp that clears every 30 days"
+            ],
+            [
+              "tmp",
+              "Temporary files (clears every 10 days). Both tmp and /var/tmp are caches"
+            ],
+            [
+              "usr",
+              "The original system directory *(الأصلي)*"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "file-directory-management",
+      "title": "File & Directory Management",
+      "icon": "folder",
+      "blocks": [
+        {
+          "t": "text",
+          "html": "<p>Navigation (<code>cd</code>, <code>pwd</code>)</p>"
+        },
+        {
+          "t": "list",
+          "items": [
+            "<strong>Shell prompt</strong>: <code>[root@server ~]</code> -> <code>~</code> refers to the home directory.",
+            "For regular users: <code>/home/regularuser</code>",
+            "For root: <code>/root</code>"
+          ]
+        },
+        {
+          "t": "table",
+          "head": [
+            "Command",
+            "Description"
+          ],
+          "rows": [
+            [
+              "cd ~ / cd",
+              "Return to the home directory (whether regular or superuser)"
+            ],
+            [
+              "cd -",
+              "One step backwards (previous directory)"
+            ],
+            [
+              "cd ..",
+              "Move up one level (relative path)"
+            ]
+          ]
+        },
+        {
+          "t": "list",
+          "items": [
+            "<strong>Absolute path</strong>: The entire path.",
+            "<strong>Relative path</strong>: Not the entire path."
+          ]
+        },
+        {
+          "t": "text",
+          "html": "<p>Listing (<code>ls</code>, <code>tree</code>)</p>"
+        },
+        {
+          "t": "table",
+          "head": [
+            "Command",
+            "Description"
+          ],
+          "rows": [
+            [
+              "ls",
+              "List files in the directory"
+            ],
+            [
+              "ls -a",
+              "List all files, whether hidden or non-hidden (Hidden files start with a dot)"
+            ],
+            [
+              "ls -l",
+              "Long list"
+            ],
+            [
+              "ls -r",
+              "Reversed list"
+            ],
+            [
+              "ls -h",
+              "Converts bits to bytes (human-readable)"
+            ],
+            [
+              "ls -lthr",
+              "Long list, human-readable, sorted by time, reversed"
+            ],
+            [
+              "ls -lR",
+              "Recursive list (lists all the content of the directory, whether files or directories)"
+            ],
+            [
+              "tree",
+              "Shows directory structure visually"
+            ]
+          ]
+        },
+        {
+          "t": "text",
+          "html": "<h6>File Creation, Copying & Moving</h6>"
+        },
+        {
+          "t": "code",
+          "code": "mkdir dir1",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Make directory.</p>"
+        },
+        {
+          "t": "code",
+          "code": "mkdir -p",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Make parent directories (e.g., <code>mkdir -p \"Rahma Tarek\"</code> vs <code>mkdir \"Roaa Tarek\"</code> vs <code>mkdir Ayah Tarek</code>).</p>"
+        },
+        {
+          "t": "code",
+          "code": "touch file1",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Create an empty file.</p>"
+        },
+        {
+          "t": "text",
+          "html": "<p><code>cp</code>: Copying files. Copies are not connected to each other (unlike links).</p>"
+        },
+        {
+          "t": "code",
+          "code": "cp -r NTI /root",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>For copying a directory.<br><em>(بناخد الـ NTI كوبي ونحطه جوا الـ root / copy الـ NTI الاصلية جوا الـ root اللي هو الـ home directory)</em></p>"
+        },
+        {
+          "t": "text",
+          "html": "<p><code>mv</code>: \"Cut\" or \"Rename\" depending on whether you provide a path to paste or just a new name.</p>"
+        },
+        {
+          "t": "text",
+          "html": "<p>Deleting (<code>rm</code>)</p>"
+        },
+        {
+          "t": "table",
+          "head": [
+            "Command",
+            "Description"
+          ],
+          "rows": [
+            [
+              "rm file2",
+              "Asks to verify"
+            ],
+            [
+              "rm -f file2",
+              "Deletes without inquiry (force)"
+            ],
+            [
+              "rm -r dir1",
+              "Removes directory recursively (asks to verify)"
+            ],
+            [
+              "rm -fr dir1",
+              "Removes directory recursively without inquiry"
+            ]
+          ]
+        },
+        {
+          "t": "callout",
+          "kind": "warning",
+          "html": "<code>rm -fr dir1</code> removes a directory recursively without asking for confirmation. Double-check the target before running it."
+        },
+        {
+          "t": "text",
+          "html": "<h6>Viewing File Content</h6>"
+        },
+        {
+          "t": "table",
+          "head": [
+            "Command",
+            "Description"
+          ],
+          "rows": [
+            [
+              "cat /etc/<file>",
+              "List the content of the file"
+            ],
+            [
+              "less /etc/<file>",
+              "Instead of cat, more organized, allows scrolling & using Space to move to the next page"
+            ],
+            [
+              "head /etc/<file>",
+              "First 10 lines"
+            ],
+            [
+              "head -n 5 /etc/<file>",
+              "First 5 lines"
+            ],
+            [
+              "head /etc/file1 /etc/file2",
+              "First 10 lines from both files"
+            ],
+            [
+              "tail /etc/<file>",
+              "Last lines"
+            ],
+            [
+              "tail -n 5 /etc/<file>",
+              "Last 5 lines"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "links-hard-links-vs-soft-links",
+      "title": "Links (Hard Links vs. Soft Links)",
+      "icon": "folder",
+      "blocks": [
+        {
+          "t": "table",
+          "head": [
+            "Behavior",
+            "Soft Link",
+            "Hard Link"
+          ],
+          "rows": [
+            [
+              "Inode",
+              "Different inode",
+              "Same inode"
+            ],
+            [
+              "Relationship to source",
+              "It's just a pointer to the original file",
+              "Both files are real-time aligned (connected to each other)"
+            ],
+            [
+              "Size",
+              "The soft link size is not related to the original file size, as it's only a pointer",
+              "The file size is the same as the hard link size"
+            ],
+            [
+              "Creation",
+              "ln -s /etc soft-link",
+              "ln <source> <link>"
+            ]
+          ]
+        },
+        {
+          "t": "code",
+          "code": "ls -i",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Displays inodes.</p>"
+        }
+      ]
+    },
+    {
+      "id": "search-pattern-matching-grep-wildcards",
+      "title": "Search & Pattern Matching (`grep` & Wildcards)",
+      "icon": "search",
+      "blocks": [
+        {
+          "t": "text",
+          "html": "<h6>Wildcards (Rules of naming files)</h6>"
+        },
+        {
+          "t": "table",
+          "head": [
+            "Pattern",
+            "Meaning"
+          ],
+          "rows": [
+            [
+              "ls [fa]*",
+              "Matches any file starting with f or a"
+            ],
+            [
+              "ls [a-c]*",
+              "Any file starting with one of these letters (a, b, c)"
+            ],
+            [
+              "ls [!fa]* / ls [^a-f]* / ls [!a-f]*",
+              "Any file that does not start with one of these letters"
+            ],
+            [
+              "ls [~a-c]*",
+              "Any file starting with one of these letters"
+            ]
+          ]
+        },
+        {
+          "t": "text",
+          "html": "<p>Text Searching (<code>grep</code>)</p>"
+        },
+        {
+          "t": "table",
+          "head": [
+            "Command",
+            "Description"
+          ],
+          "rows": [
+            [
+              "grep omar /etc/passwd",
+              "Searches for \"omar\""
+            ],
+            [
+              "grep -i omar /etc/passwd",
+              "\"Not case-sensitive\""
+            ],
+            [
+              "grep -l Karim /etc/passwd",
+              "If there is \"Karim\", returns the file path only; if not found, returns nothing"
+            ],
+            [
+              "grep -A 2 Ali /etc/passwd",
+              "Returns the line itself & 2 lines After"
+            ],
+            [
+              "grep -B 2 Ali /etc/passwd",
+              "Returns the line itself & 2 lines Before"
+            ],
+            [
+              "grep -e omar -e Ali /etc/passwd",
+              "Searching for 2 words at the same time"
+            ],
+            [
+              "grep ^cat /etc/passwd",
+              "Returns any word that starts with \"cat\""
+            ],
+            [
+              "grep c.t /etc/passwd",
+              "One letter in between 'c' and 't'"
+            ],
+            [
+              "grep ^c..t$ /etc/passwd",
+              "Starts with 'c' & ends with 't' with exactly 2 letters in between"
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,302 @@
+{
+  "day1": {
+    "title": "Lab 1 — Get Started with RHEL & Files",
+    "subtitle": "Practical exercises for Day 1 — navigation, file ops, links, and text processing.",
+    "tasks": [
+      {
+        "id": "less-vs-more-0",
+        "tag": "`less` vs `more`",
+        "title": "`less` vs `more`",
+        "objective": "Both commands display text one screen at a time, but less provides more flexible navigation.",
+        "steps": [
+          "more /etc/passwd",
+          "less /etc/passwd"
+        ]
+      },
+      {
+        "id": "cat-vs-more-1",
+        "tag": "`cat` vs `more`",
+        "title": "`cat` vs `more`",
+        "objective": "cat normally prints the entire file directly to standard output, while more pauses after each screen.",
+        "steps": [
+          "cat /etc/passwd",
+          "more /etc/passwd"
+        ]
+      },
+      {
+        "id": "rm-vs-rmdir-2",
+        "tag": "`rm` vs `rmdir`",
+        "title": "`rm` vs `rmdir`",
+        "objective": "The manual pages show that the commands have different purposes:",
+        "steps": [
+          "man rm",
+          "man rmdir",
+          "rm removes files and can remove directories when used with the appropriate recursive option.",
+          "rmdir removes empty directories.",
+          "rmdir is therefore more restrictive than rm.",
+          "rm file1",
+          "rmdir dir1",
+          "rm -r dir1"
+        ]
+      },
+      {
+        "id": "create-and-manipulat-3",
+        "tag": "Create and manipulat",
+        "title": "Create and manipulate the hierarchy",
+        "objective": "The intended hierarchy can be created under the home directory with:",
+        "steps": [
+          "~/dir1/",
+          "├── docs/",
+          "│   ├── dir11/",
+          "│   └── dir12/",
+          "└── mycv",
+          "cd ~",
+          "mkdir -p dir1/docs/dir11 dir1/docs/dir12",
+          "touch dir1/mycv"
+        ]
+      },
+      {
+        "id": "copy-etc-passwd-to-t-4",
+        "tag": "Copy `/etc/passwd` t",
+        "title": "Copy `/etc/passwd` to the home directory as `mypasswd`",
+        "objective": "Verify:",
+        "steps": [
+          "cp /etc/passwd ~/mypasswd",
+          "ls -l ~/mypasswd"
+        ]
+      },
+      {
+        "id": "rename-mypasswd-to-o-5",
+        "tag": "Rename `mypasswd` to",
+        "title": "Rename `mypasswd` to `oldpasswd`",
+        "objective": "Use mv:",
+        "steps": [
+          "mv ~/mypasswd ~/oldpasswd",
+          "ls -l ~/oldpasswd"
+        ]
+      },
+      {
+        "id": "four-ways-to-go-from-6",
+        "tag": "Four ways to go from",
+        "title": "Four ways to go from `/usr/bin` to the home directory",
+        "objective": "Assuming the home directory is /home/user:",
+        "steps": [
+          "cd",
+          "cd ~",
+          "cd \"$HOME\"",
+          "cd /home/user"
+        ]
+      },
+      {
+        "id": "list-commands-in-usr-7",
+        "tag": "List commands in `/u",
+        "title": "List commands in `/usr/bin` beginning with `w`",
+        "objective": "For a cleaner command-only list:",
+        "steps": [
+          "ls /usr/bin/w*",
+          "find /usr/bin -maxdepth 1 -type f -name 'w*' -printf '%f\\n'"
+        ]
+      },
+      {
+        "id": "display-the-first-4--8",
+        "tag": "Display the first 4 ",
+        "title": "Display the first 4 lines of `/etc/passwd`",
+        "objective": "Equivalent short form:",
+        "steps": [
+          "head -n 4 /etc/passwd",
+          "head -4 /etc/passwd"
+        ]
+      },
+      {
+        "id": "display-the-last-7-l-9",
+        "tag": "Display the last 7 l",
+        "title": "Display the last 7 lines of `/etc/passwd`",
+        "objective": "Equivalent short form:",
+        "steps": [
+          "tail -n 7 /etc/passwd",
+          "tail -7 /etc/passwd"
+        ]
+      }
+    ]
+  },
+  "day2": {
+    "title": "Lab 2 — Help, Text Files & Users",
+    "subtitle": "Practical exercises for Day 2 — man pages, Vim, redirection, and user management.",
+    "tasks": [
+      {
+        "id": "display-the-passwd-c-0",
+        "tag": "Display the `passwd`",
+        "title": "Display the `passwd` command and file manual pages sequentially",
+        "objective": "The passwd command has a section 1 manual entry, while the /etc/passwd file is documented in section 5.",
+        "steps": [
+          "man passwd",
+          "man 5 passwd",
+          "man passwd; man 5 passwd"
+        ]
+      },
+      {
+        "id": "display-the-manual-p-1",
+        "tag": "Display the manual p",
+        "title": "Display the manual page for the `passwd` file",
+        "objective": "The password database format is documented in section 5:",
+        "steps": [
+          "man 5 passwd"
+        ]
+      },
+      {
+        "id": "find-commands-whose--2",
+        "tag": "Find commands whose ",
+        "title": "Find commands whose manual pages contain `passwd`",
+        "objective": "Use man -k, which searches manual-page descriptions and keywords:",
+        "steps": [
+          "man -k passwd",
+          "apropos passwd"
+        ]
+      },
+      {
+        "id": "create-a-user-accoun-3",
+        "tag": "Create a user accoun",
+        "title": "Create a user account",
+        "objective": "The requested account is:",
+        "steps": [
+          "Username: Islam",
+          "Password: Islam",
+          "sudo useradd -m Islam",
+          "sudo passwd Islam",
+          "Islam",
+          "id Islam"
+        ]
+      },
+      {
+        "id": "search-manual-pages--4",
+        "tag": "Search manual pages ",
+        "title": "Search manual pages mentioning `password`",
+        "objective": "Use:",
+        "steps": [
+          "man -k password"
+        ]
+      },
+      {
+        "id": "create-notes-txt-usi-5",
+        "tag": "Create `notes.txt` u",
+        "title": "Create `notes.txt` using Vim",
+        "objective": "Open the file:",
+        "steps": [
+          "vim ~/notes.txt",
+          "Press i to enter Insert mode.",
+          "Type your full name.",
+          "Press Esc to return to Command mode.",
+          "Type:",
+          ":wq",
+          "Press Enter."
+        ]
+      },
+      {
+        "id": "display-notes-txt-6",
+        "tag": "Display `notes.txt`",
+        "title": "Display `notes.txt`",
+        "objective": "Use:",
+        "steps": [
+          "cat ~/notes.txt"
+        ]
+      },
+      {
+        "id": "append-aiops-without-7",
+        "tag": "Append `AIOPS` witho",
+        "title": "Append `AIOPS` without opening an editor",
+        "objective": "Use echo with the append operator:",
+        "steps": [
+          "echo \"AIOPS\" >> ~/notes.txt",
+          "cat ~/notes.txt",
+          "> overwrites the file.",
+          ">> appends to the existing content."
+        ]
+      },
+      {
+        "id": "redirect-ls-l-etc-in-8",
+        "tag": "Redirect `ls -l /etc",
+        "title": "Redirect `ls -l /etc` into `etc_listing.txt`",
+        "objective": "Run:",
+        "steps": [
+          "ls -l /etc > ~/etc_listing.txt",
+          "ls -l ~/etc_listing.txt",
+          "cat ~/etc_listing.txt",
+          "ls -l /etc",
+          "│",
+          "▼",
+          "etc_listing.txt"
+        ]
+      },
+      {
+        "id": "safely-inspect-which-9",
+        "tag": "Safely inspect which",
+        "title": "Safely inspect which users have sudo privileges",
+        "objective": "The lab asks you to determine which user is configured to run commands through sudo.",
+        "steps": [
+          "sudo visudo -c",
+          "sudo grep -vE '^[[:space:]]*(#|$)' /etc/sudoers",
+          "sudo grep -R -vE '^[[:space:]]*(#|$)' /etc/sudoers.d/",
+          "%sudo ALL=(ALL:ALL) ALL",
+          "groups",
+          "sudo -l -U username"
+        ]
+      },
+      {
+        "id": "switch-to-root-with--10",
+        "tag": "Switch to root with ",
+        "title": "Switch to root with `su -`",
+        "objective": "Run:",
+        "steps": [
+          "su -",
+          "whoami",
+          "root",
+          "exit",
+          "whoami"
+        ]
+      },
+      {
+        "id": "create-steps-txt-in--11",
+        "tag": "Create `steps.txt` i",
+        "title": "Create `steps.txt` in Vim and save without exiting",
+        "objective": "Open the file:",
+        "steps": [
+          "vim ~/steps.txt",
+          "i",
+          "Welcome to AIOPS Training",
+          "This course covers Vim",
+          "Esc",
+          ":w"
+        ]
+      },
+      {
+        "id": "search-for-the-vim-l-12",
+        "tag": "Search for the Vim l",
+        "title": "Search for the Vim line and replace `raining` with `Course`",
+        "objective": "The lab wording appears to contain a typo:",
+        "steps": [
+          "search for Vim return raining",
+          "This course covers Vim",
+          ":%s/raining/Course/g",
+          ":%s/Vim/Course/g",
+          "/raining"
+        ]
+      },
+      {
+        "id": "copy-the-current-lin-13",
+        "tag": "Copy the current lin",
+        "title": "Copy the current line, paste it below, then save and exit",
+        "objective": "In Vim Command mode:",
+        "steps": [
+          "yy",
+          "p",
+          ":wq",
+          "Esc → yy → p → :wq → Enter",
+          "Manual pages are divided into sections, and man 5 passwd refers to the passwd file format, not the passwd command.",
+          "man -k searches the manual database by keyword.",
+          ">> appends data, while > redirects output and overwrites the destination file.",
+          "Vim separates Insert mode from Command mode."
+        ]
+      }
+    ]
+  }
+}

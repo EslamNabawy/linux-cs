@@ -1,0 +1,66 @@
+{
+  "categories": [
+    {
+      "id": "navigation",
+      "title": "File & Directory Navigation",
+      "icon": "folder",
+      "count": 4
+    },
+    {
+      "id": "manipulation",
+      "title": "File Manipulation",
+      "icon": "file",
+      "count": 5
+    },
+    {
+      "id": "viewing",
+      "title": "Viewing & Editing Text",
+      "icon": "eye",
+      "count": 5
+    },
+    {
+      "id": "system",
+      "title": "System & Process Management",
+      "icon": "cpu",
+      "count": 6
+    },
+    {
+      "id": "networking",
+      "title": "Networking & Permissions",
+      "icon": "network",
+      "count": 5
+    },
+    {
+      "id": "archiving",
+      "title": "Archiving & Compression",
+      "icon": "folder",
+      "count": 4
+    },
+    {
+      "id": "git",
+      "title": "Version Control (Git)",
+      "icon": "file",
+      "count": 5
+    },
+    {
+      "id": "docker",
+      "title": "Containers (Docker)",
+      "icon": "cpu",
+      "count": 4
+    }
+  ],
+  "commandsBankCount": 78,
+  "notes": [
+    "rahma",
+    "michael",
+    "hager",
+    "sagda",
+    "tarek"
+  ],
+  "ntiDays": [
+    "day1",
+    "day2",
+    "day3"
+  ],
+  "flashcardsCount": 108
+}

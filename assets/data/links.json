@@ -1,0 +1,50 @@
+{
+  "soft": {
+    "definition": "A soft link is essentially a shortcut. It points to the path of another file.",
+    "properties": [
+      "If the original file is deleted, the soft link breaks (dangling link).",
+      "Can link across different file systems and partitions.",
+      "Can link directories."
+    ],
+    "syntax": "ln -s /path/to/original /path/to/symlink",
+    "example": "ln -s /var/www/html/myapp/config.yaml ~/config_link"
+  },
+  "hard": {
+    "definition": "A hard link is a mirror copy of a file's inode (the data structure that stores file metadata and location on the disk).",
+    "properties": [
+      "If the original file is deleted, the hard link still works because the inode data is still intact.",
+      "Cannot cross file systems/partitions.",
+      "Cannot link directories (only files).",
+      "Changing the content of the original or the hard link updates both."
+    ],
+    "syntax": "ln /path/to/original /path/to/hardlink",
+    "example": "ln /var/log/app.log ~/app_log_backup"
+  },
+  "comparison": [
+    {
+      "feature": "Points to",
+      "soft": "File path (name)",
+      "hard": "Inode (physical disk data)"
+    },
+    {
+      "feature": "If original deleted",
+      "soft": "Link breaks (invalid)",
+      "hard": "Link remains valid"
+    },
+    {
+      "feature": "Can link directories?",
+      "soft": "Yes",
+      "hard": "No"
+    },
+    {
+      "feature": "Cross file system?",
+      "soft": "Yes",
+      "hard": "No"
+    },
+    {
+      "feature": "Command",
+      "soft": "ln -s target link_name",
+      "hard": "ln target link_name"
+    }
+  ]
+}

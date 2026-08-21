@@ -1,0 +1,581 @@
+{
+  "author": "Hager",
+  "day": 1,
+  "subtitle": "Linux Session Revision Sheet",
+  "avatar": "H",
+  "sections": [
+    {
+      "id": "linux-basics",
+      "title": "Linux Basics",
+      "icon": "cpu",
+      "blocks": [
+        {
+          "t": "text",
+          "html": "<h6>Linux vs. Windows</h6>"
+        },
+        {
+          "t": "list",
+          "items": [
+            "Security",
+            "Stability",
+            "Maintenance",
+            "Runs on different hardware",
+            "Free & open source",
+            "Easy to customize",
+            "Community support",
+            "Different user-interface experience"
+          ]
+        },
+        {
+          "t": "text",
+          "html": "<h6>Linux Architecture</h6>"
+        },
+        {
+          "t": "diagram",
+          "kind": "architecture"
+        },
+        {
+          "t": "list",
+          "items": [
+            "<strong>Kernel:</strong> Works with the hardware.",
+            "<strong>Shell:</strong> Interface for interacting with the system through commands."
+          ]
+        },
+        {
+          "t": "text",
+          "html": "<h6>Swap</h6>"
+        },
+        {
+          "t": "text",
+          "html": "<p>Uses part of the storage as additional memory when needed.</p>"
+        }
+      ]
+    },
+    {
+      "id": "users-and-privileges",
+      "title": "Users and Privileges",
+      "icon": "file",
+      "blocks": [
+        {
+          "t": "table",
+          "head": [
+            "Symbol",
+            "Meaning"
+          ],
+          "rows": [
+            [
+              "$",
+              "Regular user"
+            ],
+            [
+              "#",
+              "Superuser"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "command-syntax",
+      "title": "Command Syntax",
+      "icon": "eye",
+      "blocks": [
+        {
+          "t": "code",
+          "code": "command  option  argument",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Example:</p>"
+        },
+        {
+          "t": "code",
+          "code": "ls -l /dev",
+          "lang": "bash"
+        },
+        {
+          "t": "list",
+          "items": [
+            "A space is required between the command, options, and arguments.",
+            "Options can be combined."
+          ]
+        },
+        {
+          "t": "text",
+          "html": "<p>For example:</p>"
+        },
+        {
+          "t": "code",
+          "code": "ls -ld",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>is equivalent to:</p>"
+        },
+        {
+          "t": "code",
+          "code": "ls -l -d",
+          "lang": "bash"
+        }
+      ]
+    },
+    {
+      "id": "navigation",
+      "title": "Navigation",
+      "icon": "file",
+      "blocks": [
+        {
+          "t": "table",
+          "head": [
+            "Command",
+            "Description"
+          ],
+          "rows": [
+            [
+              "pwd",
+              "Print working directory"
+            ],
+            [
+              "cd",
+              "Go to home directory"
+            ],
+            [
+              "cd ~",
+              "Go to home directory"
+            ],
+            [
+              "cd $HOME",
+              "Go to home directory"
+            ],
+            [
+              "cd /absolute/path",
+              "Go to an absolute path"
+            ],
+            [
+              "cd -",
+              "Go back to the previous directory"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "listing-files",
+      "title": "Listing Files",
+      "icon": "folder",
+      "blocks": [
+        {
+          "t": "table",
+          "head": [
+            "Command",
+            "Description"
+          ],
+          "rows": [
+            [
+              "ls",
+              "List files"
+            ],
+            [
+              "ls -a",
+              "List all files, including hidden files"
+            ],
+            [
+              "ls -l",
+              "Long listing"
+            ],
+            [
+              "ls -la",
+              "Long listing + hidden files"
+            ],
+            [
+              "ls -lt",
+              "Sort by time"
+            ],
+            [
+              "ls -ltr",
+              "Sort by time, reverse order"
+            ],
+            [
+              "ls -lth",
+              "Long listing + time sorting + human-readable size"
+            ]
+          ]
+        },
+        {
+          "t": "callout",
+          "kind": "info",
+          "html": "Files and directories starting with <code>.</code> are hidden."
+        },
+        {
+          "t": "text",
+          "html": "<h6>Wildcards</h6>"
+        },
+        {
+          "t": "table",
+          "head": [
+            "Pattern",
+            "Meaning"
+          ],
+          "rows": [
+            [
+              "ls p*",
+              "Starts with p"
+            ],
+            [
+              "ls *p",
+              "Ends with p"
+            ],
+            [
+              "ls ???",
+              "Exactly 3 characters"
+            ],
+            [
+              "ls [a-c]*",
+              "Starts with a, b, or c"
+            ],
+            [
+              "ls [!a]*",
+              "Does not start with a"
+            ],
+            [
+              "ls [!a-c]*",
+              "Does not start with a–c"
+            ]
+          ]
+        },
+        {
+          "t": "callout",
+          "kind": "info",
+          "html": "Inside <code>[]</code>, <code>!</code> and <code>^</code> have the same meaning."
+        }
+      ]
+    },
+    {
+      "id": "file-content",
+      "title": "File Content",
+      "icon": "folder",
+      "blocks": [
+        {
+          "t": "table",
+          "head": [
+            "Command",
+            "Description"
+          ],
+          "rows": [
+            [
+              "cat file",
+              "Show file content"
+            ],
+            [
+              "nano file",
+              "Edit a file"
+            ],
+            [
+              "head -n N file",
+              "Show the first N lines"
+            ],
+            [
+              "tail -n N file",
+              "Show the last N lines"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "file-directory-management",
+      "title": "File & Directory Management",
+      "icon": "folder",
+      "blocks": [
+        {
+          "t": "table",
+          "head": [
+            "Command",
+            "Description"
+          ],
+          "rows": [
+            [
+              "touch file",
+              "Create an empty file"
+            ],
+            [
+              "mkdir dir",
+              "Create a directory"
+            ],
+            [
+              "cp file dest",
+              "Copy a file"
+            ],
+            [
+              "cp -r dir dest",
+              "Copy a directory recursively"
+            ],
+            [
+              "mv file dest",
+              "Move a file"
+            ],
+            [
+              "mv file newname",
+              "Rename a file"
+            ],
+            [
+              "rm -rf dir",
+              "Force-remove a directory recursively"
+            ]
+          ]
+        },
+        {
+          "t": "text",
+          "html": "<h6>Important Options</h6>"
+        },
+        {
+          "t": "code",
+          "code": "-r / -R  → recursive\n-f       → force",
+          "lang": "bash"
+        },
+        {
+          "t": "callout",
+          "kind": "danger",
+          "html": "<code>rm -rf dir</code> force-removes a directory recursively. This is irreversible — the data is not recoverable."
+        }
+      ]
+    },
+    {
+      "id": "searching-with-grep",
+      "title": "Searching with `grep`",
+      "icon": "search",
+      "blocks": [
+        {
+          "t": "text",
+          "html": "<p>Basic command:</p>"
+        },
+        {
+          "t": "code",
+          "code": "grep hager dir",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<h6>Useful Options</h6>"
+        },
+        {
+          "t": "table",
+          "head": [
+            "Command",
+            "Description"
+          ],
+          "rows": [
+            [
+              "grep -i",
+              "Case-insensitive"
+            ],
+            [
+              "grep -l",
+              "Show only file names containing the pattern"
+            ],
+            [
+              "grep -B N",
+              "Show N lines **before** the match"
+            ],
+            [
+              "grep -A N",
+              "Show N lines **after** the match"
+            ]
+          ]
+        },
+        {
+          "t": "text",
+          "html": "<p>Example:</p>"
+        },
+        {
+          "t": "code",
+          "code": "grep -i hager dir\ngrep -l hager dir\ngrep -B 2 hager dir\ngrep -A 2 hager dir",
+          "lang": "bash"
+        }
+      ]
+    },
+    {
+      "id": "links",
+      "title": "Links",
+      "icon": "folder",
+      "blocks": [
+        {
+          "t": "text",
+          "html": "<p>Linux supports <strong>hard links</strong> and <strong>soft links</strong>.</p>"
+        },
+        {
+          "t": "text",
+          "html": "<h6>Hard Link</h6>"
+        },
+        {
+          "t": "code",
+          "code": "ln file1 file2",
+          "lang": "bash"
+        },
+        {
+          "t": "list",
+          "items": [
+            "Both names refer to the same data.",
+            "They share the same inode.",
+            "A hard link cannot link directories.",
+            "The data remains as long as at least one hard link still exists."
+          ]
+        },
+        {
+          "t": "text",
+          "html": "<p>Example:</p>"
+        },
+        {
+          "t": "code",
+          "code": "ln file1 file2",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>To remove a hard link:</p>"
+        },
+        {
+          "t": "code",
+          "code": "rm -rf hard-link",
+          "lang": "bash"
+        },
+        {
+          "t": "callout",
+          "kind": "warning",
+          "html": "<code>rm -rf hard-link</code> is used to remove a hard link. Since <code>-rf</code> is destructive, confirm the target before running it."
+        },
+        {
+          "t": "text",
+          "html": "<h6>Soft Link</h6>"
+        },
+        {
+          "t": "text",
+          "html": "<p>A soft link points to a path.</p>"
+        },
+        {
+          "t": "text",
+          "html": "<h6>Inode</h6>"
+        },
+        {
+          "t": "list",
+          "items": [
+            "Every file or directory has an <strong>inode</strong> allocated for it.",
+            "A hard link refers to the same inode/data."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "important-filesystem-directories",
+      "title": "Important Filesystem Directories",
+      "icon": "folder",
+      "blocks": [
+        {
+          "t": "table",
+          "head": [
+            "Directory",
+            "Purpose"
+          ],
+          "rows": [
+            [
+              "/",
+              "Root of the entire filesystem"
+            ],
+            [
+              "/bin",
+              "Essential binaries for regular users"
+            ],
+            [
+              "/sbin",
+              "System binaries for the superuser"
+            ],
+            [
+              "/dev",
+              "Device files"
+            ],
+            [
+              "/etc",
+              "Configuration files"
+            ],
+            [
+              "/home",
+              "Users' home directories"
+            ],
+            [
+              "/root",
+              "Home directory of the superuser"
+            ],
+            [
+              "/tmp",
+              "Temporary files"
+            ],
+            [
+              "/var",
+              "Variable data, such as /var/tmp"
+            ],
+            [
+              "/run",
+              "Runtime data related to services"
+            ],
+            [
+              "/local",
+              "Local / customized software"
+            ]
+          ]
+        },
+        {
+          "t": "text",
+          "html": "<h6>Important</h6>"
+        },
+        {
+          "t": "code",
+          "code": "/       → Root of the filesystem\n/root   → Home directory of the superuser\n/home   → Home directories of regular users",
+          "lang": "bash"
+        },
+        {
+          "t": "callout",
+          "kind": "info",
+          "html": "<code>/root</code> is <strong>not</strong> the same as <code>/home/root</code>."
+        }
+      ]
+    },
+    {
+      "id": "terminal-keyboard-shortcuts",
+      "title": "Terminal Keyboard Shortcuts",
+      "icon": "file",
+      "blocks": [
+        {
+          "t": "table",
+          "head": [
+            "Shortcut",
+            "Action"
+          ],
+          "rows": [
+            [
+              "Ctrl + A",
+              "Go to the beginning of the command"
+            ],
+            [
+              "Ctrl + E",
+              "Go to the end of the command"
+            ],
+            [
+              "Ctrl + ← / →",
+              "Move by word"
+            ],
+            [
+              "Ctrl + K",
+              "Cut from the cursor to the end of the line"
+            ],
+            [
+              "Ctrl + U",
+              "Cut from the cursor to the beginning of the line"
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

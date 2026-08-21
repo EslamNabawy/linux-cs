@@ -1,0 +1,14 @@
+﻿<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='630' viewBox='0 0 1200 630'>
+  <rect width='1200' height='630' fill='#0d1117'/>
+  <rect x='80' y='80' width='1040' height='470' rx='16' fill='#151b23' stroke='#232a34'/>
+  <g transform='translate(140,140)'>
+    <rect width='56' height='56' rx='8' fill='rgba(57,211,83,0.15)'/>
+    <g transform='translate(14,14)' stroke='#39d353' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'>
+      <polyline points='4 17 10 11 4 5'/><line x1='12' y1='19' x2='20' y2='19'/>
+    </g>
+  </g>
+  <text x='220' y='180' font-family='JetBrains Mono, monospace' font-size='42' font-weight='700' fill='#e6edf3'>Eslam<tspan fill='#39d353'>Os</tspan></text>
+  <text x='140' y='250' font-family='Inter, sans-serif' font-size='44' font-weight='700' fill='#e6edf3'>Linux Cheat Sheet &amp; Course</text>
+  <text x='140' y='300' font-family='Inter, sans-serif' font-size='20' fill='#8b949e'>Commands bank • NTI RH124 Notes • Labs • Flashcards</text>
+  <text x='140' y='480' font-family='JetBrains Mono, monospace' font-size='16' fill='#6e7681'>github.com/EslamNabawy/linux-cs</text>
+</svg>

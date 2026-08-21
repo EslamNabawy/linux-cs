@@ -1,0 +1,681 @@
+{
+  "author": "Michael",
+  "day": 1,
+  "subtitle": "Comprehensive Linux Commands & File System",
+  "avatar": "M",
+  "sections": [
+    {
+      "id": "directory-navigation-paths",
+      "title": "Directory Navigation & Paths",
+      "icon": "folder",
+      "blocks": [
+        {
+          "t": "text",
+          "html": "<h6>Working Directory & Path Types</h6>"
+        },
+        {
+          "t": "list",
+          "items": [
+            "<code>pwd</code> (<strong>Print Working Directory</strong>): Displays the current absolute directory path.",
+            "<strong>Absolute Path</strong>: Path defined from the root directory <code>/</code> (e.g., <code>/usr/share/doc/</code>).",
+            "<strong>Relative Path</strong>: Path defined relative to the current directory (e.g., <code>..</code>, <code>doc/</code>)."
+          ]
+        },
+        {
+          "t": "text",
+          "html": "<p>Navigation Commands (<code>cd</code>)</p>"
+        },
+        {
+          "t": "table",
+          "head": [
+            "Command",
+            "Description"
+          ],
+          "rows": [
+            [
+              "cd",
+              "Change directory"
+            ],
+            [
+              "cd /",
+              "Move to the Root Directory /"
+            ],
+            [
+              "cd ~ / cd $HOME / cd /home/<username>",
+              "Move to the current user's Home Directory (contains the 4 basic user directories: Desktop, Documents, Downloads, etc.)"
+            ],
+            [
+              "cd /root",
+              "Move to the Root User's Home Directory"
+            ],
+            [
+              "cd -",
+              "Switch back to the previous working directory"
+            ],
+            [
+              "cd ..",
+              "Move up one level in the directory tree (parent directory)"
+            ],
+            [
+              "cd /dev/",
+              "Navigate to system devices directory"
+            ],
+            [
+              "cd /run",
+              "Navigate to runtime variable data directory"
+            ],
+            [
+              "cd /usr/share/doc/",
+              "Navigate to documentation folder"
+            ],
+            [
+              "cd /var/log",
+              "Navigate to system log directory"
+            ]
+          ]
+        },
+        {
+          "t": "text",
+          "html": "<p><code>cd -</code> switches back to the previous working directory.<br><em>(يرجعك لآخر مكان كنت فيه)</em></p>"
+        },
+        {
+          "t": "callout",
+          "kind": "info",
+          "html": "<strong>Key Question (إيه الفرق بين <code>~</code> و <code>/home/</code>؟):</strong> <code>~</code> represents the home directory of the currently logged-in user (e.g., <code>/home/omar</code> for user <code>omar</code>, or <code>/root</code> for the <code>root</code> user). <code>/home/</code> is the base directory housing all individual user home folders."
+        }
+      ]
+    },
+    {
+      "id": "directory-listing-file-inspection-ls-dir",
+      "title": "Directory Listing & File Inspection (`ls`, `dir`, `tree`)",
+      "icon": "folder",
+      "blocks": [
+        {
+          "t": "text",
+          "html": "<p>Basic & Advanced <code>ls</code> Flags</p>"
+        },
+        {
+          "t": "list",
+          "items": [
+            "<code>ls</code>: Lists files and directories in the current folder.",
+            "<code>ls /</code>: Lists contents of the root directory.",
+            "<code>ls -l</code>: Detailed long-listing format. Displays file types, permissions (9 bits), link count, owner, group, file size, last modified time, and name."
+          ]
+        },
+        {
+          "t": "text",
+          "html": "<p><strong>File Type Identifiers in <code>ls -l</code>:</strong></p>"
+        },
+        {
+          "t": "table",
+          "head": [
+            "Identifier",
+            "Meaning"
+          ],
+          "rows": [
+            [
+              "d",
+              "Directory *(أي directory باللون الأزرق - directories in blue)*"
+            ],
+            [
+              "-",
+              "Regular file"
+            ],
+            [
+              "l",
+              "Symbolic link"
+            ]
+          ]
+        },
+        {
+          "t": "table",
+          "head": [
+            "Command",
+            "Description"
+          ],
+          "rows": [
+            [
+              "ls -la / ls -a",
+              "Lists all files, including hidden files (starting with .)"
+            ],
+            [
+              "ls -lh",
+              "Displays file sizes in Human-Readable formats (KB, MB, GB)"
+            ],
+            [
+              "ls -lt",
+              "Sorts output by modification time (newest first)"
+            ],
+            [
+              "ls -ltr",
+              "Sorts output by modification time in reverse (oldest first)"
+            ],
+            [
+              "ls -lR / ls -LR",
+              "Recursive directory listing (lists subdirectories and their contents)"
+            ],
+            [
+              "ls -li",
+              "Displays file listing along with Inode numbers"
+            ]
+          ]
+        },
+        {
+          "t": "text",
+          "html": "<p><code>dir</code> vs <code>ls</code></p>"
+        },
+        {
+          "t": "list",
+          "items": [
+            "<code>dir</code>: Similar to <code>ls</code>, lists directory contents.",
+            "<code>dir --color</code>: Colorizes directory listings to distinguish files and folders.",
+            "Both commands are <strong>case-sensitive</strong>."
+          ]
+        },
+        {
+          "t": "text",
+          "html": "<p>Wildcards & Pattern Matching in <code>ls</code></p>"
+        },
+        {
+          "t": "table",
+          "head": [
+            "Pattern",
+            "Meaning"
+          ],
+          "rows": [
+            [
+              "ls file*",
+              "Matches any file starting with file"
+            ],
+            [
+              "ls [fa]*",
+              "Matches files starting with either f or a"
+            ],
+            [
+              "ls [a-c]*",
+              "Matches files starting with letters a, b, or c"
+            ],
+            [
+              "ls [!fa]*",
+              "Matches files NOT starting with f or a *(إستثناء - exclusion)*"
+            ],
+            [
+              "ls [!a-c]*",
+              "Matches files NOT starting with a, b, or c"
+            ],
+            [
+              "ls file[[:alpha:]]",
+              "Matches file followed by any alphabetic character"
+            ],
+            [
+              "ls *[[:space:]]*",
+              "Matches filenames containing space characters"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "file-directory-management-touch-mkdir-cp",
+      "title": "File & Directory Management (`touch`, `mkdir`, `cp`, `mv`, `rm`)",
+      "icon": "folder",
+      "blocks": [
+        {
+          "t": "text",
+          "html": "<h6>Creating Files & Directories</h6>"
+        },
+        {
+          "t": "code",
+          "code": "touch File1",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Creates an empty file named <code>File1</code> (or updates timestamps if it exists).</p>"
+        },
+        {
+          "t": "code",
+          "code": "touch File1 File2",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Creates multiple empty files at once.</p>"
+        },
+        {
+          "t": "code",
+          "code": "touch /root/Desktop/File1",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Creates a file at a specific path.</p>"
+        },
+        {
+          "t": "code",
+          "code": "mkdir dir1",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Creates a directory named <code>dir1</code>.</p>"
+        },
+        {
+          "t": "code",
+          "code": "mkdir -p dir1/dir2/dir3",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p><strong>Parent flag (<code>-p</code>)</strong> creates nested directory structures recursively.<br><em>(بيعمل المجلدات وأجزائها)</em></p>"
+        },
+        {
+          "t": "code",
+          "code": "tree dir1",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Visualizes directory hierarchy in a tree structure.</p>"
+        },
+        {
+          "t": "code",
+          "code": "mkdir system/admin",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Creates nested system/admin directories.</p>"
+        },
+        {
+          "t": "text",
+          "html": "<p>Copying Files & Directories (<code>cp</code>)</p>"
+        },
+        {
+          "t": "table",
+          "head": [
+            "Command",
+            "Description"
+          ],
+          "rows": [
+            [
+              "cp /etc/passwd /home/omar",
+              "Copies /etc/passwd to /home/omar"
+            ],
+            [
+              "cp /etc/shadow .",
+              "Copies /etc/shadow to the current working directory (.)"
+            ],
+            [
+              "cp -r /etc/ /home/",
+              "Recursive copy (-r): copies directory /etc/ along with all its subdirectories and contents"
+            ],
+            [
+              "cp -r /etc/* /home/",
+              "Copies all contents inside /etc/ into /home/"
+            ],
+            [
+              "cp File1 File2 File3 /home/omar",
+              "Copies multiple files into a destination directory"
+            ],
+            [
+              "cp /etc/passwd ~",
+              "Copies file to user's home directory"
+            ]
+          ]
+        },
+        {
+          "t": "text",
+          "html": "<p>Moving & Renaming (<code>mv</code>)</p>"
+        },
+        {
+          "t": "table",
+          "head": [
+            "Command",
+            "Description"
+          ],
+          "rows": [
+            [
+              "mv passwd new_passwd",
+              "Renames file passwd to new_passwd (when destination path remains unchanged)"
+            ],
+            [
+              "mv new_passwd /root/Documents",
+              "Moves file to /root/Documents"
+            ],
+            [
+              "mv File1 File2 File3 /root/",
+              "Moves multiple files to /root/"
+            ],
+            [
+              "mv dir1 dir2 dir3 dir4",
+              "Moves multiple directories or contents"
+            ]
+          ]
+        },
+        {
+          "t": "text",
+          "html": "<p>Deleting Files & Directories (<code>rm</code>, <code>rmdir</code>)</p>"
+        },
+        {
+          "t": "code",
+          "code": "rm File1",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Removes/deletes <code>File1</code>.</p>"
+        },
+        {
+          "t": "code",
+          "code": "rmdir dir1",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Removes empty directory <code>dir1</code>.</p>"
+        },
+        {
+          "t": "text",
+          "html": "<p><strong>Aliases & Root Protection:</strong></p>"
+        },
+        {
+          "t": "callout",
+          "kind": "tip",
+          "html": "<code>alias rm='rm -i'</code>: Interactive mode prompts for confirmation before deletion.<br><em>(يسأل قبل ما يمسح)</em><br>The <code>root</code> user defaults to interactive <code>rm -i</code> for safety."
+        },
+        {
+          "t": "code",
+          "code": "rm -f File1",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p><strong>Force delete (<code>-f</code>)</strong> bypasses prompts.<br><em>(يمسح بدون ما يسأل)</em></p>"
+        },
+        {
+          "t": "code",
+          "code": "rm -r dir1",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p><strong>Recursive delete (<code>-r</code>)</strong> removes directory and its contents.</p>"
+        },
+        {
+          "t": "code",
+          "code": "rm -rf dir1",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Forcefully and recursively removes directory <code>dir1</code>.</p>"
+        },
+        {
+          "t": "callout",
+          "kind": "warning",
+          "html": "<code>rm -rf *</code> deletes everything in the current directory.<br><em>(يمسح كل حاجة)</em>"
+        },
+        {
+          "t": "callout",
+          "kind": "danger",
+          "html": "<code>rm -rf /</code> deletes the entire system. Irreversible.<br><em>(يمسح السيستم كله - CRITICAL DANGER)</em>"
+        }
+      ]
+    },
+    {
+      "id": "inodes-links-hard-links-vs-soft-symbolic",
+      "title": "Inodes & Links (Hard Links vs. Soft/Symbolic Links)",
+      "icon": "folder",
+      "blocks": [
+        {
+          "t": "text",
+          "html": "<h6>Understanding Inodes</h6>"
+        },
+        {
+          "t": "text",
+          "html": "<p><strong>Inode</strong>: Index node storing metadata about a file (file size, permissions, owner, timestamps, block pointers). Metadatas are stored in the Inode Table.</p>"
+        },
+        {
+          "t": "text",
+          "html": "<h6>Creating & Managing Links</h6>"
+        },
+        {
+          "t": "code",
+          "code": "ln passwd hard-link-passwd",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Creates a <strong>Hard Link</strong> named <code>hard-link-passwd</code>.</p>"
+        },
+        {
+          "t": "code",
+          "code": "ln -s passwd soft-link1",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Creates a <strong>Soft/Symbolic Link</strong> (<code>-s</code>) named <code>soft-link1</code>.</p>"
+        },
+        {
+          "t": "code",
+          "code": "ls -li",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Displays Inode numbers along with file details.</p>"
+        },
+        {
+          "t": "text",
+          "html": "<h6>Key Rules & Behavior Differences</h6>"
+        },
+        {
+          "t": "table",
+          "head": [
+            "Behavior",
+            "Hard Link",
+            "Soft Link"
+          ],
+          "rows": [
+            [
+              "Inode",
+              "Points directly to the same Inode as the source file. Increments link count.",
+              "Has its own Inode; points to the target filename/path."
+            ],
+            [
+              "Deleting source file (rm -f passwd)",
+              "Data remains accessible because the link points to the underlying Inode/data blocks *(لو مسحت الملف الأصلي، الـ hard link يفضل شغال)*",
+              "Becomes broken/invalid *(الـ soft link يقف - broken link error when reading via cat)*"
+            ],
+            [
+              "Works on directories?",
+              "❌ Cannot create hard links for directories *(ميدعمش نعمل hard link لـ directory)*",
+              "✅ Supports directories"
+            ],
+            [
+              "Works across different filesystems/partitions?",
+              "❌ Cannot create hard links across different filesystems/partitions *(ولا بين different filesystem)*",
+              "✅ Works across different filesystems"
+            ]
+          ]
+        },
+        {
+          "t": "diagram",
+          "kind": "links"
+        }
+      ]
+    },
+    {
+      "id": "text-searching-grep-regular-expressions",
+      "title": "Text Searching (`grep`) & Regular Expressions",
+      "icon": "search",
+      "blocks": [
+        {
+          "t": "text",
+          "html": "<p><code>grep</code> searches text for patterns and prints matching lines.</p>"
+        },
+        {
+          "t": "text",
+          "html": "<h6>Basic Searching & Flags</h6>"
+        },
+        {
+          "t": "code",
+          "code": "grep omar /etc/passwd",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Searches for string <code>omar</code> in <code>/etc/passwd</code>.</p>"
+        },
+        {
+          "t": "code",
+          "code": "grep bash /etc/passwd",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Searches for <code>bash</code>.</p>"
+        },
+        {
+          "t": "table",
+          "head": [
+            "Command",
+            "Description"
+          ],
+          "rows": [
+            [
+              "grep -i bash /etc/passwd",
+              "Case-insensitive search (-i) *(Case insensitive - يتجاهل حالة الأحرف)*"
+            ],
+            [
+              "grep -v nologin /etc/passwd",
+              "Invert match (-v): prints lines that do NOT contain nologin *(سيرش على أي line مفيهاش nologin)*"
+            ],
+            [
+              "grep -w shut /etc/passwd",
+              "Word match (-w): matches whole word shut only *(بيدور على كلمة كاملة)*"
+            ],
+            [
+              "grep -A 2 root /etc/passwd",
+              "Displays match plus 2 lines AFTER (-A)"
+            ],
+            [
+              "grep -B 2 root /etc/passwd",
+              "Displays match plus 2 lines BEFORE (-B)"
+            ],
+            [
+              "grep -r omar /etc",
+              "Recursive search (-r): searches all files inside directory /etc"
+            ],
+            [
+              "grep -rl omar /etc",
+              "Lists only filenames (-l) containing the match"
+            ],
+            [
+              "grep -e omar -e root /etc/passwd",
+              "Searches for multiple patterns (-e) simultaneously (omar OR root)"
+            ]
+          ]
+        },
+        {
+          "t": "text",
+          "html": "<p>Regular Expressions with <code>grep</code></p>"
+        },
+        {
+          "t": "text",
+          "html": "<p>Used with dictionary files (e.g., <code>/usr/share/dict/words</code>):</p>"
+        },
+        {
+          "t": "table",
+          "head": [
+            "Command",
+            "Description"
+          ],
+          "rows": [
+            [
+              "grep '^cat' /usr/share/dict/words",
+              "Matches lines starting with cat"
+            ],
+            [
+              "grep 'cat$' /usr/share/dict/words",
+              "Matches lines ending with cat"
+            ],
+            [
+              "grep '^cat$' /usr/share/dict/words",
+              "Matches exact line cat"
+            ],
+            [
+              "grep 'c.t' /usr/share/dict/words",
+              "Matches c, followed by any single character, followed by t"
+            ],
+            [
+              "grep '^c.t$' /usr/share/dict/words",
+              "Exact 3-letter words starting with c and ending with t"
+            ],
+            [
+              "grep '^c[aou]t$' /usr/share/dict/words",
+              "Exact 3-letter words starting with c, middle character a, o, or u, and ending with t (e.g., cat, cot, cut)"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "text-processing-cut",
+      "title": "Text Processing (`cut`)",
+      "icon": "file",
+      "blocks": [
+        {
+          "t": "text",
+          "html": "<p>The <code>cut</code> command extracts sections from each line of a file.</p>"
+        },
+        {
+          "t": "text",
+          "html": "<p>Slicing Characters (<code>-c</code>)</p>"
+        },
+        {
+          "t": "code",
+          "code": "cut -c 1-5 /etc/passwd",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Extracts characters from position 1 to 5 of each line.</p>"
+        },
+        {
+          "t": "code",
+          "code": "cut -c 5- /etc/passwd",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Extracts characters from position 5 to the end of each line.</p>"
+        },
+        {
+          "t": "text",
+          "html": "<p>Delimiters & Fields (<code>-d</code>, <code>-f</code>)</p>"
+        },
+        {
+          "t": "code",
+          "code": "cut -d : -f 1 /etc/passwd",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Sets delimiter (<code>-d</code>) to <code>:</code> and extracts field 1 (usernames).</p>"
+        },
+        {
+          "t": "code",
+          "code": "cut -d : -f 1,7 /etc/passwd",
+          "lang": "bash"
+        },
+        {
+          "t": "text",
+          "html": "<p>Extracts fields 1 and 7 (username and login shell).</p>"
+        }
+      ]
+    }
+  ]
+}

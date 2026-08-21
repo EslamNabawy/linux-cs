@@ -1,0 +1,1235 @@
+{
+  "categories": [
+    {
+      "id": "navigation",
+      "title": "File & Directory Navigation",
+      "icon": "folder",
+      "commands": [
+        {
+          "command": "pwd",
+          "description": "Print working directory",
+          "example": "pwd",
+          "notes": "Useful in scripts to get absolute paths — combine with $(pwd).  Tip: in scripts prefer $(pwd) — `echo \"Running in $(pwd)\"` — and `pwd -P` resolves symlinks vs `pwd -L`."
+        },
+        {
+          "command": "ls",
+          "description": "List directory contents",
+          "example": "ls -la",
+          "notes": "-a shows dotfiles (.bashrc etc.); -h with -l gives human-readable sizes.  Try `ls -lhtr` (human, time, reverse) and `ls -li` to see inodes. For spaces: `ls -b` escapes them."
+        },
+        {
+          "command": "cd",
+          "description": "Change directory",
+          "example": "cd /var/log",
+          "notes": "cd - jumps back to previous directory; cd alone goes home.  `cd -` is a stack of 1 — use `pushd`/`popd` or `cd $OLDPWD` for more. `cd` with no arg is `cd $HOME`."
+        },
+        {
+          "command": "tree",
+          "description": "List contents in a tree-like format",
+          "example": "tree -L 2",
+          "notes": "Not installed by default — sudo apt install tree.  If missing: `sudo apt install tree` or fallback `find . -maxdepth 2 -type d | sort` (faster, no color)."
+        }
+      ]
+    },
+    {
+      "id": "manipulation",
+      "title": "File Manipulation",
+      "icon": "file",
+      "commands": [
+        {
+          "command": "touch",
+          "description": "Create an empty file / update timestamp",
+          "example": "touch newfile.txt",
+          "notes": "If the file exists, it only updates the modified timestamp — no data is lost.  For spaces: `touch \"my file.txt\"` — and `touch -- -dashfile` creates a file starting with dash. `touch -t 202501010101 file` sets timestamp."
+        },
+        {
+          "command": "mkdir",
+          "description": "Make a directory",
+          "example": "mkdir -p dir/subdir",
+          "notes": "Without -p, it fails if parent directories don't already exist.  Quote parents with spaces: `mkdir -p \"My Projects/src\"` — without -p fails if parent missing."
+        },
+        {
+          "command": "cp",
+          "description": "Copy files/directories",
+          "example": "cp -r source_dir/ dest_dir/",
+          "notes": "-r is required for directories; use -i to get a prompt before overwriting.  Use `cp -a` to preserve perms/symlinks (archive). For safety: `cp -i` prompts, `cp -n` no-clobber. Never `cp -r /etc/* /` without verify."
+        },
+        {
+          "command": "mv",
+          "description": "Move or rename files",
+          "example": "mv oldname.txt newname.txt",
+          "notes": "No -i prompt by default — silently overwrites an existing destination file.  Add `-i` to prompt before overwrite. Across filesystems `mv` copies+deletes — use `rsync --remove-source-files` for large moves."
+        },
+        {
+          "command": "rm",
+          "description": "Remove files/directories",
+          "example": "rm -rf folder/",
+          "notes": "There is no Recycle Bin. rm -rf is permanent and irreversible — double-check the path.  Danger: `rm -rf /tmp/*` OK, but `rm -rf / tmp/*` (space) = disaster. Use `rm -- -file` for dash files. Check with `ls` first, or `trash-put`."
+        }
+      ]
+    },
+    {
+      "id": "viewing",
+      "title": "Viewing & Editing Text",
+      "icon": "eye",
+      "commands": [
+        {
+          "command": "cat",
+          "description": "Concatenate and print file content",
+          "example": "cat file.txt",
+          "notes": "Not ideal for huge files — it dumps everything at once; use less instead.  For numbers: `cat -n file` or better `nl -ba`. For large: `less` or `bat` (syntax). `cat file1 file2 > combined` is its true concatenate use."
+        },
+        {
+          "command": "less",
+          "description": "View file content page by page",
+          "example": "less largefile.log",
+          "notes": "/searchterm searches forward, n repeats the search — much better than more.  Inside less: `g` top, `G` bottom, `/error` + `n` next, `N` prev, `F` follow (like tail -F). Quieter than `more`."
+        },
+        {
+          "command": "head/tail",
+          "description": "View first/last lines of a file",
+          "example": "tail -f app.log",
+          "notes": "-f is the go-to for watching live logs; Ctrl+C to stop following.  `tail -n +5 file` from line 5 onward. `head -c 100` first bytes. For live: `tail -F` follows across rotations (better than -f)."
+        },
+        {
+          "command": "grep",
+          "description": "Search text within files",
+          "example": "grep -i \"error\" /var/log/syslog",
+          "notes": "-r for recursive search, -n for line numbers, -v to invert (exclude matches).  Speed: `grep -F \"literal\"` (fixed) 10× faster than regex. Limit scope: `grep -R --include=\"*.conf\"`. Use `grep -n` for line numbers."
+        },
+        {
+          "command": "nano/vim",
+          "description": "Terminal text editors",
+          "example": "nano config.yaml",
+          "notes": "nano is beginner-friendly; vim has a steeper curve — :q! quits without saving.  nano: `Ctrl+O` write, `Ctrl+X` exit. vim: `vim -R` read-only, `:%s/old/new/gc` with confirm. For quick edit, `nano` is safest."
+        }
+      ]
+    },
+    {
+      "id": "system",
+      "title": "System & Process Management",
+      "icon": "cpu",
+      "commands": [
+        {
+          "command": "top/htop",
+          "description": "Interactive process viewer",
+          "example": "htop",
+          "notes": "htop is friendlier and color-coded but usually needs installing separately.  Press `1` in top/htop to see per-CPU. `htop` → `F6` sort, `k` kill, `u` filter user. For batch: `ps aux --sort=-%cpu | head`."
+        },
+        {
+          "command": "ps",
+          "description": "Snapshot of current processes",
+          "example": "ps aux | grep python",
+          "notes": "aux shows all processes for all users, not just yours — combine with grep to filter.  `ps -ef --forest` or `ps auxf` shows tree. Combine: `ps aux --sort=-%mem | head -n 10` for memory hogs."
+        },
+        {
+          "command": "kill",
+          "description": "Terminate a process by PID",
+          "example": "kill -9 1234",
+          "notes": "-9 force-kills without letting the process clean up — try plain kill (SIGTERM) first.  Try `kill -TERM 1234` (15) first, then `kill -KILL` (9) only if needed — -9 skips cleanup. Find PID via `pgrep -a python`."
+        },
+        {
+          "command": "systemctl",
+          "description": "Manage system services",
+          "example": "sudo systemctl restart nginx",
+          "notes": "Use systemctl status service_name to check if something actually started correctly.  Check first: `systemctl status nginx` — `enabled` vs `active`. `systemctl is-enabled` vs `is-active`. Logs via `journalctl -u nginx -f`."
+        },
+        {
+          "command": "df",
+          "description": "Disk space usage",
+          "example": "df -h",
+          "notes": "Checks whole filesystems/partitions — good first check when you get 'no space left on device'.  Inodes matter too: `df -i` — “No space left” can be inode exhaustion, not bytes. Bind mounts skew `df` — use `findmnt`."
+        },
+        {
+          "command": "du",
+          "description": "Directory space usage",
+          "example": "du -sh /var/log",
+          "notes": "Without -s it recursively lists every subfolder's size — can be slow on large trees.  `du -sh --max-depth=1 /var` limits depth (fast). `du -sh * | sort -rh` finds biggest. For interactive: `ncdu`."
+        }
+      ]
+    },
+    {
+      "id": "networking",
+      "title": "Networking & Permissions",
+      "icon": "network",
+      "commands": [
+        {
+          "command": "chmod",
+          "description": "Change file permissions",
+          "example": "chmod +x script.sh",
+          "notes": "Never use chmod 777 casually — it grants everyone full read/write/execute access.  Numeric vs symbolic: `chmod 644 file` (= rw-r--r--) vs `chmod u+x,go-w`. Check `umask 022` — default perms. Never 777 on web roots — use 755/644."
+        },
+        {
+          "command": "chown",
+          "description": "Change file owner",
+          "example": "sudo chown user:group file.txt",
+          "notes": "Usually requires sudo; changing ownership on system files can break services.  Recursive danger: `chown -R user:group /` breaks system. Always verify with `ls -ld` first. For groups: `chgrp` is clearer."
+        },
+        {
+          "command": "ip",
+          "description": "Show/manipulate IP addresses",
+          "example": "ip a",
+          "notes": "Replaces the older, deprecated ifconfig on most modern distros.  Modern: `ip -br a` brief, `ip route` default gw, `ss -tulpn` replaces `netstat`. `ifconfig` is deprecated — use `ip`."
+        },
+        {
+          "command": "curl",
+          "description": "Transfer data from URLs",
+          "example": "curl -O https://example.com/file.zip",
+          "notes": "-O saves with the remote filename; add -L to follow redirects.  Add `-L` to follow redirects (`curl -L -O https://.../file.zip`). For headers: `-I`. Never `curl http://x | bash` without `-sSf` + verify."
+        },
+        {
+          "command": "ssh",
+          "description": "Secure shell remote login",
+          "example": "ssh username@192.168.1.10",
+          "notes": "Add -p PORT for a non-default port; key-based auth (ssh-keygen) is safer than passwords.  Generate ed25519: `ssh-keygen -t ed25519 -C \"host\"` — safer than RSA. Disable root: `PermitRootLogin no` in sshd_config."
+        }
+      ]
+    },
+    {
+      "id": "archiving",
+      "title": "Archiving & Compression",
+      "icon": "folder",
+      "commands": [
+        {
+          "command": "tar",
+          "description": "Archive files into a tarball",
+          "example": "tar -czvf archive.tar.gz folder/",
+          "notes": "-c create, -z gzip, -v verbose, -f file. Use -x to extract: tar -xzvf archive.tar.gz.  Preserve perms: `tar -p -czf`. Danger absolute: `tar -czf backup.tar.gz -P /etc` stores leading / — restores can overwrite. Omit -P to make relative."
+        },
+        {
+          "command": "gzip/gunzip",
+          "description": "Compress or decompress files",
+          "example": "gzip file.log",
+          "notes": "gzip replaces the file with file.log.gz; use -k to keep the original, gunzip to reverse.  Keep original: `gzip -k file.log` (keep) vs default replaces. Test: `gzip -t file.gz` verifies integrity."
+        },
+        {
+          "command": "zip/unzip",
+          "description": "Package files into a .zip archive",
+          "example": "zip -r app.zip app/",
+          "notes": "Cross-platform archives; -r is required to include subdirectories.  For permission preserve on Linux, prefer `tar.gz`. `zip -r9` best compress, `-e` encrypt (weak)."
+        },
+        {
+          "command": "rsync",
+          "description": "Efficiently sync files/directories",
+          "example": "rsync -avz src/ user@host:/dest",
+          "notes": "-a preserves permissions, -v verbose, -z compresses. Great for backups and deploys.  Dry-run first: `rsync -avzn src/ dst/` (-n). Show progress: `--progress` or `--info=progress2`. For large: `--partial` resume."
+        }
+      ]
+    },
+    {
+      "id": "git",
+      "title": "Version Control (Git)",
+      "icon": "file",
+      "commands": [
+        {
+          "command": "git clone",
+          "description": "Copy a remote repository locally",
+          "example": "git clone https://github.com/user/repo.git",
+          "notes": "Add a folder name at the end to clone into a specific directory.  Shallow: `git clone --depth 1` for huge repos. Use `--branch main` to clone single branch."
+        },
+        {
+          "command": "git status",
+          "description": "Show working tree state",
+          "example": "git status -s",
+          "notes": "-s gives a short, concise output of changed files.  Short: `git status -sb` (branch + short). For ignore check: `git check-ignore -v file`."
+        },
+        {
+          "command": "git commit",
+          "description": "Record staged changes",
+          "example": "git commit -m \"fix: typo\"",
+          "notes": "Use git add first to stage; -a commits already-tracked modified files.  Amend last: `git commit --amend`. For co-authors: add `Co-authored-by:`. Use `commit.template` for consistency."
+        },
+        {
+          "command": "git push/pull",
+          "description": "Upload or download commits",
+          "example": "git push origin main",
+          "notes": "pull = fetch + merge. Use --set-upstream (-u) the first time you push a branch.  Safer pull: `git pull --rebase` avoids merge commits. First push: `git push -u origin feature` sets upstream."
+        },
+        {
+          "command": "git branch",
+          "description": "List or create branches",
+          "example": "git checkout -b feature",
+          "notes": "checkout -b creates and switches; git merge feature integrates changes.  Delete merged: `git branch -d feature`. For remote: `git push origin --delete feature`."
+        }
+      ]
+    },
+    {
+      "id": "docker",
+      "title": "Containers (Docker)",
+      "icon": "cpu",
+      "commands": [
+        {
+          "command": "docker run",
+          "description": "Run a container from an image",
+          "example": "docker run -d -p 8080:80 nginx",
+          "notes": "-d detached, -p host:container port mapping. Image is pulled if missing.  Never `--privileged` unless needed — breaks isolation. Clean after: `docker run --rm` auto-remove."
+        },
+        {
+          "command": "docker ps",
+          "description": "List running containers",
+          "example": "docker ps -a",
+          "notes": "-a shows all containers including stopped ones.  Format: `docker ps --format \"table {{.Names}}\t{{.Status}}\"` for scripts. Watch: `watch -n1 docker ps`."
+        },
+        {
+          "command": "docker build",
+          "description": "Build an image from a Dockerfile",
+          "example": "docker build -t myapp .",
+          "notes": "-t tags the image; the . is the build context (current dir).  Layer cache: order Dockerfile from least to most changing. Use `.dockerignore` to skip. Try `docker build --no-cache` to force."
+        },
+        {
+          "command": "docker compose",
+          "description": "Manage multi-container apps",
+          "example": "docker compose up -d",
+          "notes": "Reads docker-compose.yml; -d starts in the background.  Check config: `docker compose config`. For logs: `docker compose logs -f --tail 50`."
+        }
+      ]
+    }
+  ],
+  "commandsBank": [
+    {
+      "command": "ls",
+      "category": "File System",
+      "briefDescription": "Lists directory contents.",
+      "keywords": [
+        "list",
+        "directory",
+        "folder",
+        "contents",
+        "view"
+      ]
+    },
+    {
+      "command": "cd",
+      "category": "File System",
+      "briefDescription": "Changes the current working directory.",
+      "keywords": [
+        "change",
+        "navigate",
+        "enter",
+        "path",
+        "folder"
+      ]
+    },
+    {
+      "command": "pwd",
+      "category": "File System",
+      "briefDescription": "Prints the current working directory path.",
+      "keywords": [
+        "print",
+        "working",
+        "directory",
+        "path",
+        "location",
+        "where"
+      ]
+    },
+    {
+      "command": "mkdir",
+      "category": "File System",
+      "briefDescription": "Creates a new directory.",
+      "keywords": [
+        "make",
+        "create",
+        "new",
+        "folder",
+        "directory"
+      ]
+    },
+    {
+      "command": "rmdir",
+      "category": "File System",
+      "briefDescription": "Removes an empty directory.",
+      "keywords": [
+        "remove",
+        "delete",
+        "empty",
+        "folder",
+        "directory"
+      ]
+    },
+    {
+      "command": "rm",
+      "category": "File System",
+      "briefDescription": "Removes files or directories.",
+      "keywords": [
+        "remove",
+        "delete",
+        "erase",
+        "destroy"
+      ]
+    },
+    {
+      "command": "cp",
+      "category": "File System",
+      "briefDescription": "Copies files or directories.",
+      "keywords": [
+        "copy",
+        "duplicate",
+        "paste",
+        "clone"
+      ]
+    },
+    {
+      "command": "mv",
+      "category": "File System",
+      "briefDescription": "Moves or renames files and directories.",
+      "keywords": [
+        "move",
+        "rename",
+        "transfer",
+        "relocate"
+      ]
+    },
+    {
+      "command": "touch",
+      "category": "File System",
+      "briefDescription": "Creates an empty file or updates timestamps.",
+      "keywords": [
+        "create",
+        "new",
+        "file",
+        "timestamp",
+        "empty"
+      ]
+    },
+    {
+      "command": "find",
+      "category": "File System",
+      "briefDescription": "Searches for files in a directory hierarchy.",
+      "keywords": [
+        "locate",
+        "search",
+        "files",
+        "directories",
+        "name",
+        "pattern"
+      ]
+    },
+    {
+      "command": "tar",
+      "category": "File System",
+      "briefDescription": "Archives files into a tarball.",
+      "keywords": [
+        "archive",
+        "compress",
+        "extract",
+        "zip",
+        "gzip",
+        "tarball"
+      ]
+    },
+    {
+      "command": "cat",
+      "category": "Text Processing",
+      "briefDescription": "Reads and outputs file contents.",
+      "keywords": [
+        "concatenate",
+        "read",
+        "view",
+        "print",
+        "file"
+      ]
+    },
+    {
+      "command": "less",
+      "category": "Text Processing",
+      "briefDescription": "Views file contents one page at a time.",
+      "keywords": [
+        "read",
+        "scroll",
+        "view",
+        "pager",
+        "text"
+      ]
+    },
+    {
+      "command": "more",
+      "category": "Text Processing",
+      "briefDescription": "Views file contents page by page (forward only).",
+      "keywords": [
+        "read",
+        "scroll",
+        "view",
+        "pager",
+        "text"
+      ]
+    },
+    {
+      "command": "head",
+      "category": "Text Processing",
+      "briefDescription": "Outputs the first lines of a file.",
+      "keywords": [
+        "top",
+        "beginning",
+        "first",
+        "start",
+        "read"
+      ]
+    },
+    {
+      "command": "tail",
+      "category": "Text Processing",
+      "briefDescription": "Outputs the last lines of a file.",
+      "keywords": [
+        "bottom",
+        "end",
+        "last",
+        "log",
+        "follow"
+      ]
+    },
+    {
+      "command": "grep",
+      "category": "Text Processing",
+      "briefDescription": "Searches for patterns within text.",
+      "keywords": [
+        "search",
+        "find",
+        "filter",
+        "pattern",
+        "regex",
+        "text"
+      ]
+    },
+    {
+      "command": "awk",
+      "category": "Text Processing",
+      "briefDescription": "Pattern scanning and processing language.",
+      "keywords": [
+        "pattern",
+        "process",
+        "column",
+        "text",
+        "parse"
+      ]
+    },
+    {
+      "command": "sed",
+      "category": "Text Processing",
+      "briefDescription": "Stream editor for filtering and transforming text.",
+      "keywords": [
+        "stream",
+        "edit",
+        "replace",
+        "substitute",
+        "text"
+      ]
+    },
+    {
+      "command": "nano",
+      "category": "Text Processing",
+      "briefDescription": "A simple terminal text editor.",
+      "keywords": [
+        "edit",
+        "editor",
+        "vim",
+        "text",
+        "modify"
+      ]
+    },
+    {
+      "command": "vim",
+      "category": "Text Processing",
+      "briefDescription": "Advanced terminal text editor.",
+      "keywords": [
+        "edit",
+        "editor",
+        "vi",
+        "text",
+        "modify"
+      ]
+    },
+    {
+      "command": "sort",
+      "category": "Text Processing",
+      "briefDescription": "Sorts lines of text files.",
+      "keywords": [
+        "order",
+        "arrange",
+        "alphabetical",
+        "numeric",
+        "text"
+      ]
+    },
+    {
+      "command": "uniq",
+      "category": "Text Processing",
+      "briefDescription": "Reports or omits repeated lines.",
+      "keywords": [
+        "unique",
+        "duplicate",
+        "distinct",
+        "filter",
+        "text"
+      ]
+    },
+    {
+      "command": "wc",
+      "category": "Text Processing",
+      "briefDescription": "Counts words, lines, and bytes.",
+      "keywords": [
+        "word",
+        "count",
+        "line",
+        "byte",
+        "size"
+      ]
+    },
+    {
+      "command": "chmod",
+      "category": "Permissions",
+      "briefDescription": "Changes file access permissions.",
+      "keywords": [
+        "change",
+        "mode",
+        "permissions",
+        "execute",
+        "read",
+        "write"
+      ]
+    },
+    {
+      "command": "chown",
+      "category": "Permissions",
+      "briefDescription": "Changes file owner and group.",
+      "keywords": [
+        "change",
+        "owner",
+        "user",
+        "group",
+        "permissions"
+      ]
+    },
+    {
+      "command": "sudo",
+      "category": "Permissions",
+      "briefDescription": "Executes a command as the superuser.",
+      "keywords": [
+        "superuser",
+        "root",
+        "admin",
+        "privileges",
+        "elevated"
+      ]
+    },
+    {
+      "command": "su",
+      "category": "Permissions",
+      "briefDescription": "Switches the current user.",
+      "keywords": [
+        "switch",
+        "user",
+        "substitute",
+        "root"
+      ]
+    },
+    {
+      "command": "ps",
+      "category": "Process Management",
+      "briefDescription": "Reports a snapshot of current processes.",
+      "keywords": [
+        "process",
+        "status",
+        "running",
+        "tasks",
+        "pid"
+      ]
+    },
+    {
+      "command": "kill",
+      "category": "Process Management",
+      "briefDescription": "Terminates a process by PID.",
+      "keywords": [
+        "terminate",
+        "stop",
+        "end",
+        "close",
+        "force",
+        "process"
+      ]
+    },
+    {
+      "command": "killall",
+      "category": "Process Management",
+      "briefDescription": "Terminates processes by name.",
+      "keywords": [
+        "terminate",
+        "stop",
+        "kill",
+        "name",
+        "process"
+      ]
+    },
+    {
+      "command": "top",
+      "category": "Process Management",
+      "briefDescription": "Displays real-time system processes and resources.",
+      "keywords": [
+        "monitor",
+        "task",
+        "manager",
+        "cpu",
+        "memory",
+        "processes"
+      ]
+    },
+    {
+      "command": "htop",
+      "category": "Process Management",
+      "briefDescription": "Interactive process viewer.",
+      "keywords": [
+        "monitor",
+        "task",
+        "manager",
+        "cpu",
+        "memory",
+        "interactive"
+      ]
+    },
+    {
+      "command": "systemctl",
+      "category": "Process Management",
+      "briefDescription": "Manages system services and daemons.",
+      "keywords": [
+        "service",
+        "daemon",
+        "start",
+        "stop",
+        "restart",
+        "systemd"
+      ]
+    },
+    {
+      "command": "df",
+      "category": "System Info",
+      "briefDescription": "Reports file system disk space usage.",
+      "keywords": [
+        "disk",
+        "free",
+        "space",
+        "storage",
+        "filesystem"
+      ]
+    },
+    {
+      "command": "du",
+      "category": "System Info",
+      "briefDescription": "Estimates file and directory space usage.",
+      "keywords": [
+        "disk",
+        "usage",
+        "size",
+        "space",
+        "directory"
+      ]
+    },
+    {
+      "command": "free",
+      "category": "System Info",
+      "briefDescription": "Displays amount of free and used memory.",
+      "keywords": [
+        "memory",
+        "ram",
+        "swap",
+        "usage"
+      ]
+    },
+    {
+      "command": "uname",
+      "category": "System Info",
+      "briefDescription": "Prints system information.",
+      "keywords": [
+        "system",
+        "kernel",
+        "os",
+        "version",
+        "architecture"
+      ]
+    },
+    {
+      "command": "uptime",
+      "category": "System Info",
+      "briefDescription": "Shows how long the system has been running.",
+      "keywords": [
+        "time",
+        "running",
+        "load",
+        "average"
+      ]
+    },
+    {
+      "command": "whoami",
+      "category": "System Info",
+      "briefDescription": "Prints the current user name.",
+      "keywords": [
+        "identity",
+        "user",
+        "id",
+        "who"
+      ]
+    },
+    {
+      "command": "history",
+      "category": "System Info",
+      "briefDescription": "Shows the command line history.",
+      "keywords": [
+        "past",
+        "commands",
+        "log",
+        "terminal",
+        "previous"
+      ]
+    },
+    {
+      "command": "ping",
+      "category": "Networking",
+      "briefDescription": "Tests network connectivity to a host.",
+      "keywords": [
+        "network",
+        "internet",
+        "test",
+        "latency",
+        "connection",
+        "ip"
+      ]
+    },
+    {
+      "command": "ip",
+      "category": "Networking",
+      "briefDescription": "Shows or manipulates routing and network devices.",
+      "keywords": [
+        "address",
+        "interface",
+        "mac",
+        "config",
+        "network"
+      ]
+    },
+    {
+      "command": "ifconfig",
+      "category": "Networking",
+      "briefDescription": "Configures network interfaces (legacy).",
+      "keywords": [
+        "address",
+        "interface",
+        "mac",
+        "config",
+        "network"
+      ]
+    },
+    {
+      "command": "curl",
+      "category": "Networking",
+      "briefDescription": "Transfers data to or from a server.",
+      "keywords": [
+        "url",
+        "web",
+        "api",
+        "http",
+        "request",
+        "download"
+      ]
+    },
+    {
+      "command": "wget",
+      "category": "Networking",
+      "briefDescription": "Downloads files from the web non-interactively.",
+      "keywords": [
+        "download",
+        "web",
+        "url",
+        "internet",
+        "fetch"
+      ]
+    },
+    {
+      "command": "ssh",
+      "category": "Networking",
+      "briefDescription": "Logs into a remote machine securely.",
+      "keywords": [
+        "secure",
+        "shell",
+        "remote",
+        "login",
+        "server",
+        "connect"
+      ]
+    },
+    {
+      "command": "scp",
+      "category": "Networking",
+      "briefDescription": "Securely copies files between hosts.",
+      "keywords": [
+        "secure",
+        "copy",
+        "transfer",
+        "remote",
+        "ssh"
+      ]
+    },
+    {
+      "command": "netstat",
+      "category": "Networking",
+      "briefDescription": "Displays network connections and ports.",
+      "keywords": [
+        "network",
+        "ports",
+        "connections",
+        "listening",
+        "socket"
+      ]
+    },
+    {
+      "command": "ss",
+      "category": "Networking",
+      "briefDescription": "Displays socket statistics (modern netstat).",
+      "keywords": [
+        "network",
+        "ports",
+        "connections",
+        "socket",
+        "statistics"
+      ]
+    },
+    {
+      "command": "apt",
+      "category": "Package Management",
+      "briefDescription": "Installs, updates, and removes Debian packages.",
+      "keywords": [
+        "install",
+        "update",
+        "upgrade",
+        "remove",
+        "software",
+        "ubuntu",
+        "debian"
+      ]
+    },
+    {
+      "command": "yum",
+      "category": "Package Management",
+      "briefDescription": "Installs and manages RPM packages.",
+      "keywords": [
+        "install",
+        "update",
+        "remove",
+        "software",
+        "centos",
+        "rhel"
+      ]
+    },
+    {
+      "command": "dnf",
+      "category": "Package Management",
+      "briefDescription": "Modern version of yum for Fedora/RHEL.",
+      "keywords": [
+        "install",
+        "update",
+        "remove",
+        "software",
+        "fedora"
+      ]
+    },
+    {
+      "command": "pacman",
+      "category": "Package Management",
+      "briefDescription": "Package manager for Arch Linux.",
+      "keywords": [
+        "install",
+        "update",
+        "remove",
+        "software",
+        "arch"
+      ]
+    },
+    {
+      "command": "clear",
+      "category": "System Info",
+      "briefDescription": "Clears the terminal screen.",
+      "keywords": [
+        "clean",
+        "clear",
+        "reset",
+        "console",
+        "screen"
+      ]
+    },
+    {
+      "command": "tar",
+      "category": "Archiving",
+      "briefDescription": "Archives files into a tarball, optionally compressed.",
+      "keywords": [
+        "archive",
+        "compress",
+        "extract",
+        "backup",
+        "gzip"
+      ]
+    },
+    {
+      "command": "gzip",
+      "category": "Archiving",
+      "briefDescription": "Compresses a file using the gzip algorithm.",
+      "keywords": [
+        "compress",
+        "zip",
+        "shrink",
+        "gunzip",
+        "decompress"
+      ]
+    },
+    {
+      "command": "zip",
+      "category": "Archiving",
+      "briefDescription": "Packages files into a cross-platform .zip archive.",
+      "keywords": [
+        "archive",
+        "compress",
+        "unzip",
+        "package",
+        "windows"
+      ]
+    },
+    {
+      "command": "rsync",
+      "category": "Archiving",
+      "briefDescription": "Efficiently copies and syncs files locally or remote.",
+      "keywords": [
+        "sync",
+        "backup",
+        "copy",
+        "transfer",
+        "mirror"
+      ]
+    },
+    {
+      "command": "git",
+      "category": "Version Control",
+      "briefDescription": "Distributed version control system for tracking changes.",
+      "keywords": [
+        "version",
+        "control",
+        "commit",
+        "branch",
+        "repository",
+        "github"
+      ]
+    },
+    {
+      "command": "git clone",
+      "category": "Version Control",
+      "briefDescription": "Downloads a remote repository to your machine.",
+      "keywords": [
+        "download",
+        "repository",
+        "copy",
+        "github",
+        "remote"
+      ]
+    },
+    {
+      "command": "git commit",
+      "category": "Version Control",
+      "briefDescription": "Saves a snapshot of your staged changes.",
+      "keywords": [
+        "save",
+        "snapshot",
+        "message",
+        "stage",
+        "repository"
+      ]
+    },
+    {
+      "command": "git push",
+      "category": "Version Control",
+      "briefDescription": "Uploads local commits to a remote repository.",
+      "keywords": [
+        "upload",
+        "remote",
+        "publish",
+        "github",
+        "sync"
+      ]
+    },
+    {
+      "command": "git pull",
+      "category": "Version Control",
+      "briefDescription": "Downloads and merges remote changes locally.",
+      "keywords": [
+        "download",
+        "merge",
+        "update",
+        "fetch",
+        "sync"
+      ]
+    },
+    {
+      "command": "docker",
+      "category": "Containers",
+      "briefDescription": "Platform for building and running containers.",
+      "keywords": [
+        "container",
+        "image",
+        "engine",
+        "virtualization",
+        "devops"
+      ]
+    },
+    {
+      "command": "docker run",
+      "category": "Containers",
+      "briefDescription": "Runs a new container from an image.",
+      "keywords": [
+        "container",
+        "start",
+        "image",
+        "nginx",
+        "port"
+      ]
+    },
+    {
+      "command": "docker ps",
+      "category": "Containers",
+      "briefDescription": "Lists running (or all) containers.",
+      "keywords": [
+        "container",
+        "list",
+        "status",
+        "running",
+        "ports"
+      ]
+    },
+    {
+      "command": "docker compose",
+      "category": "Containers",
+      "briefDescription": "Manages multi-container applications via compose file.",
+      "keywords": [
+        "compose",
+        "multi",
+        "service",
+        "yaml",
+        "stack"
+      ]
+    },
+    {
+      "command": "echo",
+      "category": "Text Processing",
+      "briefDescription": "Prints text or variables to standard output.",
+      "keywords": [
+        "print",
+        "output",
+        "variable",
+        "string",
+        "display"
+      ]
+    },
+    {
+      "command": "alias",
+      "category": "System Info",
+      "briefDescription": "Creates a shortcut command for a longer one.",
+      "keywords": [
+        "shortcut",
+        "custom",
+        "command",
+        "shell",
+        "config"
+      ]
+    },
+    {
+      "command": "crontab",
+      "category": "Process Management",
+      "briefDescription": "Schedules commands to run on a timer.",
+      "keywords": [
+        "schedule",
+        "timer",
+        "automation",
+        "job",
+        "periodic"
+      ]
+    },
+    {
+      "command": "journalctl",
+      "category": "System Info",
+      "briefDescription": "Queries the systemd journal (logs).",
+      "keywords": [
+        "logs",
+        "systemd",
+        "journal",
+        "service",
+        "debug"
+      ]
+    },
+    {
+      "command": "watch",
+      "category": "Process Management",
+      "briefDescription": "Runs a command repeatedly, showing live output.",
+      "keywords": [
+        "repeat",
+        "interval",
+        "monitor",
+        "live",
+        "refresh"
+      ]
+    },
+    {
+      "command": "ln",
+      "category": "File System",
+      "briefDescription": "Creates hard or symbolic (soft) links.",
+      "keywords": [
+        "link",
+        "symlink",
+        "shortcut",
+        "inode",
+        "reference"
+      ]
+    },
+    {
+      "command": "passwd",
+      "category": "Permissions",
+      "briefDescription": "Changes a user's password.",
+      "keywords": [
+        "password",
+        "change",
+        "user",
+        "credential",
+        "auth"
+      ]
+    },
+    {
+      "command": "useradd",
+      "category": "Permissions",
+      "briefDescription": "Creates a new user account.",
+      "keywords": [
+        "user",
+        "create",
+        "account",
+        "add",
+        "admin"
+      ]
+    },
+    {
+      "command": "usermod",
+      "category": "Permissions",
+      "briefDescription": "Modifies an existing user account.",
+      "keywords": [
+        "user",
+        "modify",
+        "group",
+        "account",
+        "admin"
+      ]
+    },
+    {
+      "command": "groupadd",
+      "category": "Permissions",
+      "briefDescription": "Creates a new user group.",
+      "keywords": [
+        "group",
+        "create",
+        "permission",
+        "add",
+        "admin"
+      ]
+    }
+  ]
+}

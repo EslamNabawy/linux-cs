@@ -1,0 +1,23 @@
+# OS
+.DS_Store
+Thumbs.db
+*.log
+
+# Binaries — keep repo lean (use Drive for large PDFs)
+# Uncomment to ignore next time PDFs are updated
+# NTI Course/**/*.pdf
+# NTI Course/**/*.docx
+
+# Legacy content source (now consolidated to content/)
+NTI Course Content Resources/
+NTI Course/linux Notes/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node (if build added)
+node_modules/
+dist/

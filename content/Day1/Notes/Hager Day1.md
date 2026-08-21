@@ -1,15 +1,23 @@
-# Linux Session — Revision Sheet
-**Date:** 18 Aug 2026
-
 ---
+title: Linux Session Revision Sheet - Basics, Navigation, Files, Links
+author: UNKNOWN — set manually
+category: NTI Linux Course
+tags: [linux-basics, filesystem, navigation, grep, links, permissions]
+source: AIOPS_Session1.md
+---
+
+# Linux Session Revision Sheet - Basics, Navigation, Files, Links
+*Notes by UNKNOWN — set manually*
+
+A revision sheet covering Linux basics and architecture, command syntax, navigation, file listing and wildcards, file content viewing, file/directory management, `grep` searching, hard/soft links, key filesystem directories, and terminal keyboard shortcuts.
 
 ## 1. Linux Basics
 
 ### Linux vs. Windows
 
-- **Security** ✓
-- **Stability** ✓
-- **Maintenance** ✓
+- Security
+- Stability
+- Maintenance
 - Runs on different hardware
 - Free & open source
 - Easy to customize
@@ -18,11 +26,11 @@
 
 ### Linux Architecture
 
-```text
-CLI → Shell → Application
-         ↓
-      Hardware
-       (Kernel)
+```mermaid
+flowchart TD
+    A[CLI] --> B[Shell]
+    B --> C[Application]
+    B --> D[Hardware / Kernel]
 ```
 
 - **Kernel:** Works with the hardware.
@@ -32,8 +40,6 @@ CLI → Shell → Application
 
 Uses part of the storage as additional memory when needed.
 
----
-
 ## 2. Users and Privileges
 
 | Symbol | Meaning |
@@ -41,11 +47,9 @@ Uses part of the storage as additional memory when needed.
 | `$` | Regular user |
 | `#` | Superuser |
 
----
-
 ## 3. Command Syntax
 
-```text
+```
 command  option  argument
 ```
 
@@ -70,8 +74,6 @@ is equivalent to:
 ls -l -d
 ```
 
----
-
 ## 4. Navigation
 
 | Command | Description |
@@ -82,8 +84,6 @@ ls -l -d
 | `cd $HOME` | Go to home directory |
 | `cd /absolute/path` | Go to an absolute path |
 | `cd -` | Go back to the previous directory |
-
----
 
 ## 5. Listing Files
 
@@ -97,6 +97,7 @@ ls -l -d
 | `ls -ltr` | Sort by time, reverse order |
 | `ls -lth` | Long listing + time sorting + human-readable size |
 
+> [!NOTE]
 > Files and directories starting with `.` are hidden.
 
 ### Wildcards
@@ -110,9 +111,8 @@ ls -l -d
 | `ls [!a]*` | Does not start with `a` |
 | `ls [!a-c]*` | Does not start with `a`–`c` |
 
+> [!NOTE]
 > Inside `[]`, `!` and `^` have the same meaning.
-
----
 
 ## 6. File Content
 
@@ -122,8 +122,6 @@ ls -l -d
 | `nano file` | Edit a file |
 | `head -n N file` | Show the first `N` lines |
 | `tail -n N file` | Show the last `N` lines |
-
----
 
 ## 7. File & Directory Management
 
@@ -139,12 +137,13 @@ ls -l -d
 
 ### Important Options
 
-```text
+```
 -r / -R  → recursive
 -f       → force
 ```
 
----
+> [!DANGER]
+> `rm -rf dir` force-removes a directory recursively. This is irreversible — the data is not recoverable.
 
 ## 8. Searching with `grep`
 
@@ -171,8 +170,6 @@ grep -l hager dir
 grep -B 2 hager dir
 grep -A 2 hager dir
 ```
-
----
 
 ## 9. Links
 
@@ -201,6 +198,9 @@ To remove a hard link:
 rm -rf hard-link
 ```
 
+> [!WARNING]
+> `rm -rf hard-link` is used to remove a hard link. Since `-rf` is destructive, confirm the target before running it.
+
 ### Soft Link
 
 A soft link points to a path.
@@ -209,8 +209,6 @@ A soft link points to a path.
 
 - Every file or directory has an **inode** allocated for it.
 - A hard link refers to the same inode/data.
-
----
 
 ## 10. Important Filesystem Directories
 
@@ -230,15 +228,14 @@ A soft link points to a path.
 
 ### Important
 
-```text
+```
 /       → Root of the filesystem
 /root   → Home directory of the superuser
 /home   → Home directories of regular users
 ```
 
-`/root` is **not** the same as `/home/root`.
-
----
+> [!NOTE]
+> `/root` is **not** the same as `/home/root`.
 
 ## 11. Terminal Keyboard Shortcuts
 
@@ -250,84 +247,64 @@ A soft link points to a path.
 | `Ctrl + K` | Cut from the cursor to the end of the line |
 | `Ctrl + U` | Cut from the cursor to the beginning of the line |
 
----
+## Flashcards
 
-# Quick Command Reference
+**Q: What are the three checked advantages of Linux over Windows in this sheet?**
+A: Security, Stability, and Maintenance (Linux also runs on different hardware, is free & open source, easy to customize, has community support, and offers a different UI experience).
 
-### Users
+**Q: What are the roles of the Kernel and the Shell in Linux architecture?**
+A: The Kernel works directly with the hardware, while the Shell is the interface for interacting with the system through commands.
 
-```bash
-$    # regular user
-#    # superuser
-```
+**Q: What is Swap used for?**
+A: It uses part of the storage as additional memory when needed.
 
-### Navigation
+**Q: What do the `$` and `#` prompt symbols indicate?**
+A: `$` indicates a regular user, and `#` indicates a superuser.
 
-```bash
-pwd
-cd
-cd ~
-cd $HOME
-cd -
-cd /path
-```
+**Q: What is the basic command syntax in Linux, and can options be combined?**
+A: `command option argument`, with spaces required between each part. Options can be combined, e.g. `ls -ld` is equivalent to `ls -l -d`.
 
-### Listing
+**Q: What's the difference between `cd`, `cd ~`, `cd $HOME`, and `cd -`?**
+A: `cd`, `cd ~`, and `cd $HOME` all go to the home directory; `cd -` goes back to the previous directory.
 
-```bash
-ls
-ls -a
-ls -l
-ls -la
-ls -lt
-ls -ltr
-ls -lth
-```
+**Q: What does `ls -ltr` do compared to `ls -lt`?**
+A: `ls -lt` sorts by time; `ls -ltr` sorts by time in reverse order.
 
-### Wildcards
+**Q: How are hidden files identified in Linux?**
+A: Files and directories starting with `.` are hidden.
 
-```bash
-ls p*
-ls *p
-ls ???
-ls [a-c]*
-ls [!a]*
-ls [!a-c]*
-```
+**Q: What does the wildcard pattern `[!a-c]*` match?**
+A: Files that do not start with `a`, `b`, or `c`.
 
-### File Content
+**Q: What's the difference between `head -n N file` and `tail -n N file`?**
+A: `head -n N file` shows the first N lines of a file, while `tail -n N file` shows the last N lines.
 
-```bash
-cat file
-nano file
-head -n N file
-tail -n N file
-```
+**Q: What do the `-r`/`-R` and `-f` options mean when used with commands like `cp` or `rm`?**
+A: `-r`/`-R` means recursive (applies to directories and their contents), and `-f` means force (skips confirmation).
 
-### File & Directory Management
+**Q: What does `grep -B 2 hager dir` do?**
+A: Shows the match for "hager" along with the 2 lines before each match.
 
-```bash
-touch file
-mkdir dir
-cp file dest
-cp -r dir dest
-mv file dest
-mv file newname
-rm -rf dir
-```
+**Q: What's the difference between `grep -i` and `grep -l`?**
+A: `grep -i` makes the search case-insensitive; `grep -l` shows only the names of files containing the pattern, not the matching lines.
 
-### Links
+**Q: What is an inode, and how does it relate to hard links?**
+A: An inode is allocated to every file or directory to store its metadata/data location. A hard link refers to the same inode as the original file — they share the same data.
 
-```bash
-ln file1 file2
-```
+**Q: Can a hard link point to a directory?**
+A: No, a hard link cannot link directories.
 
-### Search
+**Q: When does the data of a hard-linked file actually get deleted?**
+A: The data remains as long as at least one hard link to it still exists.
 
-```bash
-grep hager dir
-grep -i hager dir
-grep -l hager dir
-grep -B 2 hager dir
-grep -A 2 hager dir
-```
+**Q: What does a soft link point to, as opposed to a hard link?**
+A: A soft link points to a path, whereas a hard link points to the same inode/data as the original.
+
+**Q: Is `/root` the same as `/home/root`?**
+A: No — `/root` is the home directory of the superuser, and it is explicitly not the same as `/home/root`.
+
+**Q: What is the purpose of `/etc` and `/var`?**
+A: `/etc` holds configuration files; `/var` holds variable data, such as `/var/tmp`.
+
+**Q: What do `Ctrl+K` and `Ctrl+U` do in the terminal?**
+A: `Ctrl+K` cuts from the cursor to the end of the line; `Ctrl+U` cuts from the cursor to the beginning of the line.

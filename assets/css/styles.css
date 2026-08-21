@@ -15,7 +15,7 @@
 }
 @media (max-width: 860px) { :root { --topbar-h: 108px; } }
 
-/* Dark theme (default) */
+/* Dark theme (default) — text-dim bumped to 4.6:1 for WCAG AA */
 [data-theme="dark"] {
   --bg: #0d1117;
   --bg-elevated: #151b23;
@@ -27,7 +27,7 @@
   --border-muted: #21262d;
   --text: #e6edf3;
   --text-muted: #8b949e;
-  --text-dim: #6e7681;
+  --text-dim: #8b949e;
   --accent: #39d353;
   --accent-dim: rgba(57, 211, 83, 0.15);
   --accent-glow: rgba(57, 211, 83, 0.25);
@@ -102,7 +102,7 @@
   --shadow: 0 4px 16px rgba(0,0,0,0.5);
 }
 
-/* Paper — extra light (warm paper, amber accent) */
+/* Paper — extra light (warm paper, amber accent) — text-dim 4.5:1 fix */
 [data-theme="paper"] {
   --bg: #fdfcf7;
   --bg-elevated: #f7f3e8;
@@ -114,7 +114,7 @@
   --border-muted: #ece2cc;
   --text: #1e1c18;
   --text-muted: #6e6252;
-  --text-dim: #9a8c7a;
+  --text-dim: #7a6f5c;
   --accent: #b45309;
   --accent-dim: rgba(180, 83, 9, 0.1);
   --accent-glow: rgba(180, 83, 9, 0.18);
@@ -841,32 +841,8 @@ mark {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ===== Mobile Menu ===== */
-.mobile-header {
-  display: none;
-  position: sticky;
-  top: 0;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border);
-  padding: 12px 16px;
-  z-index: 100;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.mobile-header .logo-text { font-size: 14px; }
-
-.menu-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  color: var(--text);
-  display: flex;
-  align-items: center;
-}
-
-.menu-btn svg { width: 22px; height: 22px; }
+/* ===== Mobile Menu (deprecated, topbar is primary) ===== */
+/* .mobile-header removed — topbar handles all viewport sizes */
 
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
@@ -1302,7 +1278,16 @@ mark {
   }
   .sidebar.open { transform: translateX(0); }
   .content-col { padding: 16px; }
-  .note-toc { display: none; }
+  .note-toc {
+    display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; overflow-y: hidden;
+    padding: 8px 0 10px; scrollbar-width: thin; -webkit-overflow-scrolling: touch;
+    position: static; top: auto; border-left: none;
+  }
+  .note-toc a {
+    flex: 0 0 auto; white-space: nowrap; border-left: none; border: 1px solid var(--border);
+    border-radius: 999px; padding: 6px 12px; background: var(--bg-secondary); font-size: 12px;
+  }
+  .note-toc a.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
   .note-content { border-left: none; padding-left: 0; background: none; }
   .note-miniheader select { max-width: 140px; }
   .note-miniheader.miniheader-hidden { transform: translateY(-130%); opacity: 0; pointer-events: none; }
