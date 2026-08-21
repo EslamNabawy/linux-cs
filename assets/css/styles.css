@@ -2846,26 +2846,36 @@ body.cursor-hover .cursor-dot{
 }
 
 
-/* ===== Command Bank � Equal Height Cards (user request: all boxes same size) ===== */
-.cmd-grid { grid-auto-rows: 380px; grid-auto-flow: column; align-items: stretch; }
-.cmd-card { height: 100%; min-height: 0; display:flex; flex-direction:column; overflow:hidden; }
-.cmd-card-desc { min-height: 44px; flex: 0 0 auto; }
-.cmd-card-example { flex: 0 0 auto; min-height: 56px; }
-.cmd-card-flags { min-height: 26px; flex: 0 0 auto; align-content:flex-start; }
-.cmd-card-pit { min-height: 0; flex: 0 0 auto; overflow:hidden; }
-.cmd-card-related { min-height: 0; flex: 0 0 auto; }
+/* ===== Command Bank — equal height cards (clean impl: rows flow normally,
+   each row's cards stretch to the tallest sibling; no fixed heights, no clipping) ===== */
+.cmd-grid { align-items: stretch; }
+.cmd-grid .cmd-card { height: 100%; display:flex; flex-direction:column; }
+.cmd-card-desc { flex: 0 0 auto; }
+.cmd-card-example { flex: 0 0 auto; }
+.cmd-card-flags { flex: 0 0 auto; align-content:flex-start; }
+.cmd-card-pit { flex: 0 0 auto; overflow:hidden; }
+.cmd-card-related { flex: 0 0 auto; }
 .cmd-card-foot { margin-top: auto; padding-top: 8px; border-top: 1px dashed var(--border-muted); flex: 0 0 auto; }
-.cmd-card-meta { min-height: 22px; }
 .cmd-grid.is-list { grid-auto-rows: auto; }
-.cmd-grid.is-list .cmd-card { height: auto; min-height: 0; flex-direction: column; align-items: stretch; }
-.cmd-grid.is-list .cmd-card-desc { min-height: 0; flex:1; }
-@media (max-width: 860px) {
-  .cmd-grid { grid-auto-rows: auto; }
-  .cmd-card { height: auto; min-height: 320px; }
-  /* Auto-switch to list view on mobile - handled by JS class toggle */
-  .cmd-grid.is-list .cmd-card{ flex-direction:column; align-items:stretch; }
+.cmd-grid.is-list .cmd-card { height: auto; }
+
+/* ===== Linux 101 Content Library — clickable cards ===== */
+button.content-library-card{
+  display:flex; align-items:center; gap:14px;
+  width:100%; text-align:left;
+  padding:16px; border-radius: var(--radius-lg);
+  background: var(--bg-secondary);
+  border:1px solid var(--border);
+  color: var(--text);
+  font: inherit;
+  cursor:pointer;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
-@media (max-width: 640px) {
-  .cmd-grid { grid-auto-rows: 360px; }
-  .cmd-grid.is-list { grid-auto-rows: auto; }
+button.content-library-card:hover{
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
+button.content-library-card:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+button.content-library-card .content-library-arrow{ transition: transform 160ms ease; }
+button.content-library-card:hover .content-library-arrow{ transform: translateX(3px); }

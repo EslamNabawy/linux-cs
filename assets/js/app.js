@@ -936,15 +936,41 @@ function renderTopicIndex() {
   return html;
 }
 
+// ===== LINUX 101 CONTENT LIBRARY =====
+let _libraryCache = null;
+let _libraryFetch = null;
+async function getContentLibrary() {
+  if (_libraryCache) return _libraryCache;
+  if (typeof window !== 'undefined' && window.DATA_CONTENT_LIBRARY) { _libraryCache = window.DATA_CONTENT_LIBRARY; return _libraryCache; }
+  if (_libraryFetch) return _libraryFetch;
+  _libraryFetch = (async () => {
+    try {
+      const r = await fetch('assets/data/content-library.json?v=26');
+      if (r.ok) { _libraryCache = await r.json(); return _libraryCache; }
+    } catch (_e) {}
+    try {
+      await loadScriptFallback('assets/js/data-library.js?v=26');
+      if (window.DATA_CONTENT_LIBRARY) { _libraryCache = window.DATA_CONTENT_LIBRARY; return _libraryCache; }
+    } catch (_e) {}
+    return null;
+  })();
+  return _libraryFetch;
+}
+
+function librarySectionMeta(id) {
+  const lib = (typeof DATA !== 'undefined' && DATA.content && DATA.content.sections) || [];
+  return lib.find(s => s.id === id) || null;
+}
+
 function renderContentLibrary() {
   const contentData = DATA.content || {};
   let html = breadcrumbs([{label:'Linux101', tab:'content'}, {label:'Linux 101 Content'}]);
   html += `<h1 class="view-title">Linux 101 Content Library</h1>`;
-  html += `<p class="view-subtitle">Browse comprehensive Linux 101 topics and guides.</p>`;
+  html += `<p class="view-subtitle">Deep-dive guides — click any topic to read it here on the site.</p>`;
   html += `<div class="content-library-grid">`;
   contentData.sections.forEach(section => {
     html += `
-      <div class="content-library-card" data-section="${section.id}">
+      <button class="content-library-card" data-action="open-content-section" data-section="${escapeHtml(section.id)}" aria-label="Open ${escapeHtml(section.title)}">
         <div class="content-library-icon">${ICONS[section.icon] || ICONS.folder}</div>
         <div class="content-library-info">
           <div class="content-library-title">${section.title}</div>
@@ -953,10 +979,94 @@ function renderContentLibrary() {
         <div class="content-library-arrow">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
         </div>
-      </div>
+      </button>
     `;
   });
   html += `</div>`;
+  return html;
+}
+
+async function openContentSection(id) {
+  setView('content', id);
+}
+
+async function renderContentSection(id) {
+  const meta = librarySectionMeta(id);
+  const lib = await getContentLibrary();
+  const data = lib && Array.isArray(lib.sections) ? lib.sections.find(s => s.id === id) : null;
+
+  let html = breadcrumbs([
+    {label:'Linux101', tab:'content'},
+    {label:'Linux 101 Content', tab:'content', view:'library'},
+    {label: meta ? meta.title : id}
+  ]);
+  if (!data || !data.parts || !data.parts.length) {
+    html += `<div class="no-results">${ICONS.file}<h3>Content not available</h3><p>This guide hasn't been built into the site yet.</p></div>`;
+    return html;
+  }
+
+  const totalWords = data.words || 0;
+  const readingTime = Math.max(1, Math.round(totalWords / 180));
+  const partCount = data.parts.length;
+  const secId = p => `lib-${id}-${p.id}`;
+
+  // Hero
+  html += `<div class="note-page note-page--enhanced"><div class="note-hero"><div class="note-hero-card">
+    <div class="note-hero-avatar" aria-hidden="true">${ICONS[meta?.icon] || ICONS.folder}</div>
+    <div class="note-hero-main">
+      <div class="note-hero-eyebrow"><span class="note-hero-day">Guide</span> <span aria-hidden="true">·</span> ${partCount} parts <span aria-hidden="true">·</span> ~${readingTime} min read</div>
+      <h1 class="note-hero-title">${escapeHtml(meta ? meta.title : data.title || id)}</h1>
+      <p class="note-hero-subtitle">${escapeHtml(meta ? meta.preview : '')}</p>
+      <div class="note-hero-meta">
+        <span class="note-meta-chip"><span class="note-meta-dot" aria-hidden="true"></span> Linux 101 Content</span>
+        <span class="note-meta-chip note-meta-chip--muted">${escapeHtml(data.source || '')}</span>
+      </div>
+    </div>
+    <div class="note-hero-actions">
+      <button class="note-hero-print" data-action="print-note" aria-label="Print guide">${ICONS.file} Print</button>
+    </div>
+  </div>
+  <div class="note-progress" role="progressbar" aria-label="Reading progress" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"><div class="note-progress-fill" id="noteProgressFill" style="width:0%"></div></div>
+  </div>`;
+  // Toolbar with jump dropdown
+  html += `<div class="note-miniheader note-toolbar">
+    <div class="note-toolbar-left">
+      <div class="mini-avatar">${ICONS[meta?.icon] || ICONS.folder}</div>
+      <div class="mini-name">Guide</div>
+      <span class="note-toolbar-count">${partCount} parts</span>
+    </div>
+    <div class="note-toolbar-right">
+      <select class="note-jump" data-action="jump-lib-part" aria-label="Jump to part">
+        <option value="">Jump to part…</option>
+        ${data.parts.map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.title)}</option>`).join('')}
+      </select>
+    </div>
+  </div>`;
+  // TOC + body
+  html += `<div class="note-layout note-layout--enhanced"><aside class="note-toc" aria-label="Table of contents">`;
+  html += `<div class="note-toc-header"><span class="note-toc-title">On this page</span><span class="note-toc-count">${partCount}</span></div><nav class="note-toc-list">`;
+  data.parts.forEach(p => {
+    const icon = ICONS[meta?.icon] || ICONS.file;
+    html += `<a href="#${secId(p)}" data-action="jump-note-link" data-author="__lib__" data-sec="${escapeHtml(p.id)}"><span class="note-toc-icon" aria-hidden="true">${icon}</span><span class="note-toc-text">${escapeHtml(p.title)}</span></a>`;
+  });
+  html += `</nav></aside><div class="note-content">`;
+  data.parts.forEach((p, idx) => {
+    const icon = ICONS[meta?.icon] || ICONS.file;
+    const body = p.blocks.map(renderBlock).join('');
+    html += `<section class="note-section note-section--enhanced" id="${secId(p)}">
+      <div class="note-section-header">
+        <div class="note-section-icon" aria-hidden="true">${icon}</div>
+        <div class="note-section-head">
+          <h2 class="note-section-title">${escapeHtml(p.title)}</h2>
+          <div class="note-section-meta"><span>#${idx+1}</span> <span aria-hidden="true">·</span> ${p.blocks.length} blocks</div>
+        </div>
+        <button class="note-anchor" data-action="copy" data-copy="${escapeCopyAttr(location.origin + location.pathname + '#' + secId(p))}" title="Copy link to section" aria-label="Copy link to section">${ICONS.link}</button>
+      </div>
+      <div class="note-section-body">${body}</div>
+    </section>`;
+  });
+  html += `</div></div></div>`;
+  html += `<div class="note-crossnav"><button class="chip" data-action="set-view" data-tab="content" data-view="library">← Back to Library</button><button class="toggle-complete" data-action="print-note">${ICONS.file} Print guide</button></div>`;
   return html;
 }
 
@@ -1079,6 +1189,7 @@ function parseHash() {
   const tabObj = TABS.find(x => x.id === tab);
   const validView = (tab === 'course' && (COURSE_NAV.some(g => g.id === view || (g.sub && g.sub.some(s => s.id === view))))) ||
                     (tabObj && tabObj.views.some(v => v.id === view)) ||
+                    (tab === 'content' && typeof DATA !== 'undefined' && DATA.content && Array.isArray(DATA.content.sections) && DATA.content.sections.some(s => s.id === view)) ||
                     Object.values(COURSE_RENDER).length && view in COURSE_RENDER;
   if (!validView) {
     // try legacy view alias
@@ -1114,10 +1225,15 @@ function titleForView(tab, view) {
     'day2-notes-tarek': "Tarek's Notes",
     'day2-lab': 'Lab 2',
     'day3-content': 'Day 3 — Coming Soon',
+    'library': 'Linux 101 Content',
     'quiz': 'Practice Lab — Drill & Quiz',
     'links': 'Resources'
   };
-  const label = map[view] || view;
+  let label = map[view] || view;
+  if (tab === 'content' && view !== 'library') {
+    const meta = librarySectionMeta(view);
+    if (meta) label = meta.title;
+  }
   return `${label} — EslamOs`;
 }
 
@@ -2615,9 +2731,14 @@ async function render() {
   } else if (state.tab === 'course') {
     const fn = COURSE_RENDER[state.view];
     html = fn ? fn() : renderNTIRoadmap();
+  } else if (state.tab === 'content') {
+    html = (state.view && state.view !== 'library')
+      ? await renderContentSection(state.view)
+      : renderContentLibrary();
   } else if (state.tab === 'quiz') {
     html = renderQuiz();
   }
+  if (html == null) html = `<div class="no-results"><h3>Nothing to show</h3><p>This view has no content yet.</p></div>`;
 
   content.innerHTML = html;
   content.classList.remove('fade-in');
@@ -2942,6 +3063,7 @@ document.addEventListener('click', (e) => {
   }
   if (a === 'set-view') { setView(btn.dataset.tab, btn.dataset.view); return; }
   if (a === 'go-view') { goToView(btn.dataset.view); return; }
+  if (a === 'open-content-section') { openContentSection(btn.dataset.section); return; }
   if (a === 'breadcrumb') { setView(btn.dataset.tab, btn.dataset.view); return; }
   if (a === 'switch-tab') { switchTab(btn.dataset.tab); return; }
   if (a === 'toggle-topic') {
@@ -2983,7 +3105,13 @@ document.addEventListener('click', (e) => {
 
 document.addEventListener('change', (e) => {
   const el = e.target;
-  if (el.matches('[data-action=\"toggle-lab-task\"]')) {
+  if (el.matches('[data-action="jump-lib-part"]')) {
+    const val = el.value;
+    if (val) {
+      const target = document.getElementById('lib-' + state.view + '-' + val);
+      if (target) target.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+  } else if (el.matches('[data-action=\"toggle-lab-task\"]')) {
     toggleLabTask(el.dataset.id, el);
   } else if (el.matches('[data-action=\"jump-note\"]')) {
     const val = el.value;
@@ -3017,7 +3145,10 @@ document.addEventListener('click', (e) => {
   const sec = a.dataset.sec;
   if (author && sec) {
     // decide if it's NTI or note
-    if (author === 'day1' || author === 'day2' || author === 'day3') {
+    if (author === '__lib__') {
+      const target = document.getElementById('lib-' + state.view + '-' + sec);
+      if (target) target.scrollIntoView({behavior:'smooth', block:'start'});
+    } else if (author === 'day1' || author === 'day2' || author === 'day3') {
       const target = document.getElementById('nti-sec-' + author + '-' + sec) || document.getElementById('note-sec-' + author + '-' + sec);
       if (target) target.scrollIntoView({behavior:'smooth', block:'start'});
     } else {
