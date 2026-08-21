@@ -807,29 +807,80 @@ function renderBlock(b) {
 function renderNotesBody(authorKey) {
   const note = DATA.notes[authorKey];
   const secId = (s) => `note-sec-${authorKey}-${s}`;
-  let html = breadcrumbs([{label:'NTI Linux', tab:'course'}, {label:'Day 1', tab:'course', view:'day1-content'}, {label: note.author + "'s Notes"}]);
-  html += `<h1 class="view-title">${escapeHtml(note.author)}'s Notes</h1>`;
-  html += `<p class="view-subtitle">${escapeHtml(note.subtitle)}</p>`;
-  html += `<div class="note-page">`;
+  // reading time: avg 180 wpm
+  const totalWords = note.sections.reduce((acc, s) => acc + s.blocks.reduce((a,b) => {
+    if(b.t==='text' || b.t==='callout') return a + stripHtml(b.html||'').split(/\s+/).length;
+    if(b.t==='list' || b.t==='steps') return a + (b.items||[]).join(' ').split(/\s+/).length;
+    if(b.t==='code') return a + (b.code||'').split(/\s+/).length;
+    if(b.t==='table') return a + (b.head||[]).join(' ').split(/\s+/).length + (b.rows||[]).flat().join(' ').split(/\s+/).length;
+    return a;
+  }, 0), 0);
+  const readingTime = Math.max(1, Math.round(totalWords / 180));
+  const sectionCount = note.sections.length;
+  const dayLabel = note.day ? `Day ${note.day}` : 'Contributor';
+  let html = breadcrumbs([{label:'NTI Linux', tab:'course'}, {label: dayLabel, tab:'course', view: note.day===1?'day1-content': note.day===2?'day2-content':'day1-content'}, {label: note.author + "'s Notes"}]);
+  html += `<div class="note-page note-page--enhanced">`;
+  // Hero
   html += `
-    <div class="note-miniheader">
-      <div class="mini-avatar">${note.avatar}</div>
-      <div class="mini-name">${note.author}</div>
-      <select data-action="jump-note" data-author="${escapeHtml(authorKey)}">
-        <option value="">Jump to section…</option>
-        ${note.sections.map(s => `<option value="${s.id}">${escapeHtml(s.title)}</option>`).join('')}
-      </select>
+    <div class="note-hero">
+      <div class="note-hero-card">
+        <div class="note-hero-avatar" aria-hidden="true">${escapeHtml(note.avatar)}</div>
+        <div class="note-hero-main">
+          <div class="note-hero-eyebrow"><span class="note-hero-day">${escapeHtml(dayLabel)}</span> <span aria-hidden="true">·</span> ${sectionCount} sections <span aria-hidden="true">·</span> ${readingTime} min read</div>
+          <h1 class="note-hero-title">${escapeHtml(note.author)}'s Notes</h1>
+          <p class="note-hero-subtitle">${escapeHtml(note.subtitle)}</p>
+          <div class="note-hero-meta">
+            <span class="note-meta-chip"><span class="note-meta-dot" aria-hidden="true"></span> ${escapeHtml(note.author)}</span>
+            <span class="note-meta-chip note-meta-chip--muted">${escapeHtml(dayLabel)} · Contributor note</span>
+          </div>
+        </div>
+        <div class="note-hero-actions">
+          <button class="note-hero-print" data-action="print-note" aria-label="Print notes">${ICONS.file} Print</button>
+        </div>
+      </div>
+      <div class="note-progress" role="progressbar" aria-label="Reading progress" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"><div class="note-progress-fill" id="noteProgressFill" style="width:0%"></div></div>
     </div>`;
-  html += `<div class="note-layout"><aside class="note-toc">`;
+  // Toolbar (sticky miniheader enhanced)
+  html += `
+    <div class="note-miniheader note-toolbar">
+      <div class="note-toolbar-left">
+        <div class="mini-avatar">${escapeHtml(note.avatar)}</div>
+        <div class="mini-name">${escapeHtml(note.author)}</div>
+        <span class="note-toolbar-count">${sectionCount} topics</span>
+      </div>
+      <div class="note-toolbar-right">
+        <select class="note-jump" data-action="jump-note" data-author="${escapeHtml(authorKey)}" aria-label="Jump to section">
+          <option value="">Jump to section…</option>
+          ${note.sections.map(s => `<option value="${s.id}">${escapeHtml(s.title)}</option>`).join('')}
+        </select>
+      </div>
+    </div>`;
+  html += `<div class="note-layout note-layout--enhanced"><aside class="note-toc" aria-label="Table of contents">`;
+  html += `<div class="note-toc-header"><span class="note-toc-title">On this page</span><span class="note-toc-count">${sectionCount}</span></div><nav class="note-toc-list">`;
   note.sections.forEach(s => {
-    html += `<a href="#${secId(s.id)}" data-action="jump-note-link" data-author="${escapeHtml(authorKey)}" data-sec="${escapeHtml(s.id)}">${escapeHtml(s.title)}</a>`;
+    const icon = s.icon && ICONS[s.icon] ? ICONS[s.icon] : ICONS.file;
+    html += `<a href="#${secId(s.id)}" data-action="jump-note-link" data-author="${escapeHtml(authorKey)}" data-sec="${escapeHtml(s.id)}"><span class="note-toc-icon" aria-hidden="true">${icon}</span><span class="note-toc-text">${escapeHtml(s.title)}</span></a>`;
   });
-  html += `</aside><div class="note-content">`;
-  note.sections.forEach(s => {
+  html += `</nav></aside><div class="note-content">`;
+  note.sections.forEach((s, idx) => {
     const body = s.blocks.map(renderBlock).join('');
-    html += `<section class="note-section" id="${secId(s.id)}"><h2>${escapeHtml(s.title)} <span class="note-source">Source: ${note.author}</span></h2>${body}</section>`;
+    const icon = s.icon && ICONS[s.icon] ? ICONS[s.icon] : ICONS.file;
+    const blockCount = s.blocks.length;
+    html += `<section class="note-section note-section--enhanced" id="${secId(s.id)}">
+      <div class="note-section-header">
+        <div class="note-section-icon" aria-hidden="true">${icon}</div>
+        <div class="note-section-head">
+          <h2 class="note-section-title">${escapeHtml(s.title)}</h2>
+          <div class="note-section-meta"><span>#${idx+1}</span> <span aria-hidden="true">·</span> ${blockCount} blocks <span aria-hidden="true">·</span> Source: ${escapeHtml(note.author)}</div>
+        </div>
+        <button class="note-anchor" data-action="copy" data-copy="${escapeCopyAttr(location.origin + location.pathname + '#'+secId(s.id))}" title="Copy link to section" aria-label="Copy link to section">${ICONS.link}</button>
+      </div>
+      <div class="note-section-body">${body}</div>
+    </section>`;
   });
   html += `</div></div></div>`;
+  // Cross-nav
+  html += `<div class="note-crossnav"><button class="chip" data-action="set-view" data-tab="course" data-view="${note.day===1?'day1-content':'day2-content'}">← Back to ${escapeHtml(dayLabel)} content</button><button class="toggle-complete" data-action="print-note">${ICONS.file} Print notes</button></div>`;
   return html;
 }
 
@@ -2297,6 +2348,25 @@ async function render() {
 
 function postRender() {
   setupCmdSearch();
+  // note reading progress
+  (function setupNoteProgress(){
+    const fill = document.getElementById('noteProgressFill');
+    const page = document.querySelector('.note-page--enhanced');
+    if(!fill || !page) return;
+    if(window._noteProgressHandler) window.removeEventListener('scroll', window._noteProgressHandler);
+    const onScroll = () => {
+      const top = page.offsetTop;
+      const height = page.scrollHeight - window.innerHeight;
+      const scrolled = window.scrollY - top + 120;
+      const pct = height > 0 ? Math.max(0, Math.min(100, (scrolled / height) * 100)) : 0;
+      fill.style.width = pct + '%';
+      const bar = fill.parentElement;
+      if(bar) bar.setAttribute('aria-valuenow', String(Math.round(pct)));
+    };
+    window._noteProgressHandler = onScroll;
+    window.addEventListener('scroll', onScroll, {passive:true});
+    onScroll();
+  })();
   const toc = document.querySelector('.note-toc');
   if (!toc || !('IntersectionObserver' in window)) return;
   const links = Array.from(toc.querySelectorAll('a'));
@@ -2548,6 +2618,7 @@ document.addEventListener('click', (e) => {
     btn.setAttribute('aria-pressed', flipped ? 'true' : 'false');
     return;
   }
+  if (a === 'print-note') { window.print(); return; }
   if (a === 'close-spotlight') { closeSpotlight(); return; }
   if (a === 'spotlight-hint') {
     const term = btn.dataset.term || '';
