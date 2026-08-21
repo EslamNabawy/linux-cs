@@ -1,20 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://eslamnabawy.github.io/linux-cs/</loc><priority>1.0</priority></url>
-  <url><loc>https://eslamnabawy.github.io/linux-cs/#general/cheatsheet</loc><priority>0.9</priority></url>
-  <url><loc>https://eslamnabawy.github.io/linux-cs/#general/topicindex</loc><priority>0.7</priority></url>
-  <url><loc>https://eslamnabawy.github.io/linux-cs/#general/exercises</loc><priority>0.7</priority></url>
-  <url><loc>https://eslamnabawy.github.io/linux-cs/#course/roadmap</loc><priority>0.8</priority></url>
-  <url><loc>https://eslamnabawy.github.io/linux-cs/#course/day1-content</loc><priority>0.9</priority></url>
-  <url><loc>https://eslamnabawy.github.io/linux-cs/#course/day1-notes-rahma</loc><priority>0.8</priority></url>
-  <url><loc>https://eslamnabawy.github.io/linux-cs/#course/day1-notes-michael</loc><priority>0.8</priority></url>
-  <url><loc>https://eslamnabawy.github.io/linux-cs/#course/day1-notes-hager</loc><priority>0.8</priority></url>
-  <url><loc>https://eslamnabawy.github.io/linux-cs/#course/day1-lab</loc><priority>0.8</priority></url>
-  <url><loc>https://eslamnabawy.github.io/linux-cs/#course/day2-content</loc><priority>0.9</priority></url>
-  <url><loc>https://eslamnabawy.github.io/linux-cs/#course/day2-notes-sagda</loc><priority>0.8</priority></url>
-  <url><loc>https://eslamnabawy.github.io/linux-cs/#course/day2-notes-tarek</loc><priority>0.8</priority></url>
-  <url><loc>https://eslamnabawy.github.io/linux-cs/#course/day2-lab</loc><priority>0.8</priority></url>
-  <url><loc>https://eslamnabawy.github.io/linux-cs/#course/day3-content</loc><priority>0.5</priority></url>
-  <url><loc>https://eslamnabawy.github.io/linux-cs/#quiz/quiz</loc><priority>0.8</priority></url>
-  <url><loc>https://eslamnabawy.github.io/linux-cs/#links/links</loc><priority>0.6</priority></url>
+  <url><loc>https://eslamnabawy.github.io/linux101/</loc><priority>1.0</priority></url>
+  <url><loc>https://eslamnabawy.github.io/linux101/#linux101/cheatsheet</loc><priority>0.9</priority></url>
+  <url><loc>https://eslamnabawy.github.io/linux101/#linux101/topicindex</loc><priority>0.7</priority></url>
+  <url><loc>https://eslamnabawy.github.io/linux101/#linux101/exercises</loc><priority>0.7</priority></url>
+  <url><loc>https://eslamnabawy.github.io/linux101/#linux101/resources</loc><priority>0.7</priority></url>
+  <url><loc>https://eslamnabawy.github.io/linux101/#linux101/roadmap7</loc><priority>0.7</priority></url>
+  <url><loc>https://eslamnabawy.github.io/linux101/#course/roadmap</loc><priority>0.8</priority></url>
+  <url><loc>https://eslamnabawy.github.io/linux101/#course/day1-content</loc><priority>0.9</priority></url>
+  <url><loc>https://eslamnabawy.github.io/linux101/#course/day1-notes-rahma</loc><priority>0.8</priority></url>
+  <url><loc>https://eslamnabawy.github.io/linux101/#course/day1-notes-michael</loc><priority>0.8</priority></url>
+  <url><loc>https://eslamnabawy.github.io/linux101/#course/day1-notes-hager</loc><priority>0.8</priority></url>
+  <url><loc>https://eslamnabawy.github.io/linux101/#course/day1-lab</loc><priority>0.8</priority></url>
+  <url><loc>https://eslamnabawy.github.io/linux101/#course/day2-content</loc><priority>0.9</priority></url>
+  <url><loc>https://eslamnabawy.github.io/linux101/#course/day2-notes-sagda</loc><priority>0.8</priority></url>
+  <url><loc>https://eslamnabawy.github.io/linux101/#course/day2-notes-tarek</loc><priority>0.8</priority></url>
+  <url><loc>https://eslamnabawy.github.io/linux101/#course/day2-lab</loc><priority>0.8</priority></url>
+  <url><loc>https://eslamnabawy.github.io/linux101/#course/day3-content</loc><priority>0.5</priority></url>
+  <url><loc>https://eslamnabawy.github.io/linux101/#quiz/quiz</loc><priority>0.8</priority></url>
+  <!-- Legacy aliases kept for 301 compat -->
+  <url><loc>https://eslamnabawy.github.io/linux101/#general/cheatsheet</loc><priority>0.4</priority></url>
+  <url><loc>https://eslamnabawy.github.io/linux101/#links/links</loc><priority>0.4</priority></url>
 </urlset>

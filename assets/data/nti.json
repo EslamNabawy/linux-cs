@@ -4516,8 +4516,8 @@
       "avatar": "T",
       "sections": [
         {
-          "id": "25-september-wednesday-vim-scripting-ext",
-          "title": "25 September (Wednesday) — Vim Scripting, External Commands, Shell Variables",
+          "id": "vim-scripting-external-commands",
+          "title": "Vim Scripting, External Commands, Shell Variables",
           "icon": "eye",
           "blocks": [
             {
@@ -4605,8 +4605,8 @@
           ]
         },
         {
-          "id": "26-september-thursday-vim-search-and-edi",
-          "title": "26 September (Thursday) — Vim Search and Editing",
+          "id": "vim-search-and-editing",
+          "title": "Vim Search and Editing",
           "icon": "search",
           "blocks": [
             {
@@ -4749,8 +4749,8 @@
           ]
         },
         {
-          "id": "27-september-friday-dev-null-and-vi-vim-",
-          "title": "27 September (Friday) — /dev/null and Vi/Vim Modes",
+          "id": "dev-null-and-vi-vim-modes",
+          "title": "/dev/null and Vi/Vim Modes",
           "icon": "file",
           "blocks": [
             {
@@ -4856,8 +4856,8 @@
           ]
         },
         {
-          "id": "28-september-saturday-pipelines",
-          "title": "28 September (Saturday) — Pipelines",
+          "id": "pipelines",
+          "title": "Pipelines",
           "icon": "network",
           "blocks": [
             {
@@ -4944,8 +4944,8 @@
           ]
         },
         {
-          "id": "29-september-sunday-bash-find-and-standa",
-          "title": "29 September (Sunday) — Bash find and Standard Output/Error",
+          "id": "bash-find-standard-output-error",
+          "title": "Bash find and Standard Output/Error",
           "icon": "file",
           "blocks": [
             {
@@ -4986,8 +4986,8 @@
           ]
         },
         {
-          "id": "30-september-monday-redirection-and-manu",
-          "title": "30 September (Monday) — Redirection and Manual Pages",
+          "id": "redirection-and-manual-pages",
+          "title": "Redirection and Manual Pages",
           "icon": "eye",
           "blocks": [
             {
@@ -5153,8 +5153,8 @@
           ]
         },
         {
-          "id": "1-october-tuesday-manual-page-lookups",
-          "title": "1 October (Tuesday) — Manual Page Lookups",
+          "id": "manual-page-lookups",
+          "title": "Manual Page Lookups",
           "icon": "eye",
           "blocks": [
             {

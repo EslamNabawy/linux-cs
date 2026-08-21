@@ -736,44 +736,44 @@ const DATA = {
         avatar: "T",
         sections: [
         {
-          id: "25-september-wednesday-vim-scripting-ext",
-          title: "25 September (Wednesday) — Vim Scripting, External Commands, Shell Variables",
+          id: "vim-scripting-external-commands",
+          title: "Vim Scripting, External Commands, Shell Variables",
           icon: "eye",
           blocks: [{t:"text", html:"<h6>Vim Script: Find and Replace</h6>"}, {t:"code", code:":%s/login/nologin/g", lang:"bash"}, {t:"text", html:"<p><code>g</code> means Global (to replace the words).<br><em>(new name)</em></p>"}, {t:"text", html:"<h6>Execute External Command in Vim</h6>"}, {t:"code", code:":.! date", lang:"bash"}, {t:"text", html:"<p><em>(خارج ولكن يعود للمكان مره ثانيه)</em></p>"}, {t:"code", code:":* Number ! Command", lang:"bash"}, {t:"text", html:"<p>Will appear in the number of line that matches that number.</p>"}, {t:"text", html:"<h6>Vim Options</h6>"}, {t:"table", head:["Command","Description"], rows:[[":set number","Will index the lines"],[":set arabic","Will make in arabic way"],[":set noarabic","Turns off arabic mode"]]}, {t:"text", html:"<h6>Variables in Shell</h6>"}, {t:"text", html:"<p>User-defined Variable / Shell Variable — that you created / that already exists in the system or the user created it.</p>"}, {t:"code", code:"X=15\necho $X", lang:"bash"}, {t:"text", html:"<h6>Mathematics in Shell</h6>"}, {t:"code", code:"$[x+y]\necho $[x+y]", lang:"bash"}]
         },
         {
-          id: "26-september-thursday-vim-search-and-edi",
-          title: "26 September (Thursday) — Vim Search and Editing",
+          id: "vim-search-and-editing",
+          title: "Vim Search and Editing",
           icon: "search",
           blocks: [{t:"text", html:"<h6>Search Direction</h6>"}, {t:"table", head:["Command","Description"], rows:[["?","Search from bottom"],["/","Search from above"],["ESC / exit","To get out of Mode"]]}, {t:"text", html:"<h6>Cursor Insertion & Movement</h6>"}, {t:"table", head:["Command","Description"], rows:[["a","After Cursor"],["i","Before Cursor"],["o","New next line"],["Shift + A","End of line"],["Shift + I","Beginning of line"]]}, {t:"text", html:"<h6>Editing Operations</h6>"}, {t:"text", html:"<p>Everything you write, the exit option applies.</p>"}, {t:"table", head:["Command","Description"], rows:[["dd","Only to remove"],["dd + p","Cut -> Copy"]]}, {t:"text", html:"<h6>Visual Modes</h6>"}, {t:"table", head:["Command","Description"], rows:[["v","To get Visual Mode"],["Shift + V","Select the line"],["Ctrl + v","Select the block *(لعمود)*"]]}, {t:"text", html:"<h6>Saving & Exiting Vim</h6>"}, {t:"table", head:["Command","Description"], rows:[[":w","Save and keep in file"],[":wq","Save and get out"],[":q!","Not save and quit"],[":q","He will ask you (if you have done save you will get out immediately)"]]}]
         },
         {
-          id: "27-september-friday-dev-null-and-vi-vim-",
-          title: "27 September (Friday) — /dev/null and Vi/Vim Modes",
+          id: "dev-null-and-vi-vim-modes",
+          title: "/dev/null and Vi/Vim Modes",
           icon: "file",
           blocks: [{t:"text", html:"<h6>/dev/null in Linux</h6>"}, {t:"text", html:"<p>A special virtual device file. Acts like a black hole for data. Any data will disappear.</p>"}, {t:"callout", kind:"info", html:"<code>/dev/null</code> is a special virtual device file that acts like a black hole for data — anything sent to it disappears."}, {t:"text", html:"<h6>Vi / Vim Modes</h6>"}, {t:"code", code:"Vi / Vim <filename>", lang:"bash"}, {t:"text", html:"<p>To execute into the file.</p>"}, {t:"text", html:"<p>4 level modes:</p>"}, {t:"table", head:["Mode","Description"], rows:[["Default","Command Mode"],["Update","Insert Mode"],["Select","Visual Mode"],["Ex / Command Line Mode","—"]]}, {t:"text", html:"<p>After you end, to exit -> press <code>ESC</code>.</p>"}, {t:"text", html:"<p>Press <code>i</code> -> Go to Insert Mode.</p>"}, {t:"text", html:"<p>Save or Not save: <code>Shift + :</code></p>"}, {t:"text", html:"<h6>Vim Shortcuts</h6>"}, {t:"table", head:["Command","Description"], rows:[["dd","Cut / Delete line"],["yy / gy","Copy"],["p","Paste"],["u","Undo"],["/","Search"]]}]
         },
         {
-          id: "28-september-saturday-pipelines",
-          title: "28 September (Saturday) — Pipelines",
+          id: "pipelines",
+          title: "Pipelines",
           icon: "network",
           blocks: [{t:"code", code:"find / -name passwd 2> temp/temp-output", lang:"bash"}, {t:"text", html:"<h6>Pipelines</h6>"}, {t:"text", html:"<p>Input -> Output -> Command engine in that output</p>"}, {t:"text", html:"<p>Pass process -> gives you total output (will use it).</p>"}, {t:"code", code:"Command | output -> Command -> output", lang:"bash"}, {t:"text", html:"<p>Real Example:</p>"}, {t:"code", code:"ls -l | grep ^-", lang:"bash"}, {t:"text", html:"<p>Give filter output.</p>"}, {t:"code", code:"echo \"nti aiops\" | wc", lang:"bash"}, {t:"text", html:"<p>Print / Counted 'Count' word.</p>"}, {t:"text", html:"<h6>wc Options</h6>"}, {t:"table", head:["Command","Description"], rows:[["wc -l","Lines only"],["wc -w","Words only"],["wc -c","Character only"]]}, {t:"text", html:"<h6>Search Pattern</h6>"}, {t:"text", html:"<p><code>\\<th</code> -> Any word having \"th\"</p>"}, {t:"text", html:"<p>delimiter</p>"}]
         },
         {
-          id: "29-september-sunday-bash-find-and-standa",
-          title: "29 September (Sunday) — Bash find and Standard Output/Error",
+          id: "bash-find-standard-output-error",
+          title: "Bash find and Standard Output/Error",
           icon: "file",
           blocks: [{t:"code", code:"find / -name <option>", lang:"bash"}, {t:"text", html:"<p><code>option</code> -> Command anything.</p>"}, {t:"text", html:"<p>Mean: search for entire system.<br><em>(أنت بتحدد عادي هنا المكان)</em></p>"}, {t:"callout", kind:"info", html:"You may have two std output and std Error. It will get only one of them unless you specify otherwise."}, {t:"text", html:"<p>Example:</p>"}, {t:"code", code:"find / -name passwd > output", lang:"bash"}, {t:"text", html:"<p>Also has Error but it only gets the output.</p>"}, {t:"text", html:"<p><code>2></code> -> If you want to get the Error.</p>"}]
         },
         {
-          id: "30-september-monday-redirection-and-manu",
-          title: "30 September (Monday) — Redirection and Manual Pages",
+          id: "redirection-and-manual-pages",
+          title: "Redirection and Manual Pages",
           icon: "eye",
           blocks: [{t:"text", html:"<h6>Redirection</h6>"}, {t:"text", html:"<p>Redirection -> to change info to another page.</p>"}, {t:"table", head:["Stream","File Descriptor"], rows:[["std input","FD0"],["std output","FD1"],["std Error","FD2"]]}, {t:"text", html:"<p>Any Command / Any Program / Standard STDs.</p>"}, {t:"text", html:"<p>Values not be typed.</p>"}, {t:"text", html:"<p>The next or another file doesn't know what you give Std to make it understand.</p>"}, {t:"code", code:"ls -l > /temp/temp-output", lang:"bash"}, {t:"text", html:"<p>Also makes override.</p>"}, {t:"text", html:"<p>To append: <code>>></code></p>"}, {t:"text", html:"<p><code>1></code> -> Will not center / output redirect.</p>"}, {t:"code", code:"anything > temp-erro-output", lang:"bash"}, {t:"text", html:"<p>Error here: <code>2></code></p>"}, {t:"text", html:"<p>It will understand that is error.</p>"}, {t:"callout", kind:"warning", html:"<code>></code> overrides the target file's contents. Use <code>>></code> to append instead of overwriting."}, {t:"text", html:"<h6>Manual Pages & Vim Navigation</h6>"}, {t:"text", html:"<p><code>/etc</code> -> Have all Configuration file in system.</p>"}, {t:"text", html:"<p>4 Command to get to home (?)</p>"}, {t:"text", html:"<h6>Manual Page Sections</h6>"}, {t:"table", head:["Section","Description"], rows:[["1","User Command (regular page)"],["5","Configuration files"],["8","System Administrator commands"]]}, {t:"code", code:"whereis Command", lang:"bash"}, {t:"text", html:"<p>Gives you where the Command is on pages.</p>"}, {t:"text", html:"<h6>Vim / Navigation Shortcuts</h6>"}, {t:"table", head:["Command","Description"], rows:[["Shift + G","To get the last of file"],["g (small g)","To get the first of file"],["Shift + N","Will search for same word (previous match)"],["/ <word>","Search for word"],["Q","To quit"]]}, {t:"code", code:"man passwd\nman 5 passwd", lang:"bash"}]
         },
         {
-          id: "1-october-tuesday-manual-page-lookups",
-          title: "1 October (Tuesday) — Manual Page Lookups",
+          id: "manual-page-lookups",
+          title: "Manual Page Lookups",
           icon: "eye",
           blocks: [{t:"text", html:"<p>Manual page needed to update: <code>mandb</code></p>"}, {t:"text", html:"<p>What is <code>man passwd</code> ~ Word</p>"}, {t:"code", code:"man -k passwd", lang:"bash"}, {t:"text", html:"<p><code>man -w passwd</code> = Where is to all page. First one <em>(كلمتين)</em>.</p>"}, {t:"text", html:"<p>Get the first location (if it not press Q) and it asks you if you want to see the next page -> press Enter.</p>"}, {t:"text", html:"<p>What if the change in file name? It will not get it.</p>"}, {t:"text", html:"<p>It also returns Path.</p>"}, {t:"text", html:"<p>نمشي بالترتيب</p>"}, {t:"text", html:"<p>Page 1</p>"}, {t:"code", code:"Command --help", lang:"bash"}, {t:"text", html:"<p>Return option only.</p>"}, {t:"text", html:"<p>But if you want description:</p>"}, {t:"text", html:"<p><code>man</code> -> It's like documentation.</p>"}]
         }
@@ -1168,44 +1168,44 @@ const DATA = {
       avatar: "T",
       sections: [
         {
-          id: "25-september-wednesday-vim-scripting-ext",
-          title: "25 September (Wednesday) — Vim Scripting, External Commands, Shell Variables",
+          id: "vim-scripting-external-commands",
+          title: "Vim Scripting, External Commands, Shell Variables",
           icon: "eye",
           blocks: [{t:"text", html:"<h6>Vim Script: Find and Replace</h6>"}, {t:"code", code:":%s/login/nologin/g", lang:"bash"}, {t:"text", html:"<p><code>g</code> means Global (to replace the words).<br><em>(new name)</em></p>"}, {t:"text", html:"<h6>Execute External Command in Vim</h6>"}, {t:"code", code:":.! date", lang:"bash"}, {t:"text", html:"<p><em>(خارج ولكن يعود للمكان مره ثانيه)</em></p>"}, {t:"code", code:":* Number ! Command", lang:"bash"}, {t:"text", html:"<p>Will appear in the number of line that matches that number.</p>"}, {t:"text", html:"<h6>Vim Options</h6>"}, {t:"table", head:["Command","Description"], rows:[[":set number","Will index the lines"],[":set arabic","Will make in arabic way"],[":set noarabic","Turns off arabic mode"]]}, {t:"text", html:"<h6>Variables in Shell</h6>"}, {t:"text", html:"<p>User-defined Variable / Shell Variable — that you created / that already exists in the system or the user created it.</p>"}, {t:"code", code:"X=15\necho $X", lang:"bash"}, {t:"text", html:"<h6>Mathematics in Shell</h6>"}, {t:"code", code:"$[x+y]\necho $[x+y]", lang:"bash"}]
         },
         {
-          id: "26-september-thursday-vim-search-and-edi",
-          title: "26 September (Thursday) — Vim Search and Editing",
+          id: "vim-search-and-editing",
+          title: "Vim Search and Editing",
           icon: "search",
           blocks: [{t:"text", html:"<h6>Search Direction</h6>"}, {t:"table", head:["Command","Description"], rows:[["?","Search from bottom"],["/","Search from above"],["ESC / exit","To get out of Mode"]]}, {t:"text", html:"<h6>Cursor Insertion & Movement</h6>"}, {t:"table", head:["Command","Description"], rows:[["a","After Cursor"],["i","Before Cursor"],["o","New next line"],["Shift + A","End of line"],["Shift + I","Beginning of line"]]}, {t:"text", html:"<h6>Editing Operations</h6>"}, {t:"text", html:"<p>Everything you write, the exit option applies.</p>"}, {t:"table", head:["Command","Description"], rows:[["dd","Only to remove"],["dd + p","Cut -> Copy"]]}, {t:"text", html:"<h6>Visual Modes</h6>"}, {t:"table", head:["Command","Description"], rows:[["v","To get Visual Mode"],["Shift + V","Select the line"],["Ctrl + v","Select the block *(لعمود)*"]]}, {t:"text", html:"<h6>Saving & Exiting Vim</h6>"}, {t:"table", head:["Command","Description"], rows:[[":w","Save and keep in file"],[":wq","Save and get out"],[":q!","Not save and quit"],[":q","He will ask you (if you have done save you will get out immediately)"]]}]
         },
         {
-          id: "27-september-friday-dev-null-and-vi-vim-",
-          title: "27 September (Friday) — /dev/null and Vi/Vim Modes",
+          id: "dev-null-and-vi-vim-modes",
+          title: "/dev/null and Vi/Vim Modes",
           icon: "file",
           blocks: [{t:"text", html:"<h6>/dev/null in Linux</h6>"}, {t:"text", html:"<p>A special virtual device file. Acts like a black hole for data. Any data will disappear.</p>"}, {t:"callout", kind:"info", html:"<code>/dev/null</code> is a special virtual device file that acts like a black hole for data — anything sent to it disappears."}, {t:"text", html:"<h6>Vi / Vim Modes</h6>"}, {t:"code", code:"Vi / Vim <filename>", lang:"bash"}, {t:"text", html:"<p>To execute into the file.</p>"}, {t:"text", html:"<p>4 level modes:</p>"}, {t:"table", head:["Mode","Description"], rows:[["Default","Command Mode"],["Update","Insert Mode"],["Select","Visual Mode"],["Ex / Command Line Mode","—"]]}, {t:"text", html:"<p>After you end, to exit -> press <code>ESC</code>.</p>"}, {t:"text", html:"<p>Press <code>i</code> -> Go to Insert Mode.</p>"}, {t:"text", html:"<p>Save or Not save: <code>Shift + :</code></p>"}, {t:"text", html:"<h6>Vim Shortcuts</h6>"}, {t:"table", head:["Command","Description"], rows:[["dd","Cut / Delete line"],["yy / gy","Copy"],["p","Paste"],["u","Undo"],["/","Search"]]}]
         },
         {
-          id: "28-september-saturday-pipelines",
-          title: "28 September (Saturday) — Pipelines",
+          id: "pipelines",
+          title: "Pipelines",
           icon: "network",
           blocks: [{t:"code", code:"find / -name passwd 2> temp/temp-output", lang:"bash"}, {t:"text", html:"<h6>Pipelines</h6>"}, {t:"text", html:"<p>Input -> Output -> Command engine in that output</p>"}, {t:"text", html:"<p>Pass process -> gives you total output (will use it).</p>"}, {t:"code", code:"Command | output -> Command -> output", lang:"bash"}, {t:"text", html:"<p>Real Example:</p>"}, {t:"code", code:"ls -l | grep ^-", lang:"bash"}, {t:"text", html:"<p>Give filter output.</p>"}, {t:"code", code:"echo \"nti aiops\" | wc", lang:"bash"}, {t:"text", html:"<p>Print / Counted 'Count' word.</p>"}, {t:"text", html:"<h6>wc Options</h6>"}, {t:"table", head:["Command","Description"], rows:[["wc -l","Lines only"],["wc -w","Words only"],["wc -c","Character only"]]}, {t:"text", html:"<h6>Search Pattern</h6>"}, {t:"text", html:"<p><code>\\<th</code> -> Any word having \"th\"</p>"}, {t:"text", html:"<p>delimiter</p>"}]
         },
         {
-          id: "29-september-sunday-bash-find-and-standa",
-          title: "29 September (Sunday) — Bash find and Standard Output/Error",
+          id: "bash-find-standard-output-error",
+          title: "Bash find and Standard Output/Error",
           icon: "file",
           blocks: [{t:"code", code:"find / -name <option>", lang:"bash"}, {t:"text", html:"<p><code>option</code> -> Command anything.</p>"}, {t:"text", html:"<p>Mean: search for entire system.<br><em>(أنت بتحدد عادي هنا المكان)</em></p>"}, {t:"callout", kind:"info", html:"You may have two std output and std Error. It will get only one of them unless you specify otherwise."}, {t:"text", html:"<p>Example:</p>"}, {t:"code", code:"find / -name passwd > output", lang:"bash"}, {t:"text", html:"<p>Also has Error but it only gets the output.</p>"}, {t:"text", html:"<p><code>2></code> -> If you want to get the Error.</p>"}]
         },
         {
-          id: "30-september-monday-redirection-and-manu",
-          title: "30 September (Monday) — Redirection and Manual Pages",
+          id: "redirection-and-manual-pages",
+          title: "Redirection and Manual Pages",
           icon: "eye",
           blocks: [{t:"text", html:"<h6>Redirection</h6>"}, {t:"text", html:"<p>Redirection -> to change info to another page.</p>"}, {t:"table", head:["Stream","File Descriptor"], rows:[["std input","FD0"],["std output","FD1"],["std Error","FD2"]]}, {t:"text", html:"<p>Any Command / Any Program / Standard STDs.</p>"}, {t:"text", html:"<p>Values not be typed.</p>"}, {t:"text", html:"<p>The next or another file doesn't know what you give Std to make it understand.</p>"}, {t:"code", code:"ls -l > /temp/temp-output", lang:"bash"}, {t:"text", html:"<p>Also makes override.</p>"}, {t:"text", html:"<p>To append: <code>>></code></p>"}, {t:"text", html:"<p><code>1></code> -> Will not center / output redirect.</p>"}, {t:"code", code:"anything > temp-erro-output", lang:"bash"}, {t:"text", html:"<p>Error here: <code>2></code></p>"}, {t:"text", html:"<p>It will understand that is error.</p>"}, {t:"callout", kind:"warning", html:"<code>></code> overrides the target file's contents. Use <code>>></code> to append instead of overwriting."}, {t:"text", html:"<h6>Manual Pages & Vim Navigation</h6>"}, {t:"text", html:"<p><code>/etc</code> -> Have all Configuration file in system.</p>"}, {t:"text", html:"<p>4 Command to get to home (?)</p>"}, {t:"text", html:"<h6>Manual Page Sections</h6>"}, {t:"table", head:["Section","Description"], rows:[["1","User Command (regular page)"],["5","Configuration files"],["8","System Administrator commands"]]}, {t:"code", code:"whereis Command", lang:"bash"}, {t:"text", html:"<p>Gives you where the Command is on pages.</p>"}, {t:"text", html:"<h6>Vim / Navigation Shortcuts</h6>"}, {t:"table", head:["Command","Description"], rows:[["Shift + G","To get the last of file"],["g (small g)","To get the first of file"],["Shift + N","Will search for same word (previous match)"],["/ <word>","Search for word"],["Q","To quit"]]}, {t:"code", code:"man passwd\nman 5 passwd", lang:"bash"}]
         },
         {
-          id: "1-october-tuesday-manual-page-lookups",
-          title: "1 October (Tuesday) — Manual Page Lookups",
+          id: "manual-page-lookups",
+          title: "Manual Page Lookups",
           icon: "eye",
           blocks: [{t:"text", html:"<p>Manual page needed to update: <code>mandb</code></p>"}, {t:"text", html:"<p>What is <code>man passwd</code> ~ Word</p>"}, {t:"code", code:"man -k passwd", lang:"bash"}, {t:"text", html:"<p><code>man -w passwd</code> = Where is to all page. First one <em>(كلمتين)</em>.</p>"}, {t:"text", html:"<p>Get the first location (if it not press Q) and it asks you if you want to see the next page -> press Enter.</p>"}, {t:"text", html:"<p>What if the change in file name? It will not get it.</p>"}, {t:"text", html:"<p>It also returns Path.</p>"}, {t:"text", html:"<p>نمشي بالترتيب</p>"}, {t:"text", html:"<p>Page 1</p>"}, {t:"code", code:"Command --help", lang:"bash"}, {t:"text", html:"<p>Return option only.</p>"}, {t:"text", html:"<p>But if you want description:</p>"}, {t:"text", html:"<p><code>man</code> -> It's like documentation.</p>"}]
         }

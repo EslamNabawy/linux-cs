@@ -42,9 +42,15 @@ function cycleTheme(current){
 }
 const _validTheme = THEMES.includes(savedState.theme) ? savedState.theme : 'dark';
 
+const TAB_ALIASES = { 'general': 'linux101', 'links': 'linux101' };
+const VIEW_ALIASES = { 'links': 'resources' };
+function normalizeTab(tab){ if(!tab) return 'linux101'; if(TAB_ALIASES[tab]) return TAB_ALIASES[tab]; return tab; }
+function normalizeView(view){ if(!view) return 'cheatsheet'; if(VIEW_ALIASES[view]) return VIEW_ALIASES[view]; return view; }
+const _initialTab = normalizeTab(savedState.tab || 'linux101');
+const _initialView = normalizeView(savedState.view || 'cheatsheet');
 const state = {
-  tab: savedState.tab || 'general',
-  view: savedState.view || 'cheatsheet',
+  tab: _initialTab,
+  view: _initialView,
   searchTerm: '',
   cmdTerm: savedState.cmdTerm || '',
   cmdCats: savedState.cmdCats || [],
@@ -104,7 +110,7 @@ async function getNti() {
   if (_ntiFetch) return _ntiFetch;
   _ntiFetch = (async () => {
     try {
-      const r = await fetch('assets/data/nti.json?v=23');
+      const r = await fetch('assets/data/nti.json?v=24');
       if (r.ok) {
         const j = await r.json();
         _ntiCache = j;
@@ -119,7 +125,7 @@ async function getNti() {
     } catch(_e) {}
     // Fallback for file:// or fetch fail: load full data.js
     try {
-      await loadScriptFallback('assets/js/data.js?v=23');
+      await loadScriptFallback('assets/js/data.js?v=24');
       if (typeof DATA !== 'undefined' && DATA.nti) { _ntiCache = DATA.nti; return _ntiCache; }
     } catch(_e) {}
     return null;
@@ -129,7 +135,7 @@ async function getNti() {
 async function getNotesData() {
   if (typeof DATA !== 'undefined' && DATA.notes && Object.keys(DATA.notes).length) return DATA.notes;
   try {
-    const r = await fetch('assets/data/nti.json?v=23');
+    const r = await fetch('assets/data/nti.json?v=24');
     if (r.ok) {
       const j = await r.json();
       if (j.notes) {
@@ -139,10 +145,10 @@ async function getNotesData() {
     }
   } catch(_e) {}
   try {
-    const idx = await fetch('assets/data/index.json?v=23').then(r=>r.json());
+    const idx = await fetch('assets/data/index.json?v=24').then(r=>r.json());
     const notes = {};
     await Promise.all((idx.notes||[]).map(async k => {
-      try { const rr = await fetch(`assets/data/notes/${k}.json?v=23`); if(rr.ok) notes[k]=await rr.json(); } catch(_e){}
+      try { const rr = await fetch(`assets/data/notes/${k}.json?v=24`); if(rr.ok) notes[k]=await rr.json(); } catch(_e){}
     }));
     if (typeof DATA !== 'undefined') DATA.notes = notes;
     return notes;
@@ -155,7 +161,7 @@ async function ensureNtiReady() {
   // also hydrate flashcard decks if needed via separate file (nti.json already contains them in current build)
   try {
     if (_ntiCache && !_ntiCache.flashcards) {
-      const r = await fetch('assets/data/flashcards.json?v=23'); if(r.ok) _ntiCache.flashcards = await r.json();
+      const r = await fetch('assets/data/flashcards.json?v=24'); if(r.ok) _ntiCache.flashcards = await r.json();
     }
   } catch(_e){}
 }
@@ -353,9 +359,9 @@ function renderCommandsBank() {
 // ===== RENDER EXERCISES =====
 function renderExercises() {
   let html = `
-    ${breadcrumbs([{label:'General Knowledge', tab:'general'}, {label:'Practical Exercises'}])}
-    <h1 class="view-title">Practical Exercises - Part 1</h1>
-    <p class="view-subtitle">Common Linux tasks with deep-dive explanations and context.</p>
+    ${breadcrumbs([{label:'Linux101', tab:'linux101'}, {label:'Practical Exercises'}])}
+    <h1 class="view-title">Practical Exercises</h1>
+    <p class="view-subtitle">Hands-on drills — common Linux tasks with deeper context.</p>
   `;
 
   DATA.exercises.forEach(ex => {
@@ -430,8 +436,7 @@ const RH124_SECTIONS = [
       title: "Course Outlines",
       icon: "file",
       content: `
-        <table class="comparison-table">
-          <thead><tr><th>Day</th><th>Content</th></tr></thead>
+        <div class="table-wrap"><table class="comparison-table"><thead><tr><th>Day</th><th>Content</th></tr></thead>
           <tbody>
             <tr><td><strong>Day 1</strong></td><td>Get Started with RHEL<br>Access the Command Line<br>Manage Files from the Command Line</td></tr>
             <tr><td><strong>Day 2</strong></td><td>Get Help in RHEL<br>Create, View, and Edit Text Files<br>Manage Local Users and Groups</td></tr>
@@ -439,7 +444,7 @@ const RH124_SECTIONS = [
             <tr><td><strong>Day 4</strong></td><td>Configure and Secure SSH<br>Analyzing and Storing Logs<br>Manage Networking</td></tr>
             <tr><td><strong>Day 5</strong></td><td>Archiving and Transferring Files<br>Install and Update Software Packages<br>Access Linux File Systems</td></tr>
           </tbody>
-        </table>
+        </table></div>
       `
     },
     {
@@ -525,8 +530,7 @@ const RH124_SECTIONS = [
       icon: "network",
       content: `
         <div class="rh124-content">
-          <table class="comparison-table">
-            <thead><tr><th>Shortcut</th><th>Action</th></tr></thead>
+          <div class="table-wrap"><table class="comparison-table"><thead><tr><th>Shortcut</th><th>Action</th></tr></thead>
             <tbody>
               <tr><td><code>Ctrl+A</code></td><td>Jump to the beginning of the command line.</td></tr>
               <tr><td><code>Ctrl+E</code></td><td>Jump to the end of the command line.</td></tr>
@@ -658,12 +662,12 @@ function renderLinksBody() {
   html += `
     <div class="links-section">
       <h3>Quick Comparison</h3>
-      <table class="comparison-table">
+      <div class="table-wrap"><table class="comparison-table">
         <thead><tr><th>Feature</th><th>Soft Link (ln -s)</th><th>Hard Link (ln)</th></tr></thead>
         <tbody>
           ${DATA.links.comparison.map(row => `<tr><td>${row.feature}</td><td>${escapeHtml(row.soft)}</td><td>${escapeHtml(row.hard)}</td></tr>`).join('')}
         </tbody>
-      </table>
+      </table></div>
     </div>
   `;
 
@@ -774,7 +778,7 @@ function renderBlock(b) {
     case 'steps':
       return `<ul class="note-list">${b.items.map(i => `<li>${i}</li>`).join('')}</ul>`;
     case 'table':
-      return `<table class="comparison-table"><thead><tr>${b.head.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>${b.rows.map(r => `<tr>${r.map(c => `<td>${escapeHtml(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+      return `<div class="table-wrap"><table class="comparison-table"><thead><tr>${b.head.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>${b.rows.map(r => `<tr>${r.map(c => `<td>${escapeHtml(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
     case 'code': {
       const code = b.code;
       const lang = b.lang || 'bash';
@@ -803,7 +807,7 @@ function renderBlock(b) {
 function renderNotesBody(authorKey) {
   const note = DATA.notes[authorKey];
   const secId = (s) => `note-sec-${authorKey}-${s}`;
-  let html = breadcrumbs([{label:'NTI Linux Course', tab:'course'}, {label:'Day 1', tab:'course', view:'day1-content'}, {label: note.author + "'s Notes"}]);
+  let html = breadcrumbs([{label:'NTI Linux', tab:'course'}, {label:'Day 1', tab:'course', view:'day1-content'}, {label: note.author + "'s Notes"}]);
   html += `<h1 class="view-title">${escapeHtml(note.author)}'s Notes</h1>`;
   html += `<p class="view-subtitle">${escapeHtml(note.subtitle)}</p>`;
   html += `<div class="note-page">`;
@@ -837,7 +841,7 @@ function goToNoteSection(authorKey, secId) {
 // ===== RENDER LAB (body) =====
 function renderLabBody() {
   const lab = DATA.lab;
-  let html = breadcrumbs([{label:'NTI Linux Course', tab:'course'}, {label:'Day 1', tab:'course', view:'day1-content'}, {label:'Lab Task'}]);
+  let html = breadcrumbs([{label:'NTI Linux', tab:'course'}, {label:'Day 1', tab:'course', view:'day1-content'}, {label:'Lab Task'}]);
   html += `<h1 class="view-title">${escapeHtml(lab.title || 'Lab Task')}</h1>`;
   html += `<p class="view-subtitle">${escapeHtml(lab.subtitle || 'Hands-on task for this day.')}</p>`;
   const total = lab.tasks.length;
@@ -859,9 +863,9 @@ function renderLabBody() {
 
 // ===== RENDER TOPIC INDEX (pill cloud + popover) =====
 function renderTopicIndex() {
-  let html = breadcrumbs([{label:'General Knowledge', tab:'general'}, {label:'Topic Index'}]);
+  let html = breadcrumbs([{label:'Linux101', tab:'linux101'}, {label:'Topic Index'}]);
   html += `<h1 class="view-title">Topic Index</h1>`;
-  html += `<p class="view-subtitle">Overlapping topics across all Day 1 contributors. Click a topic to see where it lives.</p>`;
+  html += `<p class="view-subtitle">Overlapping topics across contributors. Click a topic to jump.</p>`;
   html += `<div class="topic-cloud">`;
   DATA.topicIndex.forEach((t, i) => {
     const size = t.links.length >= 4 ? 'lg' : (t.links.length <= 1 ? 'sm' : '');
@@ -914,31 +918,34 @@ function toggleLabTask(id, el) {
 }
 
 const TABS = [
-  { id: 'general', label: 'General Knowledge', views: [
-    { id: 'cheatsheet', label: 'Cheat Sheet' },
+  { id: 'linux101', label: 'Linux101', views: [
+    { id: 'cheatsheet', label: 'Commands' },
     { id: 'topicindex', label: 'Topic Index' },
-    { id: 'exercises', label: 'Practical Exercises' },
-    { id: 'roadmap7', label: 'Course Roadmap' }
+    { id: 'exercises', label: 'Exercises' },
+    { id: 'roadmap7', label: 'Roadmap' },
+    { id: 'resources', label: 'Resources' }
   ]},
-  { id: 'course', label: 'NTI Linux Course', views: [
-    { id: 'roadmap', label: 'Roadmap (5-day)' },
+  { id: 'course', label: 'NTI Linux', views: [
+    { id: 'roadmap', label: 'Roadmap' },
     { id: 'day1', label: 'Day 1' },
     { id: 'day2', label: 'Day 2' },
     { id: 'day3', label: 'Day 3' },
     { id: 'day4', label: 'Day 4' },
     { id: 'day5', label: 'Day 5' }
   ]},
-  { id: 'links', label: 'Helpful Links', views: [ { id: 'links', label: 'Helpful Links' } ] },
-  { id: 'quiz', label: 'Flashcards & Quizzes', views: [ { id: 'quiz', label: 'Flashcards & Quiz' } ] }
+  { id: 'quiz', label: 'Practice Lab', views: [ { id: 'quiz', label: 'Drill & Quiz' } ] }
 ];
+const LEGACY_TABS = ['general', 'links'];
 const VIEW_MAP = {
-  'cheatsheet': { tab: 'general', view: 'cheatsheet' },
-  'commandsBank': { tab: 'general', view: 'cheatsheet' },
-  'topicindex': { tab: 'general', view: 'topicindex' },
-  'exercises': { tab: 'general', view: 'exercises' },
-  'course': { tab: 'general', view: 'roadmap7' },
+  'cheatsheet': { tab: 'linux101', view: 'cheatsheet' },
+  'commandsBank': { tab: 'linux101', view: 'cheatsheet' },
+  'topicindex': { tab: 'linux101', view: 'topicindex' },
+  'exercises': { tab: 'linux101', view: 'exercises' },
+  'course': { tab: 'linux101', view: 'roadmap7' },
+  'roadmap7': { tab: 'linux101', view: 'roadmap7' },
+  'resources': { tab: 'linux101', view: 'resources' },
+  'links': { tab: 'linux101', view: 'resources' },
   'rh124': { tab: 'course', view: 'day1-content' },
-  'links': { tab: 'course', view: 'day1-content' },
   'notes-rahma': { tab: 'course', view: 'day1-notes-rahma' },
   'notes-michael': { tab: 'course', view: 'day1-notes-michael' },
   'notes-hager': { tab: 'course', view: 'day1-notes-hager' },
@@ -952,7 +959,7 @@ const VIEW_MAP = {
 // ===== HASH ROUTER (GitHub Pages deep-link support) =====
 function buildHash(tab, view) {
   // normalize: #tab/view  (e.g. #course/day1-content)
-  const t = encodeURIComponent(tab || 'general');
+  const t = encodeURIComponent(tab || 'linux101');
   const v = encodeURIComponent(view || 'cheatsheet');
   return `#${t}/${v}`;
 }
@@ -962,20 +969,33 @@ function parseHash() {
   const hashPart = raw.split('?')[0];
   const slash = hashPart.indexOf('/');
   if (slash === -1) {
-    const tab = decodeURIComponent(hashPart);
+    let tab = decodeURIComponent(hashPart);
+    tab = normalizeTab(tab);
     if (TABS.find(x => x.id === tab)) return { tab, view: tabDefaultView(tab) };
+    // legacy alias support
+    if (LEGACY_TABS.includes(decodeURIComponent(hashPart))) {
+      const ntab = normalizeTab(decodeURIComponent(hashPart));
+      if (TABS.find(x => x.id === ntab)) return { tab: ntab, view: tabDefaultView(ntab) };
+    }
     return null;
   }
-  const tab = decodeURIComponent(hashPart.slice(0, slash));
-  const viewRaw = hashPart.slice(slash + 1);
-  const view = decodeURIComponent(viewRaw.split('#')[0].split('?')[0]);
+  let tab = decodeURIComponent(hashPart.slice(0, slash));
+  let viewRaw = hashPart.slice(slash + 1);
+  let view = decodeURIComponent(viewRaw.split('#')[0].split('?')[0]);
+  tab = normalizeTab(tab);
+  view = normalizeView(view);
   if (!tab || !view) return null;
   // validate tab/view exists
   const tabObj = TABS.find(x => x.id === tab);
   const validView = (tab === 'course' && (COURSE_NAV.some(g => g.id === view || (g.sub && g.sub.some(s => s.id === view))))) ||
                     (tabObj && tabObj.views.some(v => v.id === view)) ||
                     Object.values(COURSE_RENDER).length && view in COURSE_RENDER;
-  if (!validView) return null;
+  if (!validView) {
+    // try legacy view alias
+    const altView = VIEW_ALIASES[view] ? VIEW_ALIASES[view] : null;
+    if (altView && tabObj && tabObj.views.some(v => v.id === altView)) { view = altView; }
+    else return null;
+  }
   return { tab, view };
 }
 let _ignoreHash = false;
@@ -988,10 +1008,11 @@ function syncHash() {
 }
 function titleForView(tab, view) {
   const map = {
-    'cheatsheet': 'Cheat Sheet',
+    'cheatsheet': 'Linux101 — Commands',
     'topicindex': 'Topic Index',
-    'exercises': 'Practical Exercises',
-    'roadmap7': 'Course Roadmap',
+    'exercises': 'Exercises',
+    'roadmap7': 'Roadmap',
+    'resources': 'Resources',
     'roadmap': 'NTI Roadmap',
     'day1-content': 'Day 1 — Content',
     'day1-notes-rahma': "Rahma's Notes",
@@ -1003,8 +1024,8 @@ function titleForView(tab, view) {
     'day2-notes-tarek': "Tarek's Notes",
     'day2-lab': 'Lab 2',
     'day3-content': 'Day 3 — Coming Soon',
-    'quiz': 'Flashcards & Quiz',
-    'links': 'Helpful Links'
+    'quiz': 'Practice Lab — Drill & Quiz',
+    'links': 'Resources'
   };
   const label = map[view] || view;
   return `${label} — EslamOs`;
@@ -1069,12 +1090,12 @@ function renderNTICanonical(dayId){
   }
   // Day3 coming soon has single section
   const isComingSoon = day.title && day.title.toLowerCase().includes('coming soon');
-  let html = breadcrumbs([{label:'NTI Linux Course', tab:'course'}, {label: dayId==='day1'?'Day 1': dayId==='day2'?'Day 2':'Day 3', tab:'course', view: dayId+'-content'}, {label: isComingSoon?'Coming Soon':'Content'}]);
+  let html = breadcrumbs([{label:'NTI Linux', tab:'course'}, {label: dayId==='day1'?'Day 1': dayId==='day2'?'Day 2':'Day 3', tab:'course', view: dayId+'-content'}, {label: isComingSoon?'Coming Soon':'Content'}]);
   // Override for day3: simpler breadcrumb
   if(dayId==='day3'){
-    html = breadcrumbs([{label:'NTI Linux Course', tab:'course'}, {label:'Day 3'}]);
+    html = breadcrumbs([{label:'NTI Linux', tab:'course'}, {label:'Day 3'}]);
   } else {
-    html = breadcrumbs([{label:'NTI Linux Course', tab:'course'}, {label:'Roadmap', tab:'course', view:'roadmap'}, {label: dayId==='day1'?'Day 1':'Day 2'}]);
+    html = breadcrumbs([{label:'NTI Linux', tab:'course'}, {label:'Roadmap', tab:'course', view:'roadmap'}, {label: dayId==='day1'?'Day 1':'Day 2'}]);
   }
   html += `<h1 class="view-title">${escapeHtml(day.title)}</h1>`;
   if(day.subtitle) html += `<p class="view-subtitle">${escapeHtml(day.subtitle)}</p>`;
@@ -1118,7 +1139,7 @@ function renderLabBodyForDay(dayId){
     return renderCourseDayLab(dayId);
   }
   const num = dayId.replace('day','');
-  let html = breadcrumbs([{label:'NTI Linux Course', tab:'course'}, {label:'Day ' + num, tab:'course', view: dayId+'-content'}, {label:'Lab ' + num}]);
+  let html = breadcrumbs([{label:'NTI Linux', tab:'course'}, {label:'Day ' + num, tab:'course', view: dayId+'-content'}, {label:'Lab ' + num}]);
   html += `<h1 class="view-title">${escapeHtml(lab.title || ('Lab ' + num))}</h1>`;
   html += `<p class="view-subtitle">${escapeHtml(lab.subtitle || 'Hands-on tasks. Tick when done.')}</p>`;
   const total = lab.tasks.length;
@@ -1134,7 +1155,7 @@ function renderLabBodyForDay(dayId){
 }
 
 function goToView(view) {
-  const m = VIEW_MAP[view] || { tab: 'general', view: 'cheatsheet' };
+  const m = VIEW_MAP[view] || { tab: 'linux101', view: 'cheatsheet' };
   setView(m.tab, m.view);
 }
 
@@ -1179,6 +1200,11 @@ function switchTab(tab) {
 
 function renderSubNav() {
   const nav = document.getElementById('subnav');
+  const eyebrow = document.getElementById('sidebarEyebrow');
+  if (eyebrow) {
+    const t = TABS.find(x=>x.id===state.tab);
+    eyebrow.textContent = t ? t.label : 'Navigate';
+  }
   if (!nav) return;
 
   if (state.tab === 'course') {
@@ -1227,9 +1253,9 @@ function renderCourse() {
   const progress = Math.round((completedCount / modules.length) * 100);
 
   let html = `
-    ${breadcrumbs([{label:'General Knowledge', tab:'general'}, {label:'7-Module Roadmap'}])}
+    ${breadcrumbs([{label:'Linux101', tab:'linux101'}, {label:'Roadmap'}])}
     <h1 class="view-title">Course Roadmap</h1>
-    <p class="view-subtitle">7 modules from Linux beginner to confident power user.</p>
+    <p class="view-subtitle">7 modules — from first command to confident power user.</p>
     <div class="progress-bar">
       <div class="progress-bar-header">
         <span>Your Progress</span>
@@ -1445,9 +1471,9 @@ function renderQuiz() {
   const best = state.quizScores.best || 0;
   const total = deck.length;
   let html = `
-    ${breadcrumbs([{label:'Flashcards & Quizzes', tab:'quiz'}])}
-    <h1 class="view-title">Quiz &amp; Flashcards — Day 1 & Day 2</h1>
-    <p class="view-subtitle">Day 1 & Day 2 flashcards (NTI source) — flip to memorize, then take the multiple-choice quiz. Covers 98 Q&A from Rahma, Michael, Hager, Sagda & Tarek notes.</p>
+    ${breadcrumbs([{label:'Practice Lab', tab:'quiz'}])}
+    <h1 class="view-title">Practice Lab — Drill & Quiz</h1>
+    <p class="view-subtitle">Flip the cards to memorize, then take the quiz. Day 1 & Day 2 NTI material — ${total} Q&A from Rahma, Michael, Hager, Sagda & Tarek notes.</p>
     <div class="progress-bar">
       <div class="progress-bar-header">
         <span>Best Quiz Score</span>
@@ -1655,6 +1681,224 @@ function showToast(msg) {
   t._hide = setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateX(-50%) translateY(10px)'; }, 1800);
 }
 
+// ===== SPOTLIGHT SEARCH (overlay) =====
+let _spotlightOpen = false;
+let _spotlightIndex = -1;
+let _spotlightResults = [];
+function openSpotlight(){
+  const el = document.getElementById('spotlight');
+  const input = document.getElementById('spotlightInput');
+  if(!el || !input) return;
+  el.classList.add('open');
+  el.setAttribute('aria-hidden','false');
+  document.body.style.overflow = 'hidden';
+  _spotlightOpen = true;
+  _spotlightIndex = -1;
+  setTimeout(()=> input.focus(), 30);
+  renderSpotlight(input.value || '');
+}
+function closeSpotlight(){
+  const el = document.getElementById('spotlight');
+  if(!el) return;
+  el.classList.remove('open');
+  el.setAttribute('aria-hidden','true');
+  document.body.style.overflow = '';
+  _spotlightOpen = false;
+  _spotlightIndex = -1;
+  const trig = document.getElementById('searchTrigger');
+  if(trig && document.activeElement && document.activeElement.closest('#spotlight')) trig.focus();
+}
+function spotlightCollect(term){
+  const t = (term||'').toLowerCase().trim();
+  if(!t) return [];
+  const results = [];
+  const add = (section, title, desc, view, tab, extra) => results.push({section, title, desc, view, tab, extra});
+  // commands
+  try{
+    const cmds = buildCommandIndex();
+    cmds.forEach(c=>{
+      const hay = `${c.command} ${c.category} ${c.briefDescription} ${c.keywords.join(' ')}`.toLowerCase();
+      if(hay.includes(t)) add('Commands', c.command, c.briefDescription, 'cheatsheet', 'linux101', c.example);
+    });
+  }catch(_e){}
+  // nti days
+  if(DATA.nti && DATA.nti.days){
+    Object.keys(DATA.nti.days).forEach(dayId=>{
+      const day = DATA.nti.days[dayId];
+      if(!day||!day.sections) return;
+      const dayLabel = dayId==='day1'?'Day 1':dayId==='day2'?'Day 2':'Day 3';
+      day.sections.forEach(sec=>{
+        const hay = `${day.title} ${sec.title} ${getNoteText(sec.blocks)}`.toLowerCase();
+        if(hay.includes(t)) add('NTI '+dayLabel, sec.title, 'Canonical content', dayId+'-content', 'course', null);
+      });
+    });
+    if(DATA.nti.labs){
+      Object.keys(DATA.nti.labs).forEach(labId=>{
+        const lab = DATA.nti.labs[labId];
+        if(!lab||!lab.tasks) return;
+        lab.tasks.forEach(task=>{
+          const hay = `${task.title} ${task.objective}`.toLowerCase();
+          if(hay.includes(t)) add('Lab '+labId.replace('day',''), task.title, task.objective.slice(0,90), labId+'-lab', 'course', null);
+        });
+      });
+    }
+    if(DATA.nti.flashcards){
+      DATA.nti.flashcards.forEach(fc=>{
+        const hay = `${fc.q} ${fc.a}`.toLowerCase();
+        if(hay.includes(t)) add('Practice', fc.q.slice(0,48), fc.a.slice(0,80), 'quiz', 'quiz', null);
+      });
+    }
+  }
+  // exercises
+  if(DATA.exercises){
+    DATA.exercises.forEach(ex=>{
+      const hay = `${ex.title} ${stripHtml(ex.text)}`.toLowerCase();
+      if(hay.includes(t)) add('Exercises', ex.title, stripHtml(ex.text).slice(0,90), 'exercises', 'linux101', null);
+    });
+  }
+  // resources
+  if(DATA.helpfulLinks){
+    DATA.helpfulLinks.forEach(l=>{
+      const hay = `${l.title} ${l.desc}`.toLowerCase();
+      if(hay.includes(t)) add('Resources', l.title, l.desc.slice(0,90), 'resources', 'linux101', l.url);
+    });
+  }
+  // topicIndex
+  if(DATA.topicIndex){
+    DATA.topicIndex.forEach(tp=>{
+      if(tp.title.toLowerCase().includes(t) || tp.desc.toLowerCase().includes(t)) add('Topic', tp.title, tp.desc.slice(0,80), 'topicindex', 'linux101', null);
+    });
+  }
+  return results.slice(0, 18);
+}
+function renderSpotlight(term){
+  const meta = document.getElementById('spotlightMeta');
+  const box = document.getElementById('spotlightResults');
+  if(!meta || !box) return;
+  if(!term || !term.trim()){
+    meta.textContent = 'Type to search — try “chmod”, “inode”, “vim” or “lab”';
+    box.innerHTML = `<div class="spotlight-empty">
+      <div class="spotlight-hints">
+        <button class="spotlight-hint" data-action="spotlight-hint" data-term="chmod">chmod</button>
+        <button class="spotlight-hint" data-action="spotlight-hint" data-term="grep">grep</button>
+        <button class="spotlight-hint" data-action="spotlight-hint" data-term="inode">inode</button>
+        <button class="spotlight-hint" data-action="spotlight-hint" data-term="vim">vim</button>
+        <button class="spotlight-hint" data-action="spotlight-hint" data-term="lab">lab</button>
+      </div>
+      <p class="spotlight-hint-text">Quick filters — tap to try</p>
+    </div>`;
+    _spotlightResults = [];
+    _spotlightIndex = -1;
+    return;
+  }
+  const results = spotlightCollect(term);
+  _spotlightResults = results;
+  _spotlightIndex = results.length ? 0 : -1;
+  meta.textContent = results.length ? `${results.length} result${results.length!==1?'s':''} for “${term}”` : `No results for “${term}”`;
+  if(!results.length){
+    const popular = ['ls','cd','grep','chmod','vim'];
+    const pops = popular.map(p=> `<button class="spotlight-hint" data-action="spotlight-hint" data-term="${p}">${p}</button>`).join('');
+    box.innerHTML = `<div class="spotlight-empty"><p style="color:var(--text-muted);font-size:13px;margin-bottom:8px">Try a broader term</p><div class="spotlight-hints">${pops}</div></div>`;
+    return;
+  }
+  box.innerHTML = results.map((r,i)=>`
+    <button class="spotlight-item ${i===_spotlightIndex?'is-active':''}" role="option" aria-selected="${i===_spotlightIndex?'true':'false'}" data-idx="${i}" data-action="spotlight-pick" data-idxpick="${i}">
+      <span class="spotlight-item-badge">${escapeHtml(r.section)}</span>
+      <span class="spotlight-item-title">${highlightMatch(escapeHtml(r.title), term)}</span>
+      <span class="spotlight-item-desc">${highlightMatch(escapeHtml(r.desc||''), term)}</span>
+    </button>
+  `).join('');
+  updateSpotlightActive();
+}
+function updateSpotlightActive(){
+  const items = document.querySelectorAll('.spotlight-item');
+  items.forEach((el, i)=>{
+    const active = i===_spotlightIndex;
+    el.classList.toggle('is-active', active);
+    el.setAttribute('aria-selected', active?'true':'false');
+    if(active) el.scrollIntoView({block:'nearest'});
+  });
+}
+function spotlightMove(dir){
+  if(!_spotlightResults.length) return;
+  _spotlightIndex = (_spotlightIndex + dir + _spotlightResults.length) % _spotlightResults.length;
+  updateSpotlightActive();
+}
+function spotlightPick(idx){
+  const r = _spotlightResults[idx];
+  if(!r) return;
+  closeSpotlight();
+  // navigate
+  if(r.tab && r.view) setView(r.tab, r.view);
+  else if(r.view) goToView(r.view);
+  // if extra is url, open external
+  if(r.extra && r.extra.startsWith('http')){
+    window.open(r.extra, '_blank', 'noopener');
+  }
+  // if it's a command, copy hint
+  if(r.section==='Commands' && r.extra){
+    // optional copy
+  }
+}
+
+// ===== COOL CURSOR =====
+function initCoolCursor(){
+  const dot = document.getElementById('cursorDot');
+  const ring = document.getElementById('cursorRing');
+  if(!dot || !ring) return;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isTouch = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+  if(reduce || isTouch || window.innerWidth <= 860){
+    dot.style.display = 'none';
+    ring.style.display = 'none';
+    return;
+  }
+  let mx = 0, my = 0, rx = 0, ry = 0;
+  let raf = null;
+  const lerp = (a,b,n)=> (1-n)*a + n*b;
+  function onMove(e){
+    mx = e.clientX;
+    my = e.clientY;
+    dot.style.opacity = '1';
+    ring.style.opacity = '1';
+    dot.style.transform = `translate3d(${mx}px, ${my}px, 0)`;
+    if(!raf) raf = requestAnimationFrame(tick);
+  }
+  function tick(){
+    rx = lerp(rx, mx, 0.14);
+    ry = lerp(ry, my, 0.14);
+    ring.style.transform = `translate3d(${rx}px, ${ry}px, 0)`;
+    if(Math.abs(rx-mx) > 0.1 || Math.abs(ry-my) > 0.1) raf = requestAnimationFrame(tick);
+    else raf = null;
+  }
+  window.addEventListener('mousemove', onMove, {passive:true});
+  const hoverables = 'a, button, [data-action], .tab, .subnav-item, .cmd-card, .ext-link-card, .topic-pill';
+  document.addEventListener('mouseover', (e)=>{
+    if(e.target.closest(hoverables)){
+      document.body.classList.add('cursor-hover');
+    } else {
+      document.body.classList.remove('cursor-hover');
+    }
+  });
+  document.addEventListener('mouseleave', ()=> {
+    dot.style.opacity = '0';
+    ring.style.opacity = '0';
+  });
+  document.addEventListener('mouseenter', ()=> {
+    dot.style.opacity = '1';
+    ring.style.opacity = '1';
+  });
+  // hide when over spotlight or modal
+  const obs = new MutationObserver(()=>{
+    const spot = document.getElementById('spotlight');
+    const isOpen = spot && spot.classList.contains('open');
+    dot.style.display = isOpen ? 'none' : '';
+    ring.style.display = isOpen ? 'none' : '';
+  });
+  const sp = document.getElementById('spotlight');
+  if(sp) obs.observe(sp, {attributes:true, attributeFilter:['class']});
+}
+
 // ===== FIXED TOGGLE FUNCTIONS =====
 function toggleCategory(id) {
   state.collapsedCategories[id] = state.collapsedCategories[id] === false ? true : false;
@@ -1742,9 +1986,9 @@ function renderMergedCheatSheet() {
     ? `<div id="cmdResults" class="cmd-grid">${cmds.map(cmdCard).join('')}</div>`
     : `<div class="no-results">${ICONS.search}<h3>No commands match</h3><p>Try clearing the filters or search term.</p></div>`;
   return `
-    ${breadcrumbs([{label:'General Knowledge', tab:'general'}, {label:'Cheat Sheet'}])}
-    <h1 class="view-title">Linux Cheat Sheet &amp; Command Bank</h1>
-    <p class="view-subtitle">${all.length} commands across ${cats.length} categories — cheat sheet + bank merged. <span style="color:var(--text-dim)">Press <kbd style="font-family:var(--font-mono);font-size:11px;border:1px solid var(--border);padding:1px 5px;border-radius:3px;background:var(--bg-tertiary)">/</kbd> to filter • Global search finds notes & exercises</span></p>
+    ${breadcrumbs([{label:'Linux101', tab:'linux101'}, {label:'Commands'}])}
+    <h1 class="view-title">Linux101 — Commands</h1>
+    <p class="view-subtitle">${all.length} commands · ${cats.length} categories — merged cheat sheet + bank. <span style="color:var(--text-dim)">Press <kbd style="font-family:var(--font-mono);font-size:11px;border:1px solid var(--border);padding:1px 5px;border-radius:3px;background:var(--bg-tertiary)">⌘K</kbd> to search everywhere</span></p>
     <div class="cmd-filterbar">
       <div class="cmd-search-box">
         <span class="cmd-search-icon">${ICONS.search}</span>
@@ -1873,13 +2117,13 @@ function enableChipScroll(){
   });
 }
 
-// ===== NTI LINUX COURSE =====
+// ===== NTI Linux =====
 function renderNTIRoadmap() {
   const days = DATA.course.days || [];
   const readySet = new Set(['day1','day2']);
   let html = `
-    ${breadcrumbs([{label:'NTI Linux Course', tab:'course'}, {label:'Roadmap'}])}
-    <h1 class="view-title">NTI Linux Course — Roadmap</h1>
+    ${breadcrumbs([{label:'NTI Linux', tab:'course'}, {label:'Roadmap'}])}
+    <h1 class="view-title">NTI Linux — Roadmap</h1>
     <p class="view-subtitle">${days.length}-day Red Hat (RH124-style) outline — Day 1 & Day 2 live, Day 3 coming soon — plus the 7-module practical track.</p>
     <h2 class="day-part-title">${days.length}-Day Course Outline</h2>
     <div class="roadmap-grid">
@@ -1908,8 +2152,8 @@ function renderDayPlaceholder(view) {
   const day = (DATA.course.days || []).find(d => d.id === view.replace('-content','').replace('-lab',''));
   const topics = day ? day.topics : [];
   return `
-    ${breadcrumbs([{label:'NTI Linux Course', tab:'course'}, {label:'Roadmap', tab:'course', view:'roadmap'}, {label:'Day ' + dayNum}])}
-    <h1 class="view-title">NTI Linux Course — Day ${dayNum}</h1>
+    ${breadcrumbs([{label:'NTI Linux', tab:'course'}, {label:'Roadmap', tab:'course', view:'roadmap'}, {label:'Day ' + dayNum}])}
+    <h1 class="view-title">NTI Linux — Day ${dayNum}</h1>
     ${day ? `<p class="view-subtitle">${escapeHtml(day.title)}</p>` : ''}
     <div class="no-results">
       ${ICONS.file}
@@ -1920,14 +2164,14 @@ function renderDayPlaceholder(view) {
         <button class="toggle-complete" data-action="set-view" data-tab="course" data-view="day1-content">${ICONS.chevron} Go to Day 1</button>
         <button class="chip" data-action="set-view" data-tab="course" data-view="roadmap">Back to Roadmap</button>
       </div>
-      <p style="font-size:12px;color:var(--text-dim);margin-top:14px">Want this sooner? Check the 7-module Practical Track in General Knowledge.</p>
+        <p style="font-size:12px;color:var(--text-dim);margin-top:14px">Want this sooner? Check the 7-module track in Linux101 · Roadmap.</p>
     </div>`;
 }
 
 function renderDay1Content() {
   return `
-    ${breadcrumbs([{label:'NTI Linux Course', tab:'course'}, {label:'Roadmap', tab:'course', view:'roadmap'}, {label:'Day 1'}])}
-    <h1 class="view-title">NTI Linux Course — Day 1</h1>
+    ${breadcrumbs([{label:'NTI Linux', tab:'course'}, {label:'Roadmap', tab:'course', view:'roadmap'}, {label:'Day 1'}])}
+    <h1 class="view-title">NTI Linux — Day 1</h1>
     <p class="view-subtitle">RH124 summary and the soft vs hard links guide.</p>
     <div class="day-part">
       <h2 class="day-part-title">RH124 — Day 1 Summary</h2>
@@ -1944,8 +2188,8 @@ function renderCourseDayContent(dayId) {
   const day = (DATA.course.days || []).find(d => d.id === dayId);
   if (!day) return renderDayPlaceholder(dayId);
   const num = dayId.replace('day', '');
-  let html = breadcrumbs([{label:'NTI Linux Course', tab:'course'}, {label:'Roadmap', tab:'course', view:'roadmap'}, {label:'Day ' + num}]);
-  html += `<h1 class="view-title">NTI Linux Course — Day ${num}</h1>`;
+  let html = breadcrumbs([{label:'NTI Linux', tab:'course'}, {label:'Roadmap', tab:'course', view:'roadmap'}, {label:'Day ' + num}]);
+  html += `<h1 class="view-title">NTI Linux — Day ${num}</h1>`;
   html += `<p class="view-subtitle">${escapeHtml(day.title)}</p>`;
   (day.content || []).forEach(sec => {
     html += `<div class="day-part"><h2 class="day-part-title">${escapeHtml(sec.title)}</h2>`;
@@ -1964,7 +2208,7 @@ function renderCourseDayContent(dayId) {
 function renderCourseDayLab(dayId) {
   const day = (DATA.course.days || []).find(d => d.id === dayId);
   const num = dayId.replace('day', '');
-  let html = breadcrumbs([{label:'NTI Linux Course', tab:'course'}, {label:'Day ' + num, tab:'course', view: dayId + '-content'}, {label:'Lab Task'}]);
+  let html = breadcrumbs([{label:'NTI Linux', tab:'course'}, {label:'Day ' + num, tab:'course', view: dayId + '-content'}, {label:'Lab Task'}]);
   html += `<h1 class="view-title">Lab · Day ${num}</h1>`;
   html += `<p class="view-subtitle">${escapeHtml(day ? day.title : 'Practice tasks')}</p>`;
   html += `<div class="task-card"><div class="task-header"><span class="task-tag">Practice</span><span class="task-title">${escapeHtml('Hands-on tasks for ' + (day ? day.title : ('Day ' + num)))}</span></div>`;
@@ -1978,13 +2222,13 @@ function renderCourseDayLab(dayId) {
   return html;
 }
 
-// ===== HELPFUL LINKS (TAB 3) =====
+// ===== HELPFUL LINKS (now inside Linux101) =====
 function renderHelpfulLinks() {
   const links = DATA.helpfulLinks || [];
   let html = `
-    ${breadcrumbs([{label:'Helpful Links'}])}
-    <h1 class="view-title">Helpful Links</h1>
-    <p class="view-subtitle">Curated resources to support the NTI Linux course.</p>
+    ${breadcrumbs([{label:'Linux101', tab:'linux101'}, {label:'Resources'}])}
+    <h1 class="view-title">Resources</h1>
+    <p class="view-subtitle">Curated external resources to support Linux101 &amp; NTI Linux.</p>
     ${!links.length ? `<div class="no-results">${ICONS.link}<h3>No links yet</h3><p>Add resources to DATA.helpfulLinks.</p></div>` : ''}
     <div class="link-card-grid">
   `;
@@ -2019,16 +2263,16 @@ async function render() {
   // Global search: any non-empty term searches across ALL sections.
   if (state.searchTerm.trim()) {
     html = renderSearchResults();
-  } else if (state.tab === 'general') {
+  } else if (state.tab === 'linux101') {
     if (state.view === 'cheatsheet') html = renderMergedCheatSheet();
     else if (state.view === 'topicindex') html = renderTopicIndex();
     else if (state.view === 'exercises') html = renderExercises();
     else if (state.view === 'roadmap7') html = renderCourse();
+    else if (state.view === 'resources') html = renderHelpfulLinks();
+    else html = renderMergedCheatSheet();
   } else if (state.tab === 'course') {
     const fn = COURSE_RENDER[state.view];
     html = fn ? fn() : renderNTIRoadmap();
-  } else if (state.tab === 'links') {
-    html = renderHelpfulLinks();
   } else if (state.tab === 'quiz') {
     html = renderQuiz();
   }
@@ -2145,12 +2389,30 @@ document.getElementById('searchInput').addEventListener('input', (e) => {
 })();
 
 document.addEventListener('keydown', (e) => {
+  // Spotlight shortcuts: Cmd+K / Ctrl+K and /
+  if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey)) {
+    e.preventDefault();
+    if(_spotlightOpen) closeSpotlight();
+    else openSpotlight();
+    return;
+  }
   if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) {
     if (document.activeElement.isContentEditable) return;
+    if(_spotlightOpen) return;
     e.preventDefault();
-    const local = document.getElementById('cmdSearch');
-    if (local && local.offsetParent !== null) local.focus();
-    else document.getElementById('searchInput').focus();
+    openSpotlight();
+    return;
+  }
+  if (_spotlightOpen) {
+    if (e.key === 'Escape') { e.preventDefault(); closeSpotlight(); return; }
+    if (e.key === 'ArrowDown') { e.preventDefault(); spotlightMove(1); return; }
+    if (e.key === 'ArrowUp') { e.preventDefault(); spotlightMove(-1); return; }
+    if (e.key === 'Enter') {
+      const active = _spotlightResults[_spotlightIndex];
+      if(active){ e.preventDefault(); spotlightPick(_spotlightIndex); }
+      return;
+    }
+    return;
   }
   if (e.key === 'Escape') {
     const sidebar = document.getElementById('sidebar');
@@ -2209,6 +2471,19 @@ function closeSidebar() {
 }
 document.getElementById('menuBtn').addEventListener('click', openSidebar);
 document.getElementById('overlay').addEventListener('click', closeSidebar);
+// Spotlight trigger & input wiring
+const _searchTrig = document.getElementById('searchTrigger');
+if(_searchTrig) _searchTrig.addEventListener('click', openSpotlight);
+const _spotIn = document.getElementById('spotlightInput');
+if(_spotIn){
+  _spotIn.addEventListener('input', (e)=> renderSpotlight(e.target.value));
+  _spotIn.addEventListener('keydown', (e)=>{
+    if(e.key==='ArrowDown' || e.key==='ArrowUp'){
+      // handled globally, but prevent cursor move
+      e.preventDefault();
+    }
+  });
+}
 
 // ===== DELEGATED ACTIONS (central, replaces inline onclick/escapeAttr) =====
 document.addEventListener('click', (e) => {
@@ -2270,6 +2545,18 @@ document.addEventListener('click', (e) => {
     btn.classList.toggle('flipped');
     const flipped = btn.classList.contains('flipped');
     btn.setAttribute('aria-pressed', flipped ? 'true' : 'false');
+    return;
+  }
+  if (a === 'close-spotlight') { closeSpotlight(); return; }
+  if (a === 'spotlight-hint') {
+    const term = btn.dataset.term || '';
+    const inp = document.getElementById('spotlightInput');
+    if(inp){ inp.value = term; renderSpotlight(term); inp.focus(); }
+    return;
+  }
+  if (a === 'spotlight-pick') {
+    const idx = parseInt(btn.dataset.idxpick ?? btn.dataset.idx, 10);
+    spotlightPick(idx);
     return;
   }
 });
@@ -2444,4 +2731,37 @@ document.addEventListener('click', (e) => {
     if (window.innerWidth > 860) closeSidebar();
     updateStickyHeights();
   });
+  // init cool cursor + spotlight + sidebar extras
+  try{ initCoolCursor(); }catch(_e){}
+  // sidebar collapse (desktop)
+  const collapseBtn = document.getElementById('sidebarCollapse');
+  const layoutEl = document.querySelector('.layout');
+  if(collapseBtn && layoutEl){
+    const savedCollapsed = (()=>{ try{ return localStorage.getItem('linuxcs_sidebar_collapsed')==='1'; }catch(_e){ return false; }})();
+    if(savedCollapsed && window.innerWidth>860) layoutEl.classList.add('sidebar-collapsed');
+    collapseBtn.addEventListener('click', ()=>{
+      layoutEl.classList.toggle('sidebar-collapsed');
+      const isC = layoutEl.classList.contains('sidebar-collapsed');
+      try{ localStorage.setItem('linuxcs_sidebar_collapsed', isC?'1':'0'); }catch(_e){}
+      updateStickyHeights();
+      collapseBtn.setAttribute('aria-label', isC?'Expand sidebar':'Collapse sidebar');
+    });
+  }
+  // logo keyboard activation
+  const logoEl = document.querySelector('.logo');
+  if(logoEl){
+    logoEl.addEventListener('keydown', (e)=>{
+      if(e.key==='Enter' || e.key===' '){ e.preventDefault(); switchTab('linux101'); }
+    });
+  }
+  // spotlight backdrop click already via data-action; also close on overlay
+  const spot = document.getElementById('spotlight');
+  if(spot){
+    spot.addEventListener('click', (e)=>{
+      if(e.target===spot || e.target.classList.contains('spotlight-backdrop')) closeSpotlight();
+    });
+  }
+  // expose for debugging
+  window.openSpotlight = openSpotlight;
+  window.closeSpotlight = closeSpotlight;
 })();
