@@ -4198,6 +4198,48 @@ const DATA = {
         "icon": "edit",
         "category": "editor",
         "preview": "Comprehensive guide to vim and nano text editors."
+      },
+      {
+        "id": "ansible-basics",
+        "title": "Ansible Basics",
+        "icon": "clipboard",
+        "category": "automation",
+        "preview": "Inventories, ad-hoc commands, and playbooks — write once, apply to every server."
+      },
+      {
+        "id": "docker-containers",
+        "title": "Docker & Containers",
+        "icon": "layers",
+        "category": "containers",
+        "preview": "Images, layers, volumes, networking, and Compose — containers from zero."
+      },
+      {
+        "id": "monitoring-stack",
+        "title": "Prometheus + Grafana Stack",
+        "icon": "eye",
+        "category": "monitoring",
+        "preview": "Build a full monitoring stack from zero — Prometheus, Grafana, dashboards & alerts."
+      },
+      {
+        "id": "server-hardening",
+        "title": "Server Hardening",
+        "icon": "check",
+        "category": "security",
+        "preview": "Minimize attack surface: services, firewalls, updates, users, and audit hygiene."
+      },
+      {
+        "id": "systemd-deep-dive",
+        "title": "systemd Deep Dive",
+        "icon": "cpu",
+        "category": "system",
+        "preview": "Unit files, timers (the modern cron), journal integration, and troubleshooting."
+      },
+      {
+        "id": "tmux-screen",
+        "title": "tmux & screen",
+        "icon": "terminal",
+        "category": "terminal",
+        "preview": "Terminal multiplexers — sessions that survive disconnects, panes, and shared work."
       }
     ]
   }

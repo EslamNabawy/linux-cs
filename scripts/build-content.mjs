@@ -24,6 +24,12 @@ const SECTIONS = [
   { id: 'process-monitoring',     file: 'process-performance-monitoring.md',      icon: 'activity', category: 'monitoring' },
   { id: 'ssh-guide',              file: 'ssh-remote-access-guide.md',             icon: 'terminal', category: 'networking' },
   { id: 'vim-nano',               file: 'vim-nano-complete-guide.md',             icon: 'edit',     category: 'editing' },
+  { id: 'ansible-basics',         file: 'ansible-basics-guide.md',                icon: 'clipboard',category: 'automation' },
+  { id: 'docker-containers',      file: 'docker-containers-guide.md',             icon: 'layers',   category: 'containers' },
+  { id: 'monitoring-stack',       file: 'prometheus-grafana-monitoring-stack.md', icon: 'eye',      category: 'monitoring' },
+  { id: 'server-hardening',       file: 'server-hardening-guide.md',              icon: 'check',    category: 'security' },
+  { id: 'systemd-deep-dive',      file: 'systemd-deep-dive.md',                   icon: 'cpu',      category: 'system' },
+  { id: 'tmux-screen',            file: 'tmux-screen-guide.md',                   icon: 'terminal', category: 'terminal' },
 ];
 
 function escHtml(s) {

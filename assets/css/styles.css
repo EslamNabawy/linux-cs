@@ -2879,3 +2879,8 @@ button.content-library-card:hover{
 button.content-library-card:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 button.content-library-card .content-library-arrow{ transition: transform 160ms ease; }
 button.content-library-card:hover .content-library-arrow{ transform: translateX(3px); }
+
+/* ===== Sidebar: Content Library guide list ===== */
+.nav-group-guides > .nav-group-header{ color: var(--accent); margin-top: 4px; }
+.subnav-item--guide{ font-size: 12.5px; padding: 6px 10px; gap: 8px; }
+.subnav-item--guide .subnav-icon svg{ width: 13px; height: 13px; }

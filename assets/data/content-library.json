@@ -7011,6 +7011,2542 @@
      ]
     }
    ]
+  },
+  {
+   "id": "ansible-basics",
+   "title": "Ansible Basics — Write Once, Apply to Every Server",
+   "icon": "clipboard",
+   "category": "automation",
+   "preview": "",
+   "source": "ansible-basics-guide.md",
+   "words": 1763,
+   "parts": [
+    {
+     "id": "introduction",
+     "title": "Introduction",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>The core AIOps pattern: describe the state you want, run it against one server or a thousand, and Ansible figures out what actually needs to change.</p>"
+      }
+     ]
+    },
+    {
+     "id": "what-makes-ansible-different",
+     "title": "What Makes Ansible Different",
+     "blocks": [
+      {
+       "t": "list",
+       "items": [
+        "<strong>Agentless</strong> — no software to install on target servers, just SSH access and Python. Compare this to tools that need a persistent agent daemon running everywhere.",
+        "<strong>Push-based</strong> — you run Ansible from a control machine, it connects out to targets and applies changes. (Contrast with pull-based tools where each server checks in for its own config.)",
+        "<strong>Declarative</strong> — you describe the desired end state (\"nginx should be installed and running\"), not a sequence of imperative steps (\"run apt install, then run systemctl start\").",
+        "<strong>Idempotent</strong> — running the same playbook 100 times produces the same result as running it once. If nginx is already installed and running, Ansible recognizes that and does nothing on the second run — this is the property that makes it safe to re-run constantly, which is the entire point."
+       ]
+      }
+     ]
+    },
+    {
+     "id": "installation",
+     "title": "Installation",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "sudo apt install ansible -y      # on the CONTROL machine only — targets need nothing installed\nansible --version"
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Prerequisite on every target server:</strong> SSH access (ideally key-based, per your SSH guide) and Python 3 present — which is true by default on virtually every mainstream distro already."
+      }
+     ]
+    },
+    {
+     "id": "inventory-defining-what-every-server-means",
+     "title": "Inventory — Defining What \"Every Server\" Means",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>The inventory file lists the servers Ansible manages, optionally grouped.</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Basic static inventory (INI-style)</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "ini",
+       "code": "# inventory.ini\n\n[webservers]\nweb1 ansible_host=203.0.113.10\nweb2 ansible_host=203.0.113.11\n\n[databases]\ndb1 ansible_host=203.0.113.20\n\n[all:vars]\nansible_user=solo\nansible_ssh_private_key_file=~/.ssh/id_ed25519"
+      },
+      {
+       "t": "text",
+       "html": "<h6>YAML inventory (more common in real-world setups now)</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "yaml",
+       "code": "# inventory.yml\nall:\n  children:\n    webservers:\n      hosts:\n        web1:\n          ansible_host: 203.0.113.10\n        web2:\n          ansible_host: 203.0.113.11\n    databases:\n      hosts:\n        db1:\n          ansible_host: 203.0.113.20\n  vars:\n    ansible_user: solo\n    ansible_ssh_private_key_file: ~/.ssh/id_ed25519"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Testing connectivity to your inventory</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "ansible all -i inventory.ini -m ping"
+      },
+      {
+       "t": "text",
+       "html": "<p>This isn't ICMP ping — it's Ansible's own module that confirms it can actually SSH in and run Python on every host. This is the very first thing to run against any new inventory, before attempting anything real.</p>"
+      }
+     ]
+    },
+    {
+     "id": "ad-hoc-commands-one-off-tasks-without-a-playbook",
+     "title": "Ad-Hoc Commands — One-Off Tasks Without a Playbook",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>For quick, single actions across your whole fleet, without writing a file:</p>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "ansible webservers -i inventory.ini -m ping\nansible webservers -i inventory.ini -a \"uptime\"                          # -a runs a raw shell command\nansible webservers -i inventory.ini -m apt -a \"name=nginx state=present\" --become   # install nginx everywhere in the group\nansible all -i inventory.ini -m command -a \"df -h\"                          # disk usage across the whole fleet, one command"
+      },
+      {
+       "t": "text",
+       "html": "<p><code>--become</code> = escalate privileges (the Ansible equivalent of <code>sudo</code>) for that task.</p>"
+      },
+      {
+       "t": "text",
+       "html": "<p><strong>Ad-hoc commands are for quick checks/fixes — anything you'd want to repeat, version-control, or reason about later belongs in a playbook instead.</strong></p>"
+      }
+     ]
+    },
+    {
+     "id": "playbooks-the-real-unit-of-work",
+     "title": "Playbooks — The Real Unit of Work",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>A playbook is a YAML file describing a set of tasks to apply to a set of hosts.</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Anatomy of a basic playbook</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "yaml",
+       "code": "# webserver-setup.yml\n---\n- name: Configure web servers\n  hosts: webservers\n  become: true\n\n  tasks:\n    - name: Install nginx\n      apt:\n        name: nginx\n        state: present\n        update_cache: true\n\n    - name: Ensure nginx is running and enabled\n      service:\n        name: nginx\n        state: started\n        enabled: true\n\n    - name: Copy custom index page\n      copy:\n        src: files/index.html\n        dest: /var/www/html/index.html\n        owner: www-data\n        group: www-data\n        mode: '0644'"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "ansible-playbook -i inventory.ini webserver-setup.yml"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Reading the structure</h6>"
+      },
+      {
+       "t": "list",
+       "items": [
+        "<code>hosts:</code> — which inventory group (or host, or <code>all</code>) this play targets",
+        "<code>become:</code> — whether tasks need elevated privileges",
+        "<code>tasks:</code> — the ordered list of actions, each using a <strong>module</strong> (<code>apt</code>, <code>service</code>, <code>copy</code>, etc.) with parameters"
+       ]
+      },
+      {
+       "t": "text",
+       "html": "<h6>The idempotency payoff, made concrete</h6>"
+      },
+      {
+       "t": "text",
+       "html": "<p>Run the playbook above a second time immediately: Ansible checks nginx's actual installed state, actual running state, and the actual content/checksum of <code>index.html</code> — and reports <strong>\"ok\"</strong> (no change) for anything already matching the desired state, only reporting <strong>\"changed\"</strong> for things that genuinely needed to change. This is what makes it safe to run constantly (e.g. via a systemd timer, tying back to your timers guide) rather than something you have to remember to run carefully by hand.</p>"
+      }
+     ]
+    },
+    {
+     "id": "variables",
+     "title": "Variables",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<h6>Inline in a playbook</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "yaml",
+       "code": "- name: Configure app\n  hosts: webservers\n  vars:\n    app_port: 8080\n    app_env: production\n  tasks:\n    - name: Print the port\n      debug:\n        msg: \"App runs on port {{ app_port }}\""
+      },
+      {
+       "t": "text",
+       "html": "<h6>`group_vars` and `host_vars` — the scalable pattern for real projects</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "inventory.ini\ngroup_vars/\n  webservers.yml       # applies to every host in the \"webservers\" group\n  all.yml                # applies to EVERY host, regardless of group\nhost_vars/\n  web1.yml                 # applies ONLY to the specific host \"web1\""
+      },
+      {
+       "t": "code",
+       "lang": "yaml",
+       "code": "# group_vars/webservers.yml\napp_port: 8080\nnginx_worker_processes: 4"
+      },
+      {
+       "t": "text",
+       "html": "<p>Ansible loads these automatically based on filename matching group/host names — no explicit include needed. This is the real-world way variables are organized once an inventory grows beyond a handful of hosts.</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Variable precedence (simplified, most to least specific wins)</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "host_vars  >  group_vars  >  playbook vars  >  role defaults"
+      }
+     ]
+    },
+    {
+     "id": "templates-dynamic-config-files-with-jinja2",
+     "title": "Templates — Dynamic Config Files with Jinja2",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>Instead of copying a static file, generate one per-host from a template using variables.</p>"
+      },
+      {
+       "t": "code",
+       "lang": "jinja2",
+       "code": "# templates/nginx.conf.j2\nserver {\n    listen {{ app_port }};\n    server_name {{ inventory_hostname }};\n\n    location / {\n        proxy_pass http://127.0.0.1:{{ backend_port }};\n    }\n}"
+      },
+      {
+       "t": "code",
+       "lang": "yaml",
+       "code": "- name: Deploy nginx config from template\n  template:\n    src: templates/nginx.conf.j2\n    dest: /etc/nginx/sites-available/myapp.conf\n  notify: Reload nginx"
+      },
+      {
+       "t": "text",
+       "html": "<p><code>{{ inventory_hostname }}</code> is a built-in variable — automatically the current host's name in the inventory, no need to define it yourself. Every host gets a config generated with <strong>its own</strong> values, from one shared template.</p>"
+      }
+     ]
+    },
+    {
+     "id": "handlers-restart-only-when-something-actually-ch",
+     "title": "Handlers — Restart Only When Something Actually Changed",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>A handler is a task that only runs if explicitly <strong>notified</strong> by another task that reported a real change — avoiding unnecessary restarts on every single run.</p>"
+      },
+      {
+       "t": "code",
+       "lang": "yaml",
+       "code": "tasks:\n  - name: Deploy nginx config\n    template:\n      src: templates/nginx.conf.j2\n      dest: /etc/nginx/sites-available/myapp.conf\n    notify: Reload nginx\n\nhandlers:\n  - name: Reload nginx\n    service:\n      name: nginx\n      state: reloaded"
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Why this matters:</strong> without this pattern, you'd either reload nginx on every playbook run (wasteful, briefly disruptive) or forget to reload it at all when the config actually changes (config drift). The handler only fires when the <code>template</code> task above reports <code>changed</code>, and even if 5 different tasks notify the same handler, it only runs <strong>once</strong> at the end of the play — not once per notification."
+      }
+     ]
+    },
+    {
+     "id": "conditionals-loops",
+     "title": "Conditionals & Loops",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<h6>Conditionals</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "yaml",
+       "code": "- name: Install a package only on Debian-based systems\n  apt:\n    name: nginx\n    state: present\n  when: ansible_facts['os_family'] == \"Debian\""
+      },
+      {
+       "t": "text",
+       "html": "<h6>Loops</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "yaml",
+       "code": "- name: Create multiple directories\n  file:\n    path: \"{{ item }}\"\n    state: directory\n  loop:\n    - /opt/myapp/logs\n    - /opt/myapp/data\n    - /opt/myapp/config"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Combining both</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "yaml",
+       "code": "- name: Install packages, only if not already listed as present\n  apt:\n    name: \"{{ item }}\"\n    state: present\n  loop:\n    - nginx\n    - fail2ban\n    - unattended-upgrades\n  when: ansible_facts['os_family'] == \"Debian\""
+      }
+     ]
+    },
+    {
+     "id": "roles-reusable-shareable-structure",
+     "title": "Roles — Reusable, Shareable Structure",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>Once a playbook grows past a handful of tasks, split it into a <strong>role</strong> — a standardized directory structure Ansible understands automatically.</p>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "roles/\n  webserver/\n    tasks/main.yml         # the actual task list\n    handlers/main.yml       # handlers\n    templates/                # Jinja2 templates\n    files/                     # static files to copy\n    defaults/main.yml            # default variable values (lowest precedence, easily overridden)\n    vars/main.yml                  # role-specific variables (higher precedence)"
+      },
+      {
+       "t": "code",
+       "lang": "yaml",
+       "code": "# site.yml — using the role\n- name: Configure all web servers\n  hosts: webservers\n  become: true\n  roles:\n    - webserver\n    - firewall\n    - monitoring"
+      },
+      {
+       "t": "text",
+       "html": "<p>This is what \"write once, apply to every server\" really means at scale — a <code>webserver</code> role written once can be applied across every project/inventory that needs a web server, versioned and shared like any other code.</p>"
+      }
+     ]
+    },
+    {
+     "id": "ansible-vault-handling-secrets-properly",
+     "title": "Ansible Vault — Handling Secrets Properly",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>Never put real passwords/API keys/keys in plain playbook variables that get committed to git. Vault encrypts a file (or specific values) so secrets can live safely in version control.</p>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "ansible-vault create secrets.yml          # create a new encrypted file, prompts for a password\nansible-vault edit secrets.yml               # edit it later — decrypts, opens editor, re-encrypts on save\nansible-vault view secrets.yml                # view without editing\nansible-vault encrypt existing_vars.yml         # encrypt a file that already exists"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "ansible-playbook -i inventory.ini site.yml --ask-vault-pass    # prompts for the vault password at run time\nansible-playbook -i inventory.ini site.yml --vault-password-file ~/.vault_pass    # or read it from a file (keep THAT file out of git too)"
+      }
+     ]
+    },
+    {
+     "id": "practical-example-a-real-hardening-playbook",
+     "title": "Practical Example — A Real Hardening Playbook",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>Ties together several earlier guides (firewall, fail2ban, unattended-upgrades) into one applyable playbook:</p>"
+      },
+      {
+       "t": "code",
+       "lang": "yaml",
+       "code": "---\n- name: Baseline server hardening\n  hosts: all\n  become: true\n\n  tasks:\n    - name: Install core security packages\n      apt:\n        name:\n          - ufw\n          - fail2ban\n          - unattended-upgrades\n        state: present\n        update_cache: true\n\n    - name: Set ufw default deny incoming\n      ufw:\n        direction: incoming\n        policy: deny\n\n    - name: Allow SSH through ufw\n      ufw:\n        rule: limit\n        port: '2222'\n        proto: tcp\n\n    - name: Enable ufw\n      ufw:\n        state: enabled\n\n    - name: Deploy fail2ban jail.local from template\n      template:\n        src: templates/jail.local.j2\n        dest: /etc/fail2ban/jail.local\n      notify: Restart fail2ban\n\n    - name: Ensure fail2ban is enabled and running\n      service:\n        name: fail2ban\n        state: started\n        enabled: true\n\n    - name: Enable unattended-upgrades\n      copy:\n        content: |\n          APT::Periodic::Update-Package-Lists \"1\";\n          APT::Periodic::Unattended-Upgrade \"1\";\n        dest: /etc/apt/apt.conf.d/20auto-upgrades\n\n  handlers:\n    - name: Restart fail2ban\n      service:\n        name: fail2ban\n        state: restarted"
+      },
+      {
+       "t": "text",
+       "html": "<p>Run this against your entire fleet with one command, and every server ends up in the exact same hardened state — re-run it any time to confirm nothing's drifted.</p>"
+      }
+     ]
+    },
+    {
+     "id": "common-modules-reference",
+     "title": "Common Modules Reference",
+     "blocks": [
+      {
+       "t": "table",
+       "head": [
+        "Module",
+        "Purpose"
+       ],
+       "rows": [
+        [
+         "<code>apt</code> / <code>yum</code> / <code>dnf</code>",
+         "package management"
+        ],
+        [
+         "<code>service</code> / <code>systemd</code>",
+         "manage services"
+        ],
+        [
+         "<code>copy</code>",
+         "copy a static file to the target"
+        ],
+        [
+         "<code>template</code>",
+         "render a Jinja2 template to the target"
+        ],
+        [
+         "<code>file</code>",
+         "manage file/directory state, permissions"
+        ],
+        [
+         "<code>user</code> / <code>group</code>",
+         "manage system users/groups"
+        ],
+        [
+         "<code>lineinfile</code>",
+         "ensure a specific line exists (or doesn't) in a file — great for surgical config edits"
+        ],
+        [
+         "<code>command</code> / <code>shell</code>",
+         "run an arbitrary command (prefer a proper module when one exists — it's what gives you idempotency)"
+        ],
+        [
+         "<code>debug</code>",
+         "print a variable/message, useful for troubleshooting a playbook"
+        ],
+        [
+         "<code>git</code>",
+         "clone/update a git repository"
+        ],
+        [
+         "<code>docker_container</code>",
+         "manage Docker containers (needs the community.docker collection)"
+        ]
+       ]
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Important idiom:</strong> prefer a dedicated module (<code>apt</code>, <code>service</code>, <code>copy</code>) over <code>command</code>/<code>shell</code> whenever one exists — dedicated modules understand desired state and are properly idempotent; <code>command</code>/<code>shell</code> just blindly runs a command every single time, re-doing work that didn't need doing and potentially erroring on a second run."
+      }
+     ]
+    },
+    {
+     "id": "running-checking-debugging",
+     "title": "Running, Checking & Debugging",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "ansible-playbook -i inventory.ini site.yml --check          # DRY RUN — shows what WOULD change, changes nothing\nansible-playbook -i inventory.ini site.yml --diff             # show the actual before/after diff for changed files\nansible-playbook -i inventory.ini site.yml -v                   # verbose (stack -vv, -vvv for more detail)\nansible-playbook -i inventory.ini site.yml --limit web1            # run against just one host from the inventory\nansible-playbook -i inventory.ini site.yml --tags \"firewall\"         # run only tasks tagged \"firewall\""
+      },
+      {
+       "t": "text",
+       "html": "<p><strong><code>--check</code> is worth using as a habit</strong> before applying anything new or edited to a production fleet — it's the equivalent of <code>ufw</code>'s dry-run pattern from earlier guides, catching surprises before they actually happen.</p>"
+      }
+     ]
+    },
+    {
+     "id": "quick-reference",
+     "title": "Quick Reference",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "TEST CONNECTIVITY    ansible all -i inventory.ini -m ping\nAD-HOC COMMAND         ansible <group> -i inventory.ini -a \"<command>\"\nRUN A PLAYBOOK           ansible-playbook -i inventory.ini <playbook>.yml\nDRY RUN                    ansible-playbook -i inventory.ini <playbook>.yml --check --diff\nLIMIT TO ONE HOST            ansible-playbook -i inventory.ini <playbook>.yml --limit <host>\nVAULT A SECRETS FILE           ansible-vault create secrets.yml\n\nSTRUCTURE\n  inventory.ini / inventory.yml    → who\n  group_vars/ , host_vars/          → what values apply where\n  playbook.yml                       → what to do\n  roles/<name>/tasks/main.yml         → reusable, shareable \"what to do\"\n  templates/*.j2                        → dynamic config, rendered per-host\n\nCORE PRINCIPLE: idempotent, declarative, agentless — describe the end state,\nrun it as often as you want, only real changes ever get applied."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "docker-containers",
+   "title": "Docker & Containers — Full Guide",
+   "icon": "layers",
+   "category": "containers",
+   "preview": "",
+   "source": "docker-containers-guide.md",
+   "words": 2146,
+   "parts": [
+    {
+     "id": "introduction",
+     "title": "Introduction",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>Images, volumes, networks, and Compose stacks — the four pillars that cover almost everything you'll actually do with Docker day to day.</p>"
+      }
+     ]
+    },
+    {
+     "id": "what-a-container-actually-is-briefly",
+     "title": "What a Container Actually Is (Briefly)",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>A container isn't a lightweight VM — it's a regular process on your host, isolated using two Linux kernel features:</p>"
+      },
+      {
+       "t": "list",
+       "items": [
+        "<strong>Namespaces</strong> — give the process its own isolated view of the filesystem, network, process list, hostname, etc.",
+        "<strong>cgroups</strong> — limit and account for the resources (CPU, memory) that process can use."
+       ]
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Image vs container — the distinction that trips people up:</strong> an <strong>image</strong> is a read-only template (built once, stored, reused). A <strong>container</strong> is a running (or stopped) instance created from an image, with its own writable layer on top. You can run many containers from the same image, exactly like many instances of a class from one class definition."
+      }
+     ]
+    },
+    {
+     "id": "installing-docker",
+     "title": "Installing Docker",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "curl -fsSL https://get.docker.com | sudo sh     # official convenience script, quickest path\nsudo usermod -aG docker $USER                       # let your user run docker without sudo every time\nnewgrp docker                                         # apply the new group in your current shell without re-logging in\ndocker --version\ndocker run hello-world                                  # confirm it actually works end to end"
+      }
+     ]
+    },
+    {
+     "id": "images-pulling-building-understanding-layers",
+     "title": "Images — Pulling, Building & Understanding Layers",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<h6>Pulling existing images</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "docker pull nginx                  # latest tag, from Docker Hub by default\ndocker pull nginx:1.25-alpine        # a specific tag — always prefer pinning a real version over \"latest\" in anything you'll rely on\ndocker images                          # list images stored locally\ndocker rmi nginx                        # remove an image (fails if a container is still using it)"
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Why pinning matters:</strong> <code>latest</code> is just a tag, not a guarantee — it moves as the maintainer pushes new builds. A <code>docker-compose.yml</code> that says <code>image: nginx:latest</code> can pull a genuinely different image next month than it did today, silently. Pin real versions (<code>nginx:1.25-alpine</code>) for anything beyond quick local testing."
+      },
+      {
+       "t": "text",
+       "html": "<h6>Building your own image — Dockerfile anatomy</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "dockerfile",
+       "code": "FROM python:3.12-slim\n\nWORKDIR /app\n\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\n\nCOPY . .\n\nEXPOSE 8000\n\nENV PYTHONUNBUFFERED=1\n\nCMD [\"python3\", \"app.py\"]"
+      },
+      {
+       "t": "table",
+       "head": [
+        "Instruction",
+        "Meaning"
+       ],
+       "rows": [
+        [
+         "<code>FROM</code>",
+         "the base image everything else builds on top of"
+        ],
+        [
+         "<code>WORKDIR</code>",
+         "sets the working directory inside the image for subsequent instructions"
+        ],
+        [
+         "<code>COPY</code>",
+         "copies files from your build context into the image"
+        ],
+        [
+         "<code>RUN</code>",
+         "executes a command <strong>at build time</strong>, its result gets baked into the image layer"
+        ],
+        [
+         "<code>EXPOSE</code>",
+         "documents which port the container listens on (doesn't actually publish it — that's done at <code>docker run</code>, see networks section)"
+        ],
+        [
+         "<code>ENV</code>",
+         "sets an environment variable inside the running container"
+        ],
+        [
+         "<code>CMD</code>",
+         "the default command run <strong>when the container starts</strong> (not build time) — can be overridden at <code>docker run</code>"
+        ],
+        [
+         "<code>ENTRYPOINT</code>",
+         "similar to <code>CMD</code> but harder to override — commonly paired with <code>CMD</code> supplying default arguments to it"
+        ]
+       ]
+      },
+      {
+       "t": "text",
+       "html": "<h6>Layers — why instruction order matters for build speed</h6>"
+      },
+      {
+       "t": "text",
+       "html": "<p>Each instruction creates a new <strong>layer</strong>, and Docker caches layers — if a layer's inputs haven't changed, it's reused instead of rebuilt. This is why <code>COPY requirements.txt .</code> and <code>RUN pip install</code> happen <strong>before</strong> <code>COPY . .</code> in the example above: your dependency list changes far less often than your actual code, so ordering it first means most rebuilds skip the (usually slow) dependency install step entirely and only re-run the fast final copy.</p>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "docker build -t myapp:1.0 .              # build from the Dockerfile in the current directory\ndocker build -t myapp:1.0 -f Dockerfile.prod .   # use a specifically-named Dockerfile\ndocker history myapp:1.0                   # see every layer and its size — useful for hunting bloat"
+      },
+      {
+       "t": "text",
+       "html": "<h6>`.dockerignore` — keep the build context small</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": ".git\nnode_modules\n*.log\n.env"
+      },
+      {
+       "t": "text",
+       "html": "<p>Same role as <code>.gitignore</code> but for what gets sent to the Docker build process — a large, unfiltered context slows every build down.</p>"
+      }
+     ]
+    },
+    {
+     "id": "containers-running-managing",
+     "title": "Containers — Running & Managing",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "docker run nginx                          # run in foreground, attached\ndocker run -d nginx                          # detached — runs in background, returns your shell immediately\ndocker run -d --name myweb nginx               # give it a memorable name instead of a random one\ndocker run -d -p 8080:80 nginx                   # map host port 8080 to container port 80\ndocker run -d -e APP_ENV=production myapp         # set an environment variable\ndocker run -d --restart unless-stopped myapp        # auto-restart policy — see below\n\ndocker ps                                              # list RUNNING containers\ndocker ps -a                                             # list ALL containers, including stopped ones\ndocker stop myweb\ndocker start myweb\ndocker restart myweb\ndocker rm myweb                                            # remove a stopped container\ndocker rm -f myweb                                           # force-remove, even if running"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Restart policies</h6>"
+      },
+      {
+       "t": "table",
+       "head": [
+        "Policy",
+        "Behavior"
+       ],
+       "rows": [
+        [
+         "<code>no</code> (default)",
+         "never auto-restarts"
+        ],
+        [
+         "<code>on-failure</code>",
+         "restarts only on a non-zero exit code"
+        ],
+        [
+         "<code>always</code>",
+         "always restarts, including after a manual stop and a host reboot"
+        ],
+        [
+         "<code>unless-stopped</code>",
+         "like <code>always</code>, but respects a manual <code>docker stop</code> — won't restart until you explicitly start it again"
+        ]
+       ]
+      },
+      {
+       "t": "text",
+       "html": "<p><strong><code>unless-stopped</code> is the right default for most real services</strong> — it survives crashes and host reboots, but doesn't fight you when you deliberately stop it for maintenance.</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Interacting with a running container</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "docker logs myweb                    # see its stdout/stderr\ndocker logs -f myweb                   # live-tail, like tail -f\ndocker exec -it myweb bash              # open an interactive shell INSIDE the running container\ndocker exec -it myweb sh                 # use sh instead if the image is minimal (alpine-based, no bash)\ndocker inspect myweb                       # full JSON detail — IPs, mounts, env vars, everything\ndocker stats                                 # live resource usage (CPU/mem) across all running containers"
+      }
+     ]
+    },
+    {
+     "id": "volumes-persisting-data-beyond-a-container-s-lif",
+     "title": "Volumes — Persisting Data Beyond a Container's Lifetime",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>Without a volume, anything written inside a container disappears the moment that container is removed — the writable layer is tied to the container, not the image. Volumes solve this.</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Three types</h6>"
+      },
+      {
+       "t": "table",
+       "head": [
+        "Type",
+        "Where it lives",
+        "Use for"
+       ],
+       "rows": [
+        [
+         "<strong>Named volume</strong>",
+         "Managed by Docker, under <code>/var/lib/docker/volumes/</code>",
+         "The default choice for most persistent data (databases, uploaded files)"
+        ],
+        [
+         "<strong>Bind mount</strong>",
+         "An exact path YOU choose on the host",
+         "When you need direct host access to the files (e.g. live-editing code during development)"
+        ],
+        [
+         "<strong>tmpfs mount</strong>",
+         "RAM only, never touches disk",
+         "Sensitive temp data, or a performance-critical scratch space"
+        ]
+       ]
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "# Named volume — Docker manages the actual location\ndocker run -d -v mydata:/var/lib/mysql mysql\ndocker volume ls\ndocker volume inspect mydata\n\n# Bind mount — you specify the exact host path\ndocker run -d -v /home/solo/project:/app myapp\n\n# tmpfs — RAM-backed, gone on container stop\ndocker run -d --tmpfs /app/cache myapp"
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Practical rule of thumb:</strong> named volumes for anything you want Docker to manage and back up as a unit (databases especially); bind mounts specifically when you need to actively edit files from the host side while the container runs (classic dev workflow — edit code locally, container picks it up live)."
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "docker volume rm mydata                # delete a named volume (fails if in use)\ndocker volume prune                       # remove ALL unused volumes — be sure nothing important is only referenced there"
+      }
+     ]
+    },
+    {
+     "id": "networks-how-containers-talk-to-each-other-and-t",
+     "title": "Networks — How Containers Talk to Each Other and the World",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<h6>Default network types</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "docker network ls"
+      },
+      {
+       "t": "table",
+       "head": [
+        "Driver",
+        "Behavior"
+       ],
+       "rows": [
+        [
+         "<code>bridge</code> (default)",
+         "isolated internal network, containers can reach each other by IP, and the host via port mapping"
+        ],
+        [
+         "<code>host</code>",
+         "container shares the host's network stack directly — no isolation, no port mapping needed, but no isolation either"
+        ],
+        [
+         "<code>none</code>",
+         "no networking at all"
+        ]
+       ]
+      },
+      {
+       "t": "text",
+       "html": "<h6>Publishing a port — making a container reachable from outside</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "docker run -d -p 8080:80 nginx\n#              │    │\n#              │    └─ container's internal port\n#              └────── host's port, what you actually connect to"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "docker run -d -p 127.0.0.1:8080:80 nginx     # bind ONLY to localhost — not reachable from outside the host at all"
+      },
+      {
+       "t": "text",
+       "html": "<p>This mirrors the \"bind to localhost\" principle from the hardening guide — if a service genuinely doesn't need external access, don't expose it beyond the loopback interface.</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Custom networks — the right way for multi-container communication</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "docker network create mynet\ndocker run -d --name db --network mynet postgres\ndocker run -d --name app --network mynet myapp"
+      },
+      {
+       "t": "text",
+       "html": "<p>Containers on the same custom network can reach each other <strong>by container name</strong> as a hostname — <code>app</code> can connect to <code>db:5432</code> directly, no IP addresses or port mapping needed between them. This is the real reason to create custom networks instead of relying on the default bridge, where name-based resolution isn't guaranteed the same way.</p>"
+      }
+     ]
+    },
+    {
+     "id": "docker-compose-multi-container-stacks-declarativ",
+     "title": "Docker Compose — Multi-Container Stacks Declaratively",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>Compose lets you define an entire multi-service stack (app + database + cache, etc.) in one YAML file instead of a string of individual <code>docker run</code> commands.</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Anatomy of a `docker-compose.yml`</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "yaml",
+       "code": "version: \"3.9\"\n\nservices:\n  app:\n    build: .\n    ports:\n      - \"8080:8000\"\n    environment:\n      - DATABASE_URL=postgres://user:pass@db:5432/mydb\n    depends_on:\n      - db\n    restart: unless-stopped\n    volumes:\n      - ./app:/app          # bind mount for live code editing during dev\n\n  db:\n    image: postgres:16\n    environment:\n      - POSTGRES_USER=user\n      - POSTGRES_PASSWORD=pass\n      - POSTGRES_DB=mydb\n    volumes:\n      - db_data:/var/lib/postgresql/data\n    restart: unless-stopped\n\n  redis:\n    image: redis:7-alpine\n    restart: unless-stopped\n\nvolumes:\n  db_data:"
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Key things this file does automatically that raw <code>docker run</code> doesn't:</strong> "
+      },
+      {
+       "t": "list",
+       "items": [
+        "Creates a dedicated network for the whole stack, so <code>app</code> can reach <code>db</code> and <code>redis</code> by service name — no manual <code>docker network create</code> needed.",
+        "<code>depends_on</code> controls <strong>start order</strong> (though notably not \"wait until actually ready\" — see the health check note below).",
+        "One command spins up or tears down the entire stack together, consistently."
+       ]
+      },
+      {
+       "t": "text",
+       "html": "<h6>Core commands</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "docker compose up -d              # start the whole stack, detached\ndocker compose down                 # stop and remove containers (volumes persist unless you add -v)\ndocker compose down -v                # stop AND remove volumes too — destructive, deletes your data\ndocker compose ps                       # status of every service in the stack\ndocker compose logs -f app                # live logs for one specific service\ndocker compose logs -f                      # live logs for the WHOLE stack, interleaved\ndocker compose build                          # rebuild images defined with a `build:` key\ndocker compose restart app                      # restart just one service\ndocker compose exec app bash                      # shell into a running service"
+      },
+      {
+       "t": "text",
+       "html": "<h6>The `depends_on` gotcha</h6>"
+      },
+      {
+       "t": "text",
+       "html": "<p><code>depends_on</code> only waits for the dependency container to <strong>start</strong>, not for the application inside it to actually be ready to accept connections — a database container can report \"started\" well before Postgres has finished initializing. For anything that genuinely needs to wait for real readiness, add a health check:</p>"
+      },
+      {
+       "t": "code",
+       "lang": "yaml",
+       "code": "services:\n  db:\n    image: postgres:16\n    healthcheck:\n      test: [\"CMD-SHELL\", \"pg_isready -U user\"]\n      interval: 5s\n      timeout: 5s\n      retries: 5\n\n  app:\n    depends_on:\n      db:\n        condition: service_healthy    # NOW it actually waits for db to be truly ready"
+      }
+     ]
+    },
+    {
+     "id": "practical-aiops-example-a-monitoring-stack-via-c",
+     "title": "Practical AIOps Example — A Monitoring Stack via Compose",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>Directly relevant to your important-files list from earlier — Prometheus + Grafana as an actual runnable stack:</p>"
+      },
+      {
+       "t": "code",
+       "lang": "yaml",
+       "code": "version: \"3.9\"\n\nservices:\n  prometheus:\n    image: prom/prometheus:latest\n    volumes:\n      - ./prometheus.yml:/etc/prometheus/prometheus.yml\n      - prom_data:/prometheus\n    ports:\n      - \"127.0.0.1:9090:9090\"     # local-only — reach it through a reverse proxy or SSH tunnel, not directly exposed\n    restart: unless-stopped\n\n  grafana:\n    image: grafana/grafana:latest\n    ports:\n      - \"127.0.0.1:3000:3000\"\n    volumes:\n      - grafana_data:/var/lib/grafana\n    depends_on:\n      - prometheus\n    restart: unless-stopped\n\nvolumes:\n  prom_data:\n  grafana_data:"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "docker compose up -d\ndocker compose logs -f grafana     # confirm it started cleanly"
+      },
+      {
+       "t": "text",
+       "html": "<p>This gives you a persistent, restart-safe monitoring stack in about 20 lines — genuinely representative of how much of real AIOps tooling gets deployed in practice.</p>"
+      }
+     ]
+    },
+    {
+     "id": "debugging-common-issues",
+     "title": "Debugging & Common Issues",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "docker logs <container>                        # first stop, always — most failures explain themselves here\ndocker inspect <container> --format '{{.State.ExitCode}}'   # what exit code did it die with\ndocker events                                       # live stream of Docker daemon events — useful for catching a container that keeps restarting\ndocker exec -it <container> sh                          # get inside it and poke around directly"
+      },
+      {
+       "t": "table",
+       "head": [
+        "Symptom",
+        "Likely cause"
+       ],
+       "rows": [
+        [
+         "Container exits immediately after start",
+         "The main process (<code>CMD</code>) finished/crashed instantly — check <code>docker logs</code>; a common cause is running an interactive-only process without <code>-it</code>, or a missing dependency inside the image"
+        ],
+        [
+         "<code>Cannot connect to the Docker daemon</code>",
+         "Docker service isn't running (<code>sudo systemctl status docker</code>), or your user isn't in the <code>docker</code> group yet"
+        ],
+        [
+         "Port already in use",
+         "Something else on the host (or another container) already bound that port — `sudo ss -tulnp \\",
+         "grep &lt;port&gt;` to find it"
+        ],
+        [
+         "Container can't reach another container by name",
+         "They're not on the same custom network — check with <code>docker network inspect &lt;network&gt;</code>"
+        ],
+        [
+         "Changes to code aren't showing up",
+         "If using a bind mount, confirm the path is actually correct; if not using one, you need to rebuild the image (<code>docker compose build</code>) since the old code is baked into the image layer"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "id": "cleanup-maintenance",
+     "title": "Cleanup & Maintenance",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "docker ps -a                            # see what's actually accumulated\ndocker container prune                    # remove all stopped containers\ndocker image prune                          # remove dangling (untagged) images\ndocker image prune -a                         # remove ALL unused images, not just dangling ones — more aggressive\ndocker volume prune                             # remove unused volumes — be careful, this can delete real data\ndocker system prune -a --volumes                  # nuclear option — cleans everything unused across the board\ndocker system df                                     # see how much disk Docker is actually using, broken down by category"
+      },
+      {
+       "t": "text",
+       "html": "<p><strong>Worth running periodically on any dev machine</strong> — Docker images and build cache accumulate fast, and <code>docker system df</code> is the quickest way to see where your disk actually went before you go hunting manually.</p>"
+      }
+     ]
+    },
+    {
+     "id": "quick-reference",
+     "title": "Quick Reference",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "IMAGES        docker pull <image>:<tag>       docker build -t <name> .        docker images\nCONTAINERS     docker run -d -p <host>:<container> --name <name> <image>\n                docker ps -a     docker logs -f <name>     docker exec -it <name> sh\nVOLUMES         docker run -v <volume>:<path>     docker volume ls\nNETWORKS         docker network create <name>     docker run --network <name>\nCOMPOSE           docker compose up -d     docker compose down     docker compose logs -f\nCLEANUP            docker system df     docker system prune -a --volumes\n\nALWAYS PIN VERSIONS, NEVER RELY ON :latest FOR ANYTHING YOU NEED TO TRUST."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "monitoring-stack",
+   "title": "Monitoring Stack Setup — Prometheus + Grafana From Zero",
+   "icon": "eye",
+   "category": "monitoring",
+   "preview": "",
+   "source": "prometheus-grafana-monitoring-stack.md",
+   "words": 1416,
+   "parts": [
+    {
+     "id": "introduction",
+     "title": "Introduction",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>The stack that's been sitting as a loose entry in your important-files list, actually built out: metrics collection, storage, querying, visualization, and alerting.</p>"
+      }
+     ]
+    },
+    {
+     "id": "architecture-how-the-pieces-fit",
+     "title": "Architecture — How the Pieces Fit",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "Target servers\n  └─ node_exporter        →  exposes hardware/OS metrics (CPU, mem, disk, network) on port 9100\n\nPrometheus\n  └─ scrapes node_exporter(s) on a schedule, stores the time-series data, evaluates alert rules\n\nGrafana\n  └─ queries Prometheus, renders dashboards\n\nAlertmanager (optional but standard)\n  └─ receives firing alerts FROM Prometheus, handles routing/dedup/notification (Slack, email, etc.)"
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Key distinction to keep straight:</strong> Prometheus itself can evaluate alert rules and know something's wrong — but Alertmanager is the separate component that actually decides how/where to notify someone about it (grouping, silencing, routing to different channels). Small setups often skip Alertmanager initially and just watch Grafana dashboards; it's worth adding once you actually want to be notified rather than having to go look."
+      }
+     ]
+    },
+    {
+     "id": "two-installation-paths",
+     "title": "Two Installation Paths",
+     "blocks": [
+      {
+       "t": "table",
+       "head": [
+        "Path",
+        "Best for"
+       ],
+       "rows": [
+        [
+         "<strong>Docker Compose</strong>",
+         "Fastest to get running, easiest to tear down/rebuild, good for a dev box or quick lab setup"
+        ],
+        [
+         "<strong>Native systemd services</strong>",
+         "More \"production,\" direct host-level metrics access without container networking layers, matches how most real ops teams actually run it long-term"
+        ]
+       ]
+      },
+      {
+       "t": "text",
+       "html": "<p>Both are shown below — start with Compose to learn the pieces, move to native if/when you want it running as core infrastructure.</p>"
+      }
+     ]
+    },
+    {
+     "id": "path-a-docker-compose-setup",
+     "title": "Path A: Docker Compose Setup",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<h6>Step 1 — Directory structure</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "mkdir -p ~/monitoring/{prometheus,grafana}\ncd ~/monitoring"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Step 2 — Prometheus config</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "yaml",
+       "code": "# ~/monitoring/prometheus/prometheus.yml\nglobal:\n  scrape_interval: 15s        # how often Prometheus pulls metrics from each target\n\nscrape_configs:\n  - job_name: 'prometheus'       # Prometheus monitoring itself\n    static_configs:\n      - targets: ['localhost:9090']\n\n  - job_name: 'node'                # the host machine, via node_exporter\n    static_configs:\n      - targets: ['node-exporter:9100']"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Step 3 — Compose file</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "yaml",
+       "code": "# ~/monitoring/docker-compose.yml\nversion: \"3.9\"\n\nservices:\n  node-exporter:\n    image: prom/node-exporter:latest\n    container_name: node-exporter\n    restart: unless-stopped\n    network_mode: host       # needs host networking to see REAL host metrics, not the container's own\n\n  prometheus:\n    image: prom/prometheus:latest\n    container_name: prometheus\n    restart: unless-stopped\n    volumes:\n      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml\n      - prom_data:/prometheus\n    ports:\n      - \"127.0.0.1:9090:9090\"    # localhost-only — see the security section before exposing this further\n\n  grafana:\n    image: grafana/grafana:latest\n    container_name: grafana\n    restart: unless-stopped\n    ports:\n      - \"127.0.0.1:3000:3000\"\n    volumes:\n      - grafana_data:/var/lib/grafana\n    depends_on:\n      - prometheus\n\nvolumes:\n  prom_data:\n  grafana_data:"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Step 4 — Launch it</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "docker compose up -d\ndocker compose ps                    # confirm all three are running\ndocker compose logs -f prometheus      # confirm it started without config errors"
+      }
+     ]
+    },
+    {
+     "id": "path-b-native-systemd-install-no-containers",
+     "title": "Path B: Native systemd Install (No Containers)",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<h6>Step 1 — Create a dedicated user (services shouldn't run as root)</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "sudo useradd --no-create-home --shell /bin/false prometheus"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Step 2 — Download and install Prometheus</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "cd /tmp\ncurl -LO https://github.com/prometheus/prometheus/releases/latest/download/prometheus-3.0.0.linux-amd64.tar.gz\ntar xzf prometheus-3.0.0.linux-amd64.tar.gz\nsudo mkdir -p /etc/prometheus /var/lib/prometheus\nsudo cp prometheus-3.0.0.linux-amd64/prometheus /usr/local/bin/\nsudo cp prometheus-3.0.0.linux-amd64/promtool /usr/local/bin/\nsudo cp -r prometheus-3.0.0.linux-amd64/consoles /etc/prometheus/\nsudo cp -r prometheus-3.0.0.linux-amd64/console_libraries /etc/prometheus/\nsudo chown -R prometheus:prometheus /etc/prometheus /var/lib/prometheus"
+      },
+      {
+       "t": "text",
+       "html": "<p>(Check the actual latest version at github.com/prometheus/prometheus/releases before running this — version numbers age fast.)</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Step 3 — Same `prometheus.yml` as above, placed at `/etc/prometheus/prometheus.yml`</h6>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Step 4 — systemd unit (direct application of your systemd deep-dive guide)</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "ini",
+       "code": "# /etc/systemd/system/prometheus.service\n[Unit]\nDescription=Prometheus\nWants=network-online.target\nAfter=network-online.target\n\n[Service]\nType=simple\nUser=prometheus\nGroup=prometheus\nExecStart=/usr/local/bin/prometheus \\\n  --config.file=/etc/prometheus/prometheus.yml \\\n  --storage.tsdb.path=/var/lib/prometheus \\\n  --web.listen-address=127.0.0.1:9090\nRestart=on-failure\nRestartSec=5\n\n[Install]\nWantedBy=multi-user.target"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "sudo systemctl daemon-reload\nsudo systemctl enable --now prometheus\nsudo systemctl status prometheus\njournalctl -u prometheus -f"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Step 5 — node_exporter, same pattern</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "cd /tmp\ncurl -LO https://github.com/prometheus/node_exporter/releases/latest/download/node_exporter-1.8.0.linux-amd64.tar.gz\ntar xzf node_exporter-1.8.0.linux-amd64.tar.gz\nsudo cp node_exporter-1.8.0.linux-amd64/node_exporter /usr/local/bin/\nsudo useradd --no-create-home --shell /bin/false node_exporter"
+      },
+      {
+       "t": "code",
+       "lang": "ini",
+       "code": "# /etc/systemd/system/node_exporter.service\n[Unit]\nDescription=Node Exporter\nAfter=network.target\n\n[Service]\nType=simple\nUser=node_exporter\nExecStart=/usr/local/bin/node_exporter\nRestart=on-failure\n\n[Install]\nWantedBy=multi-user.target"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "sudo systemctl daemon-reload\nsudo systemctl enable --now node_exporter"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Step 6 — Grafana (native)</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "sudo apt install -y software-properties-common\nsudo add-apt-repository \"deb https://packages.grafana.com/oss/deb stable main\"\ncurl https://packages.grafana.com/gpg.key | sudo apt-key add -\nsudo apt update\nsudo apt install grafana -y\nsudo systemctl enable --now grafana-server"
+      }
+     ]
+    },
+    {
+     "id": "verifying-prometheus-is-actually-collecting-data",
+     "title": "Verifying Prometheus Is Actually Collecting Data",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "curl http://localhost:9090/api/v1/query?query=up"
+      },
+      {
+       "t": "text",
+       "html": "<p>Or open <code>http://localhost:9090</code> in a browser (via SSH tunnel if it's bound to localhost only — see the security section) and go to <strong>Status → Targets</strong>: every scrape target should show <code>State: UP</code>. If a target shows <code>DOWN</code>, that's your first debugging stop — usually a firewall blocking port 9100, or node_exporter not actually running (<code>systemctl status node_exporter</code>).</p>"
+      }
+     ]
+    },
+    {
+     "id": "connecting-grafana-to-prometheus",
+     "title": "Connecting Grafana to Prometheus",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p><strong>Step 1 — Access Grafana</strong> (default login <code>admin</code>/<code>admin</code>, forces a password change on first login):</p>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "http://localhost:3000"
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Step 2 — Add Prometheus as a data source:</strong> Configuration → Data Sources → Add data source → Prometheus → set URL to <code>http://localhost:9090</code> (or <code>http://prometheus:9090</code> if Grafana is running as a Docker container on the same Compose network, using the service name instead of localhost) → Save &amp; Test."
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Step 3 — Import a ready-made dashboard instead of building from scratch:</strong> Dashboards → Import → enter dashboard ID <strong>1860</strong> (\"Node Exporter Full,\" the standard, most widely used community dashboard for exactly this stack) → select your Prometheus data source → Import."
+      },
+      {
+       "t": "text",
+       "html": "<p>This alone gets you CPU, memory, disk, and network graphs for every monitored host, without writing a single query by hand — a genuinely good starting point before customizing anything.</p>"
+      }
+     ]
+    },
+    {
+     "id": "basic-promql-enough-to-be-dangerous",
+     "title": "Basic PromQL — Enough to Be Dangerous",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "promql",
+       "code": "up                                          # 1 = target is being scraped successfully, 0 = it's down\n\nnode_cpu_seconds_total                        # raw counter — rarely useful directly, needs rate()\n\nrate(node_cpu_seconds_total{mode=\"idle\"}[5m])    # CPU idle rate over a 5-min window — the building block for CPU usage %\n\n100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)   # CPU USAGE %, the query you actually want\n\nnode_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100    # memory available as a percentage\n\nnode_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"} * 100    # disk free % on root\n\nrate(node_disk_io_time_seconds_total[5m])       # disk I/O time — the Prometheus equivalent of the iostat %util you already know"
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>The one PromQL concept worth actually internalizing:</strong> most raw metrics are <strong>counters</strong> — they only ever go up (total CPU seconds spent, total bytes received). You almost never graph a counter directly; you wrap it in <code>rate()</code> to get \"how fast is this increasing,\" which is what turns a meaningless ever-climbing number into an actual usage rate you can read."
+      }
+     ]
+    },
+    {
+     "id": "alerting-prometheus-rules-alertmanager",
+     "title": "Alerting — Prometheus Rules + Alertmanager",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<h6>Step 1 — Define alert rules</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "yaml",
+       "code": "# /etc/prometheus/alert_rules.yml\ngroups:\n  - name: node_alerts\n    rules:\n      - alert: HighCPUUsage\n        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100) > 85\n        for: 5m\n        labels:\n          severity: warning\n        annotations:\n          summary: \"High CPU on {{ $labels.instance }}\"\n          description: \"CPU usage above 85% for 5+ minutes\"\n\n      - alert: DiskSpaceLow\n        expr: (node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"}) * 100 < 10\n        for: 10m\n        labels:\n          severity: critical\n        annotations:\n          summary: \"Low disk space on {{ $labels.instance }}\"\n          description: \"Root filesystem below 10% free — ties directly to the disk-full failure scenario from your storage guide\"\n\n      - alert: HostDown\n        expr: up == 0\n        for: 2m\n        labels:\n          severity: critical\n        annotations:\n          summary: \"{{ $labels.instance }} is down\"\n          description: \"Prometheus has not been able to scrape this target for 2+ minutes\""
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Reference this in <code>prometheus.yml</code>:</strong> "
+      },
+      {
+       "t": "code",
+       "lang": "yaml",
+       "code": "rule_files:\n  - \"alert_rules.yml\""
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "promtool check rules /etc/prometheus/alert_rules.yml     # validate syntax BEFORE reloading — catches typos early\nsudo systemctl reload prometheus"
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>The <code>for:</code> field matters as much as the threshold itself:</strong> without it, a single momentary CPU spike fires an alert instantly — <code>for: 5m</code> requires the condition to stay true continuously for 5 minutes before it actually fires, filtering out normal noise and only alerting on sustained real problems."
+      },
+      {
+       "t": "text",
+       "html": "<h6>Step 2 — Alertmanager, for actual notifications</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "yaml",
+       "code": "# /etc/alertmanager/alertmanager.yml\nroute:\n  receiver: 'default'\n  group_wait: 30s\n  group_interval: 5m\n  repeat_interval: 4h\n\nreceivers:\n  - name: 'default'\n    # webhook, email, or Slack config goes here — e.g. for Slack:\n    slack_configs:\n      - api_url: 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL'\n        channel: '#alerts'\n        send_resolved: true"
+      },
+      {
+       "t": "text",
+       "html": "<p>Add to <code>prometheus.yml</code>:</p>"
+      },
+      {
+       "t": "code",
+       "lang": "yaml",
+       "code": "alerting:\n  alertmanagers:\n    - static_configs:\n        - targets: ['localhost:9093']"
+      }
+     ]
+    },
+    {
+     "id": "securing-the-stack",
+     "title": "Securing the Stack",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>Directly applying your hardening guide's principles to this specific setup:</p>"
+      },
+      {
+       "t": "text",
+       "html": "<p>``<code>bash ssh -L 3000:localhost:3000 -L 9090:localhost:9090 solo@yourserver </code>`<code> Then open </code>http://localhost:3000` on your <strong>local</strong> machine — traffic tunnels securely over the existing SSH connection.</p>"
+      },
+      {
+       "t": "list",
+       "items": [
+        "<strong>Bind Prometheus/Grafana to <code>127.0.0.1</code></strong>, exactly as done throughout this guide — neither needs to be directly internet-facing.",
+        "<strong>Reach them remotely via SSH tunnel or Tailscale</strong> (from your SSH/remote-access guides), not by opening ports 9090/3000 to the world:",
+        "<strong>Change Grafana's default admin password immediately</strong> on first login — an exposed default-credential Grafana instance is a genuinely common real-world compromise vector.",
+        "<strong>If you do need Grafana reachable more broadly</strong>, put it behind a reverse proxy (nginx) with real TLS and its own auth, rather than exposing Grafana's own port directly."
+       ]
+      }
+     ]
+    },
+    {
+     "id": "quick-reference",
+     "title": "Quick Reference",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "STACK             node_exporter (metrics source) → Prometheus (scrape+store+alert) → Grafana (visualize)\n                    optionally: Alertmanager (routes firing alerts to Slack/email/etc)\n\nDOCKER PATH          docker compose up -d   (see prometheus.yml + docker-compose.yml above)\nNATIVE PATH            systemctl enable --now prometheus node_exporter grafana-server\n\nVERIFY SCRAPING          http://localhost:9090 → Status → Targets → all should show UP\nCONNECT GRAFANA            Data Sources → Prometheus → http://localhost:9090\nFAST DASHBOARD               Import dashboard ID 1860 (\"Node Exporter Full\")\n\nKEY PROMQL                  rate(node_cpu_seconds_total{mode=\"idle\"}[5m])   → CPU idle rate, the building block for usage %\n                              node_filesystem_avail_bytes{mountpoint=\"/\"}     → disk free bytes\n\nALERT RULE TEST                promtool check rules /etc/prometheus/alert_rules.yml\nACCESS SECURELY                  ssh -L 3000:localhost:3000 -L 9090:localhost:9090 <host>   (never expose directly)"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "server-hardening",
+   "title": "General Server Hardening — Beyond SSH",
+   "icon": "check",
+   "category": "security",
+   "preview": "",
+   "source": "server-hardening-guide.md",
+   "words": 1436,
+   "parts": [
+    {
+     "id": "introduction",
+     "title": "Introduction",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>SSH hardening gets one door. This covers the rest of the house: automated patching, intrusion detection, activity auditing, and cutting down what's even exposed to attack in the first place.</p>"
+      }
+     ]
+    },
+    {
+     "id": "the-hardening-mental-model",
+     "title": "The Hardening Mental Model",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "1. Reduce attack surface   →  fewer running services/open ports = fewer things that can go wrong\n2. Patch automatically       →  known vulnerabilities get fixed before they're exploited, without you remembering\n3. Detect intrusion attempts   →  fail2ban reacts to abuse in real time\n4. Audit what actually happened →  auditd/logs give you a record if something DOES get through"
+      },
+      {
+       "t": "text",
+       "html": "<p>These four layers are independent — losing one doesn't defeat the others, which is the whole point of \"defense in depth.\"</p>"
+      }
+     ]
+    },
+    {
+     "id": "minimizing-attack-surface",
+     "title": "Minimizing Attack Surface",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>The single highest-leverage hardening step, and the one most guides skip in favor of flashier tools: <strong>run less stuff.</strong></p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Audit what's actually running and listening</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "sudo ss -tulnp                  # every listening port, and the process behind it\nsudo systemctl list-units --type=service --state=running     # every active service"
+      },
+      {
+       "t": "text",
+       "html": "<p>For each result, ask: does this actually need to be running on this machine, and does it need to be reachable from outside (vs. <code>localhost</code>-only)?</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Disable services you don't need</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "sudo systemctl stop <service>\nsudo systemctl disable <service>      # prevents it from starting again on next boot"
+      },
+      {
+       "t": "text",
+       "html": "<p>Common offenders on a fresh install that are rarely needed on a headless server: print spoolers (<code>cups</code>), Bluetooth (<code>bluetooth</code>), and various desktop-environment leftovers if you installed from a desktop ISO instead of server-minimal.</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Bind services to localhost when they don't need external access</h6>"
+      },
+      {
+       "t": "text",
+       "html": "<p>Many services (databases, internal APIs, admin panels) only need to be reached by other processes on the same machine, or through a reverse proxy — not directly from the internet. In the service's own config:</p>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "# example: PostgreSQL, MySQL, Redis, etc — bind to loopback only\nlisten_addresses = 'localhost'\nbind 127.0.0.1"
+      },
+      {
+       "t": "text",
+       "html": "<p>A service that's only listening on <code>127.0.0.1</code> simply isn't reachable from outside at all, regardless of firewall rules — this is a stronger guarantee than \"I firewalled it,\" because there's no rule to misconfigure.</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Remove unused packages, don't just disable them</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "sudo apt list --installed\nsudo apt purge <package>            # removes it entirely, including config files\nsudo apt autoremove                 # cleans up now-orphaned dependencies"
+      },
+      {
+       "t": "text",
+       "html": "<p>A disabled-but-installed service can still get re-enabled by an update, another package's dependency, or a future mistake. Removed is more permanent than disabled.</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Close ports at the firewall too (defense in depth with the previous point)</h6>"
+      },
+      {
+       "t": "text",
+       "html": "<p>Even after minimizing what's running, apply your <code>ufw</code>/firewall rules (from the firewall guide) as a second layer — belt and suspenders, not either/or.</p>"
+      }
+     ]
+    },
+    {
+     "id": "unattended-upgrades-automatic-security-patching",
+     "title": "`unattended-upgrades` — Automatic Security Patching",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>Most real-world compromises exploit <strong>known, already-patched</strong> vulnerabilities on systems that simply never got updated. This closes that gap without you needing to remember <code>apt upgrade</code> regularly.</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Install and configure</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "sudo apt install unattended-upgrades apt-listchanges -y\nsudo dpkg-reconfigure --priority=low unattended-upgrades     # interactive setup, choose \"Yes\""
+      },
+      {
+       "t": "text",
+       "html": "<h6>Key config file: `/etc/apt/apt.conf.d/50unattended-upgrades`</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "Unattended-Upgrade::Allowed-Origins {\n    \"${distro_id}:${distro_codename}-security\";\n    // uncomment the next line too if you also want non-security updates applied automatically —\n    // most hardened setups deliberately leave this OFF and patch non-security updates manually\n    //\"${distro_id}:${distro_codename}-updates\";\n};\n\nUnattended-Upgrade::Remove-Unused-Dependencies \"true\";\nUnattended-Upgrade::Automatic-Reboot \"false\";       // see note below before flipping this to true\nUnattended-Upgrade::Automatic-Reboot-Time \"02:00\";"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Whether to enable automatic reboots</h6>"
+      },
+      {
+       "t": "text",
+       "html": "<p>Some kernel/library updates need a reboot to fully take effect — until then, the running processes are still using the old, vulnerable code even though the files on disk are patched. <code>Automatic-Reboot \"true\"</code> closes that gap completely, but takes the machine down on a schedule with no human confirmation — genuinely fine for most personal/dev servers, riskier for something where unexpected downtime has real consequences. Know the tradeoff rather than defaulting either way blindly.</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Confirm it's actually enabled and working</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "cat /etc/apt/apt.conf.d/20auto-upgrades"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "APT::Periodic::Update-Package-Lists \"1\";\nAPT::Periodic::Unattended-Upgrade \"1\";"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Check what it's actually done</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "cat /var/log/unattended-upgrades/unattended-upgrades.log"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Dry-run test (see what it WOULD do, right now, without applying anything)</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "sudo unattended-upgrade --dry-run --debug"
+      }
+     ]
+    },
+    {
+     "id": "tuning-fail2ban-properly",
+     "title": "Tuning `fail2ban` Properly",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>Basic <code>fail2ban</code> install/enable was covered in the SSH guide — this is the actual tuning most people skip.</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Understanding the two files that matter</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "/etc/fail2ban/jail.conf     # the DEFAULT config — DO NOT edit this directly, it gets overwritten on package updates\n/etc/fail2ban/jail.local     # YOUR overrides — create this, fail2ban merges it on top of jail.conf"
+      },
+      {
+       "t": "text",
+       "html": "<h6>A properly tuned `jail.local`</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "sudo nano /etc/fail2ban/jail.local"
+      },
+      {
+       "t": "code",
+       "lang": "ini",
+       "code": "[DEFAULT]\nbantime  = 1h            # how long an IP stays banned\nfindtime = 10m             # the window within which maxretry failures must occur\nmaxretry = 5                 # how many failures within findtime triggers a ban\nignoreip = 127.0.0.1/8 ::1 192.168.1.0/24    # NEVER let fail2ban ban your own trusted network by accident\n\n[sshd]\nenabled = true\nport    = 2222              # match whatever port you actually run SSH on (see your SSH guide)\nbantime = 1d                 # SSH specifically deserves a longer ban than the default — real attackers, not typos\n\n[nginx-http-auth]\nenabled = true\n\n[nginx-limit-req]\nenabled = true"
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Why <code>ignoreip</code> matters more than it looks:</strong> without it, a genuine typo in your own SSH client (wrong key, mistyped password if you still allow that) can get you banned from your own server. Always whitelist your home/office IP or trusted subnet explicitly."
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Why per-jail <code>bantime</code> matters:</strong> an SSH brute-force attempt is a much stronger malicious signal than, say, a single failed login on a lower-stakes service — tuning <code>bantime</code> per jail lets you ban SSH attackers harder and longer while staying more lenient elsewhere."
+      },
+      {
+       "t": "text",
+       "html": "<h6>Escalating bans for repeat offenders</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "ini",
+       "code": "[DEFAULT]\nbantime.increment = true\nbantime.factor = 2          # each subsequent ban for the same IP doubles in length\nbantime.maxtime = 1w         # cap the escalation so it doesn't grow unbounded forever"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Checking fail2ban's actual state</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "sudo fail2ban-client status                 # list active jails\nsudo fail2ban-client status sshd              # see currently banned IPs for a specific jail\nsudo fail2ban-client set sshd unbanip <ip>      # manually unban an IP (useful if you accidentally ban yourself)"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Testing a jail's regex against your actual logs before trusting it</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "sudo fail2ban-regex /var/log/auth.log /etc/fail2ban/filter.d/sshd.conf"
+      },
+      {
+       "t": "text",
+       "html": "<p>Confirms the jail's pattern actually matches your real log format — worth doing once for any custom jail you write, since a filter that doesn't match anything provides zero protection while looking configured.</p>"
+      }
+     ]
+    },
+    {
+     "id": "auditd-knowing-what-actually-happened",
+     "title": "`auditd` — Knowing What Actually Happened",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>Where journald/syslog tell you what services logged, <code>auditd</code> tracks lower-level system events: specific file access, command execution, permission changes — a much finer-grained record, at the cost of more noise to manage.</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Install and enable</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "sudo apt install auditd audispd-plugins -y\nsudo systemctl enable auditd --now"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Writing audit rules — `/etc/audit/rules.d/audit.rules`</h6>"
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Watch a critical file for any changes:</strong> "
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "-w /etc/passwd -p wa -k passwd_changes\n-w /etc/shadow -p wa -k shadow_changes\n-w /etc/sudoers -p wa -k sudoers_changes"
+      },
+      {
+       "t": "text",
+       "html": "<p><code>-p wa</code> = watch for writes and attribute changes. <code>-k &lt;name&gt;</code> = a searchable tag for this rule's matches.</p>"
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Watch for use of a specific command (e.g. track every use of <code>sudo</code>):</strong> "
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "-w /usr/bin/sudo -p x -k sudo_usage"
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Watch a whole directory:</strong> "
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "-w /etc/ssh/ -p wa -k sshd_config_changes"
+      },
+      {
+       "t": "text",
+       "html": "<p>Apply new rules:</p>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "sudo augenrules --load\n# or reboot, since some environments load rules only at boot"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Actually querying the audit log — this is the part that makes it useful</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "sudo ausearch -k passwd_changes           # everything matching that tag\nsudo ausearch -k sudo_usage -ts today       # sudo usage, today only\nsudo ausearch -ui 1000                      # everything by a specific UID\nsudo aureport -au                             # summary report of authentication events\nsudo aureport -f                                # summary report of file access events"
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Practical example — \"did anyone touch <code>/etc/sudoers</code> this week, and who\":</strong> "
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "sudo ausearch -k sudoers_changes -ts week-ago"
+      },
+      {
+       "t": "text",
+       "html": "<p>This is the kind of question <code>auditd</code> answers cleanly that plain syslog genuinely can't — it ties the event to the exact process, UID, and command line responsible, not just a general log line.</p>"
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Honest tradeoff to know:</strong> <code>auditd</code> produces a lot of log volume if you watch broad paths — start with a small, deliberate rule set (critical config files, sudo usage) rather than trying to audit everything, or the noise buries the signal you actually care about."
+      }
+     ]
+    },
+    {
+     "id": "putting-it-together-a-baseline-hardening-checkli",
+     "title": "Putting It Together — A Baseline Hardening Checklist",
+     "blocks": [
+      {
+       "t": "list",
+       "items": [
+        "[ ] Audited running services (<code>ss -tulnp</code>), disabled/removed anything unnecessary",
+        "[ ] Internal-only services (DB, cache, admin panels) bound to <code>127.0.0.1</code>, not <code>0.0.0.0</code>",
+        "[ ] Firewall (<code>ufw</code>/iptables/nftables) default-deny inbound, explicit allows only",
+        "[ ] <code>unattended-upgrades</code> installed and confirmed active, security updates at minimum",
+        "[ ] <code>fail2ban</code> tuned with a real <code>jail.local</code> — proper <code>bantime</code>/<code>findtime</code>/<code>maxretry</code>, <code>ignoreip</code> set to your own trusted network",
+        "[ ] <code>auditd</code> watching at minimum: <code>/etc/passwd</code>, <code>/etc/shadow</code>, <code>/etc/sudoers</code>, and sudo usage itself",
+        "[ ] SSH hardening from the earlier guide applied (key-only auth, non-default port, no root login)",
+        "[ ] A recurring calendar reminder (not just automation) to actually review <code>aureport</code>/<code>fail2ban-client status</code>/<code>journalctl -p err</code> periodically — automation reduces the work, it doesn't replace occasionally actually looking"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "systemd-deep-dive",
+   "title": "systemd Deep Dive — Unit Files & Timers (The Modern Cron Replacement)",
+   "icon": "cpu",
+   "category": "system",
+   "preview": "",
+   "source": "systemd-deep-dive.md",
+   "words": 1758,
+   "parts": [
+    {
+     "id": "introduction",
+     "title": "Introduction",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>Writing your own systemd units properly, and why timers beat cron for anything you actually want to monitor and trust.</p>"
+      }
+     ]
+    },
+    {
+     "id": "unit-basics",
+     "title": "Unit Basics",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<h6>Unit types you'll actually use</h6>"
+      },
+      {
+       "t": "table",
+       "head": [
+        "Extension",
+        "Purpose"
+       ],
+       "rows": [
+        [
+         "<code>.service</code>",
+         "a long-running or one-shot process"
+        ],
+        [
+         "<code>.timer</code>",
+         "schedules another unit to run — the cron replacement"
+        ],
+        [
+         "<code>.socket</code>",
+         "socket-activated services (start on first connection, not boot)"
+        ],
+        [
+         "<code>.mount</code> / <code>.automount</code>",
+         "filesystem mounts as managed units"
+        ],
+        [
+         "<code>.target</code>",
+         "a named grouping/synchronization point (like <code>multi-user.target</code>)"
+        ],
+        [
+         "<code>.path</code>",
+         "trigger a unit when a file/directory changes"
+        ]
+       ]
+      },
+      {
+       "t": "text",
+       "html": "<h6>Where unit files live — and why location matters</h6>"
+      },
+      {
+       "t": "table",
+       "head": [
+        "Location",
+        "Priority",
+        "Use for"
+       ],
+       "rows": [
+        [
+         "<code>/etc/systemd/system/</code>",
+         "Highest — overrides everything below",
+         "<strong>Your own custom units go here</strong>"
+        ],
+        [
+         "<code>/run/systemd/system/</code>",
+         "Runtime-only, not persisted across reboot",
+         "Rarely used manually"
+        ],
+        [
+         "<code>/lib/systemd/system/</code> (or <code>/usr/lib/systemd/system/</code>)",
+         "Lowest — package-installed defaults",
+         "Managed by <code>apt</code>/<code>dnf</code> — never hand-edit these directly"
+        ]
+       ]
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Rule:</strong> always create your own units in <code>/etc/systemd/system/</code>. If you need to modify a package-provided unit instead of writing a new one, use an override (see section 6) rather than editing the package's file directly — your edit would be silently overwritten on the next package update."
+      }
+     ]
+    },
+    {
+     "id": "anatomy-of-a-service-unit-file",
+     "title": "Anatomy of a Service Unit File",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "ini",
+       "code": "# /etc/systemd/system/myapp.service\n\n[Unit]\nDescription=My Application\nAfter=network-online.target\nWants=network-online.target\n\n[Service]\nType=simple\nUser=myappuser\nGroup=myappuser\nWorkingDirectory=/opt/myapp\nExecStart=/usr/bin/python3 /opt/myapp/main.py\nRestart=on-failure\nRestartSec=5\nEnvironment=APP_ENV=production\nEnvironmentFile=/opt/myapp/.env\nStandardOutput=journal\nStandardError=journal\n\n[Install]\nWantedBy=multi-user.target"
+      },
+      {
+       "t": "text",
+       "html": "<h6>`[Unit]` section</h6>"
+      },
+      {
+       "t": "table",
+       "head": [
+        "Directive",
+        "Meaning"
+       ],
+       "rows": [
+        [
+         "<code>Description</code>",
+         "human-readable label, shown in <code>systemctl status</code>"
+        ],
+        [
+         "<code>After=</code>",
+         "pure <strong>ordering</strong> — start this unit after the listed ones, but doesn't force them to be pulled in as dependencies by itself"
+        ],
+        [
+         "<code>Before=</code>",
+         "the reverse of <code>After=</code>"
+        ],
+        [
+         "<code>Requires=</code>",
+         "a <strong>hard dependency</strong> — if the required unit fails, this one is stopped too"
+        ],
+        [
+         "<code>Wants=</code>",
+         "a <strong>soft dependency</strong> — pulls in the listed unit if possible, but doesn't fail this one if it doesn't start"
+        ],
+        [
+         "<code>Conflicts=</code>",
+         "this unit cannot run at the same time as the listed one"
+        ]
+       ]
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>The single most common mistake:</strong> using only <code>After=network.target</code> for something that needs actual internet access. <code>network.target</code> just means \"networking subsystem initialized,\" not \"network is actually up and has connectivity\" — for anything that makes outbound connections at startup, use <code>After=network-online.target</code> <strong>and</strong> <code>Wants=network-online.target</code> together, as shown above."
+      },
+      {
+       "t": "text",
+       "html": "<h6>`[Service]` section</h6>"
+      },
+      {
+       "t": "table",
+       "head": [
+        "Directive",
+        "Meaning"
+       ],
+       "rows": [
+        [
+         "<code>Type=</code>",
+         "how systemd should treat this process (see section 3)"
+        ],
+        [
+         "<code>ExecStart=</code>",
+         "the command that actually runs — must be an absolute path"
+        ],
+        [
+         "<code>ExecStop=</code>",
+         "optional custom stop command (systemd sends SIGTERM by default if omitted)"
+        ],
+        [
+         "<code>ExecReload=</code>",
+         "optional command for <code>systemctl reload</code> (e.g. send SIGHUP instead of a full restart)"
+        ],
+        [
+         "<code>Restart=</code>",
+         "when to auto-restart (see section 4)"
+        ],
+        [
+         "<code>RestartSec=</code>",
+         "delay before a restart attempt"
+        ],
+        [
+         "<code>User=</code> / <code>Group=</code>",
+         "run as this user instead of root — always set this unless you specifically need root"
+        ],
+        [
+         "<code>WorkingDirectory=</code>",
+         "the directory the process starts in — matters for relative file paths in your app"
+        ],
+        [
+         "<code>Environment=</code>",
+         "inline environment variables (repeat the line for multiple)"
+        ],
+        [
+         "<code>EnvironmentFile=</code>",
+         "load environment variables from a file (your <code>.env</code> pattern from the important-files guide)"
+        ]
+       ]
+      },
+      {
+       "t": "text",
+       "html": "<h6>`[Install]` section</h6>"
+      },
+      {
+       "t": "table",
+       "head": [
+        "Directive",
+        "Meaning"
+       ],
+       "rows": [
+        [
+         "<code>WantedBy=multi-user.target</code>",
+         "which target pulls this in when enabled — <code>multi-user.target</code> is the standard choice for a normal background service"
+        ]
+       ]
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Note:</strong> <code>[Install]</code> only matters for <code>systemctl enable</code> — it has zero effect on <code>systemctl start</code>. A unit with no <code>[Install]</code> section can still be started manually, it just can't be enabled to start automatically at boot."
+      }
+     ]
+    },
+    {
+     "id": "service-types-picking-the-right-one",
+     "title": "Service Types — Picking the Right One",
+     "blocks": [
+      {
+       "t": "table",
+       "head": [
+        "Type",
+        "Use when"
+       ],
+       "rows": [
+        [
+         "<code>simple</code> (default)",
+         "the process started by <code>ExecStart</code> stays in the foreground and IS the service — the overwhelming majority of custom scripts/apps"
+        ],
+        [
+         "<code>forking</code>",
+         "a traditional daemon that forks into the background and the parent exits — systemd needs <code>PIDFile=</code> to track the actual running process"
+        ],
+        [
+         "<code>oneshot</code>",
+         "a task that runs once and exits, not a long-running process — pair with <code>RemainAfterExit=yes</code> if later units should treat it as \"active\" even after it exits"
+        ],
+        [
+         "<code>notify</code>",
+         "the app itself tells systemd when it's actually ready via <code>sd_notify()</code> — more precise startup ordering, requires app-level support"
+        ],
+        [
+         "<code>idle</code>",
+         "delays execution until other jobs have finished — mostly cosmetic, avoids interleaving output on boot"
+        ]
+       ]
+      },
+      {
+       "t": "text",
+       "html": "<p><strong>For your own scripts (Python, Node, Dart/Flutter backend processes, etc.), <code>simple</code> is almost always correct</strong> unless the process explicitly daemonizes itself.</p>"
+      }
+     ]
+    },
+    {
+     "id": "restart-policies-preventing-restart-loops",
+     "title": "Restart Policies & Preventing Restart Loops",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "ini",
+       "code": "Restart=on-failure\nRestartSec=5\nStartLimitIntervalSec=60\nStartLimitBurst=3"
+      },
+      {
+       "t": "table",
+       "head": [
+        "`Restart=` value",
+        "Restarts when..."
+       ],
+       "rows": [
+        [
+         "<code>no</code> (default)",
+         "never auto-restarts"
+        ],
+        [
+         "<code>on-success</code>",
+         "only if it exited cleanly (0) — unusual, rarely what you want"
+        ],
+        [
+         "<code>on-failure</code>",
+         "exited with a non-zero code, or was killed by a signal — <strong>the common choice</strong>"
+        ],
+        [
+         "<code>on-abnormal</code>",
+         "crashed, was killed, or timed out — but not a clean non-zero exit"
+        ],
+        [
+         "<code>always</code>",
+         "restarts no matter how it exited, including clean shutdowns — use carefully"
+        ]
+       ]
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong><code>StartLimitIntervalSec</code>/<code>StartLimitBurst</code> matters more than it looks:</strong> without a limit, a genuinely broken service (crashes instantly every time) will restart in an infinite tight loop, burning CPU and flooding your logs. The example above says \"if it fails 3 times within 60 seconds, stop trying and give up\" — check <code>systemctl status</code> afterward, it'll show <code>Failed to start</code> and stop attempting further restarts until you manually intervene."
+      }
+     ]
+    },
+    {
+     "id": "managing-your-unit",
+     "title": "Managing Your Unit",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "sudo systemctl daemon-reload         # REQUIRED after creating or editing any unit file — systemd caches unit definitions\nsudo systemctl start myapp\nsudo systemctl stop myapp\nsudo systemctl restart myapp\nsudo systemctl reload myapp            # only works if ExecReload= is defined\nsudo systemctl enable myapp              # start automatically on boot\nsudo systemctl enable --now myapp          # enable AND start in one command\nsudo systemctl status myapp\nsudo systemctl disable myapp"
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>The mistake that costs the most debugging time:</strong> editing a unit file and then just running <code>systemctl restart</code> — without <code>daemon-reload</code> first, systemd is still running on the old cached definition, and your changes silently don't apply."
+      }
+     ]
+    },
+    {
+     "id": "overriding-a-package-provided-unit-without-editi",
+     "title": "Overriding a Package-Provided Unit (Without Editing It Directly)",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "sudo systemctl edit nginx"
+      },
+      {
+       "t": "text",
+       "html": "<p>This opens an editor for a small override snippet (stored separately, under <code>/etc/systemd/system/nginx.service.d/override.conf</code>) — your changes layer on top of the original unit instead of replacing it, and survive package updates cleanly.</p>"
+      },
+      {
+       "t": "code",
+       "lang": "ini",
+       "code": "# only need to specify the directives you're actually changing\n[Service]\nRestart=always\nRestartSec=10"
+      }
+     ]
+    },
+    {
+     "id": "systemd-timers-the-modern-cron-replacement",
+     "title": "systemd Timers — The Modern Cron Replacement",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>A timer is a separate unit that triggers another unit (almost always a same-named <code>.service</code>) on a schedule — cron's job, but integrated into systemd with real dependency awareness, native logging, and missed-run recovery.</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>The pairing convention</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "myjob.service     ← what to actually run (Type=oneshot, no [Install] needed)\nmyjob.timer        ← when to run it"
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>The service half:</strong> "
+      },
+      {
+       "t": "code",
+       "lang": "ini",
+       "code": "# /etc/systemd/system/myjob.service\n[Unit]\nDescription=My scheduled job\n\n[Service]\nType=oneshot\nExecStart=/opt/scripts/myjob.sh"
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>The timer half:</strong> "
+      },
+      {
+       "t": "code",
+       "lang": "ini",
+       "code": "# /etc/systemd/system/myjob.timer\n[Unit]\nDescription=Run myjob every 15 minutes\n\n[Timer]\nOnCalendar=*:0/15\nPersistent=true\n\n[Install]\nWantedBy=timers.target"
+      },
+      {
+       "t": "text",
+       "html": "<p><strong>Enable the TIMER, not the service</strong> — the timer is what needs to be enabled/started; it triggers the service on schedule:</p>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "sudo systemctl daemon-reload\nsudo systemctl enable --now myjob.timer"
+      },
+      {
+       "t": "text",
+       "html": "<h6>`OnCalendar=` syntax — more readable than cron once you know it</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "OnCalendar=*-*-* 04:00:00        # every day at 4:00 AM\nOnCalendar=Mon *-*-* 09:00:00      # every Monday at 9:00 AM\nOnCalendar=*:0/15                    # every 15 minutes\nOnCalendar=hourly                     # shorthand — every hour\nOnCalendar=daily                       # shorthand — every day at midnight\nOnCalendar=weekly                       # shorthand — every Monday at midnight"
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Test what a calendar expression actually resolves to, before trusting it:</strong> "
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "systemd-analyze calendar \"Mon *-*-* 09:00:00\""
+      },
+      {
+       "t": "text",
+       "html": "<p>This prints the next several actual trigger times — an easy way to sanity-check your syntax without waiting for it to fire.</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Monotonic timers — relative to boot/activation instead of a fixed clock time</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "ini",
+       "code": "[Timer]\nOnBootSec=10min           # 10 minutes after boot\nOnUnitActiveSec=1h          # 1 hour after this timer last activated its service — good for \"run every hour, but not at a fixed clock time\""
+      },
+      {
+       "t": "text",
+       "html": "<h6>`Persistent=true` — the feature cron simply doesn't have</h6>"
+      },
+      {
+       "t": "text",
+       "html": "<p>If the machine is <strong>off</strong> when a scheduled run would have happened (laptop asleep, server rebooting for updates), <code>Persistent=true</code> makes systemd run the missed job as soon as the system is back up, instead of just silently skipping it until the next scheduled time. This alone is a strong reason to prefer timers over cron for anything that genuinely needs to run — backups, certificate renewal checks, monitoring scripts.</p>"
+      }
+     ]
+    },
+    {
+     "id": "timers-vs-cron-direct-comparison",
+     "title": "Timers vs Cron — Direct Comparison",
+     "blocks": [
+      {
+       "t": "table",
+       "head": [
+        "",
+        "cron",
+        "systemd timers"
+       ],
+       "rows": [
+        [
+         "Logging",
+         "Job output isn't captured by default — you must manually redirect (<code>&gt;&gt; logfile.log 2&gt;&amp;1</code>) or it vanishes",
+         "Captured in <code>journalctl -u myjob.service</code> automatically, no extra config"
+        ],
+        [
+         "Missed runs (machine was off)",
+         "Silently skipped, no recovery",
+         "<code>Persistent=true</code> catches up automatically"
+        ],
+        [
+         "Dependency awareness",
+         "None — cron doesn't know if the network/a mount/another service is ready",
+         "Full systemd dependency system — <code>After=</code>, <code>Requires=</code>, etc. all apply"
+        ],
+        [
+         "Manual testing",
+         "Have to wait for the schedule, or manually run the underlying command yourself",
+         "<code>systemctl start myjob.service</code> runs it immediately, on demand, independent of the timer"
+        ],
+        [
+         "Resource control",
+         "None built-in",
+         "Can apply the same resource limits as any systemd service (<code>MemoryMax=</code>, <code>CPUQuota=</code>, etc.)"
+        ],
+        [
+         "Per-user jobs",
+         "<code>crontab -e</code> per user, separate mechanism",
+         "<code>systemctl --user</code> timers, same unit file format"
+        ],
+        [
+         "Syntax",
+         "Terse, easy to get subtly wrong (<code>* * * * *</code> ordering is easy to misremember)",
+         "More verbose but more explicit, and testable with <code>systemd-analyze calendar</code>"
+        ]
+       ]
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>When cron still makes sense:</strong> extremely simple personal scripts on a system where you don't care about missed-run recovery or structured logging, and you already know cron syntax cold. For anything you'd actually call \"AIOps\" — health checks, backups, monitoring, log rotation triggers — timers are the better default going forward."
+      }
+     ]
+    },
+    {
+     "id": "practical-example-a-health-check-job-aiops-flavo",
+     "title": "Practical Example — A Health-Check Job (AIOps-Flavored)",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>A script that checks a service's health every 5 minutes, logs structured output to the journal, and would be trivial to wire into an alerting pipeline later.</p>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "#!/usr/bin/env bash\n# /opt/scripts/health-check.sh\nset -euo pipefail\n\nlog() { echo \"[$(date '+%Y-%m-%d %H:%M:%S')] $*\"; }\n\nif curl -sf http://localhost:8080/health > /dev/null; then\n    log \"OK: service healthy\"\nelse\n    log \"FAIL: service health check failed\"\n    exit 1     # non-zero exit — this is what lets systemd/monitoring tools recognize failure\nfi"
+      },
+      {
+       "t": "code",
+       "lang": "ini",
+       "code": "# /etc/systemd/system/health-check.service\n[Unit]\nDescription=Health check for myapp\n\n[Service]\nType=oneshot\nExecStart=/opt/scripts/health-check.sh"
+      },
+      {
+       "t": "code",
+       "lang": "ini",
+       "code": "# /etc/systemd/system/health-check.timer\n[Unit]\nDescription=Run health-check every 5 minutes\n\n[Timer]\nOnCalendar=*:0/5\nPersistent=true\n\n[Install]\nWantedBy=timers.target"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "sudo systemctl daemon-reload\nsudo systemctl enable --now health-check.timer"
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Now every run's outcome is queryable with standard tools:</strong> "
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "journalctl -u health-check.service --since today       # full history, timestamped, structured\njournalctl -u health-check.service -p err                 # ONLY the failures\nsystemctl list-timers health-check.timer                    # confirm next scheduled run time"
+      },
+      {
+       "t": "text",
+       "html": "<p>This is the exact advantage over a cron-based version of the same script — no separate log file to manage, no missing timestamps, and <code>journalctl -p err</code> gives you a pre-filtered failure history for free.</p>"
+      }
+     ]
+    },
+    {
+     "id": "debugging-units",
+     "title": "Debugging Units",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "sudo systemd-analyze verify /etc/systemd/system/myapp.service     # catches syntax errors BEFORE you try to start it\nsudo systemctl status myapp                                          # current state + last few log lines\njournalctl -u myapp -f                                                 # live tail\njournalctl -u myapp --since \"10 min ago\"\nsystemctl list-timers --all                                              # every timer, and its next scheduled run\nsystemctl list-units --failed                                              # everything currently in a failed state, system-wide"
+      }
+     ]
+    },
+    {
+     "id": "quick-reference",
+     "title": "Quick Reference",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "CREATE A UNIT       /etc/systemd/system/<name>.service\nAFTER ANY EDIT        sudo systemctl daemon-reload    (always, no exceptions)\nENABLE + START NOW      sudo systemctl enable --now <name>\nCHECK STATUS              systemctl status <name>\nLIVE LOGS                   journalctl -u <name> -f\n\nTIMER PAIR                   <name>.service (Type=oneshot, no [Install])\n                                <name>.timer  (OnCalendar=..., Persistent=true, WantedBy=timers.target)\nENABLE THE TIMER                sudo systemctl enable --now <name>.timer\nTEST A SCHEDULE EXPRESSION        systemd-analyze calendar \"<expression>\"\nSEE ALL SCHEDULED TIMERS            systemctl list-timers --all"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "tmux-screen",
+   "title": "tmux & screen — Sessions That Survive a Disconnect",
+   "icon": "terminal",
+   "category": "terminal",
+   "preview": "",
+   "source": "tmux-screen-guide.md",
+   "words": 1324,
+   "parts": [
+    {
+     "id": "introduction",
+     "title": "Introduction",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>The single fix for the most annoying problem in remote server work: close your laptop, lose wifi, or get disconnected mid-SSH-session, and whatever was running just dies with it. Both tools solve this the same way — by running your actual work in a session on the <strong>server</strong>, independent of your SSH connection, that you can detach from and reattach to later.</p>"
+      }
+     ]
+    },
+    {
+     "id": "why-this-matters-concretely",
+     "title": "Why This Matters, Concretely",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>Without tmux/screen, running something long on a remote box means the SSH connection itself has to survive the entire duration — a laptop going to sleep, a wifi drop, or a closed terminal kills the process along with it. This has directly mattered in every SSH-based guide so far in this series: a long-running <code>dd</code> copy, a Docker Compose stack you're watching logs on, an Ansible playbook against a large fleet, or <code>journalctl -f</code> output you want to leave running while you do something else.</p>"
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>The fix:</strong> start the work inside a tmux/screen session on the server. Detach whenever (deliberately, or by accident via disconnect) — the session and everything running in it keeps going. Reattach later, from the same machine or a different one entirely, and it's exactly where you left it."
+      }
+     ]
+    },
+    {
+     "id": "tmux-the-modern-standard",
+     "title": "tmux — The Modern Standard",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "sudo apt install tmux -y"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Core concepts</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "Session   →  a full workspace, can contain multiple windows\n  └─ Window   →  like a tab, can contain multiple panes\n       └─ Pane    →  a split section of a window, each running its own shell"
+      },
+      {
+       "t": "text",
+       "html": "<h6>The prefix key</h6>"
+      },
+      {
+       "t": "text",
+       "html": "<p>Every tmux command starts with a <strong>prefix</strong> — by default <code>Ctrl+b</code>, pressed and released, then followed by the actual command key. This guide writes it as <code>Prefix + &lt;key&gt;</code>.</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Starting &amp; basic session management</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "tmux                          # start a new, unnamed session\ntmux new -s mysession           # start a new session with a specific name — DO THIS, unnamed sessions are annoying to find later\ntmux ls                          # list all sessions currently running on this machine\ntmux attach -t mysession           # reattach to a specific named session\ntmux attach                          # attach to the most recent session if only one exists\ntmux kill-session -t mysession         # terminate a session entirely"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Detaching (the whole point)</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "Prefix + d      → detach from the current session, leaving it running in the background"
+      },
+      {
+       "t": "text",
+       "html": "<p>You're now back at your normal shell — the session (and everything running inside it) keeps going untouched. <strong>Simply closing your terminal or losing your SSH connection has the same practical effect as <code>Prefix + d</code></strong> — tmux doesn't care how you left, the session survives either way.</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Windows (tabs within a session)</h6>"
+      },
+      {
+       "t": "table",
+       "head": [
+        "Command",
+        "Effect"
+       ],
+       "rows": [
+        [
+         "<code>Prefix + c</code>",
+         "create a new window"
+        ],
+        [
+         "<code>Prefix + ,</code>",
+         "rename the current window (do this, it makes <code>tmux ls</code>/window-switching sane)"
+        ],
+        [
+         "<code>Prefix + n</code>",
+         "next window"
+        ],
+        [
+         "<code>Prefix + p</code>",
+         "previous window"
+        ],
+        [
+         "<code>Prefix + 0</code>–<code>9</code>",
+         "jump directly to window number 0–9"
+        ],
+        [
+         "<code>Prefix + w</code>",
+         "interactive window list/picker"
+        ],
+        [
+         "<code>Prefix + &amp;</code>",
+         "close the current window (asks for confirmation)"
+        ]
+       ]
+      },
+      {
+       "t": "text",
+       "html": "<h6>Panes (splits within a window)</h6>"
+      },
+      {
+       "t": "table",
+       "head": [
+        "Command",
+        "Effect"
+       ],
+       "rows": [
+        [
+         "<code>Prefix + %</code>",
+         "split vertically (side by side)"
+        ],
+        [
+         "<code>Prefix + \"</code>",
+         "split horizontally (stacked)"
+        ],
+        [
+         "<code>Prefix + arrow key</code>",
+         "move between panes"
+        ],
+        [
+         "<code>Prefix + o</code>",
+         "cycle to the next pane"
+        ],
+        [
+         "<code>Prefix + z</code>",
+         "zoom the current pane to fullscreen (toggle again to un-zoom) — great for temporarily focusing without losing the layout"
+        ],
+        [
+         "<code>Prefix + x</code>",
+         "close the current pane (asks for confirmation)"
+        ],
+        [
+         "<code>Prefix + Ctrl+arrow</code>",
+         "resize the current pane"
+        ]
+       ]
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Practical layout example:</strong> split a window three ways to watch a deploy — one pane running <code>journalctl -u myapp -f</code>, another running <code>docker stats</code>, a third free for actually running commands. All three stay visible simultaneously, and the whole layout survives a detach/reattach exactly as arranged."
+      },
+      {
+       "t": "text",
+       "html": "<h6>Copy mode — scrolling back and copying text</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "Prefix + [        → enter copy mode (lets you scroll up with arrow keys / Page Up)\nq                    → exit copy mode"
+      },
+      {
+       "t": "text",
+       "html": "<p>Inside copy mode: move the cursor, press <code>Space</code> to start a selection, move again, then <code>Enter</code> to copy it into tmux's own buffer.</p>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "Prefix + ]        → paste tmux's copied buffer"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Configuration — `~/.tmux.conf`</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "# ~/.tmux.conf\n\n# Change prefix from Ctrl+b to Ctrl+a (more ergonomic for many people, matches old screen muscle memory)\nset -g prefix C-a\nunbind C-b\nbind C-a send-prefix\n\n# Start window/pane numbering at 1, not 0 — matches keyboard number row order\nset -g base-index 1\nsetw -g pane-base-index 1\n\n# Mouse support — click to switch panes, drag to resize, scroll to scroll back\nset -g mouse on\n\n# Increase scrollback buffer size (default is quite small)\nset -g history-limit 10000\n\n# Faster escape time — noticeable input lag fix for vim users inside tmux\nset -sg escape-time 0\n\n# Status bar — show session name, host, and time\nset -g status-left \"#[bold]#S \"\nset -g status-right \"%Y-%m-%d %H:%M\""
+      },
+      {
+       "t": "text",
+       "html": "<p>Reload a config change without restarting tmux:</p>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "Prefix + :source-file ~/.tmux.conf"
+      }
+     ]
+    },
+    {
+     "id": "screen-the-older-alternative-still-worth-knowing",
+     "title": "screen — The Older Alternative, Still Worth Knowing",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p><code>screen</code> predates tmux and is simpler/more limited (no built-in status bar, weaker scripting), but it's genuinely still present by default on more minimal/older systems where tmux might not be installed — worth knowing the basics even if tmux is your daily driver.</p>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "sudo apt install screen -y"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Basic session management</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "screen                        # start a new, unnamed session\nscreen -S mysession             # start a new NAMED session\nscreen -ls                        # list running sessions\nscreen -r mysession                 # reattach to a named session\nscreen -r                             # reattach if only one session exists\nscreen -d -r mysession                  # force-detach it from anywhere else it's attached, then reattach here (useful if you forgot you left it attached on another terminal)"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Detaching</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "Ctrl+a  d      → detach (screen's prefix is Ctrl+a, not Ctrl+b — note the difference from tmux's default)"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Windows</h6>"
+      },
+      {
+       "t": "table",
+       "head": [
+        "Command",
+        "Effect"
+       ],
+       "rows": [
+        [
+         "<code>Ctrl+a  c</code>",
+         "create a new window"
+        ],
+        [
+         "<code>Ctrl+a  n</code>",
+         "next window"
+        ],
+        [
+         "<code>Ctrl+a  p</code>",
+         "previous window"
+        ],
+        [
+         "<code>Ctrl+a  \"</code>",
+         "interactive window list"
+        ],
+        [
+         "<code>Ctrl+a  A</code>",
+         "rename the current window"
+        ]
+       ]
+      },
+      {
+       "t": "text",
+       "html": "<h6>Basic splits (screen's split support is more limited than tmux's)</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "Ctrl+a  S      → split horizontally\nCtrl+a  |       → split vertically (newer screen versions)\nCtrl+a  Tab       → switch between splits"
+      }
+     ]
+    },
+    {
+     "id": "tmux-vs-screen-direct-comparison",
+     "title": "tmux vs screen — Direct Comparison",
+     "blocks": [
+      {
+       "t": "table",
+       "head": [
+        "",
+        "tmux",
+        "screen"
+       ],
+       "rows": [
+        [
+         "Default prefix",
+         "<code>Ctrl+b</code>",
+         "<code>Ctrl+a</code>"
+        ],
+        [
+         "Pane splitting",
+         "Full support, flexible, resizable",
+         "Present but more limited/clunkier"
+        ],
+        [
+         "Scripting/automation",
+         "Strong (<code>tmux send-keys</code>, scriptable session setup)",
+         "Weaker"
+        ],
+        [
+         "Status bar",
+         "Built-in, customizable",
+         "Not built-in"
+        ],
+        [
+         "Mouse support",
+         "Yes (<code>set -g mouse on</code>)",
+         "Limited"
+        ],
+        [
+         "Active development",
+         "Yes",
+         "Largely maintenance-only at this point"
+        ],
+        [
+         "Availability",
+         "Needs installing on most distros",
+         "Sometimes present by default already, especially on older/minimal systems"
+        ]
+       ]
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Practical takeaway:</strong> learn tmux as your daily driver — it's more capable and what most current documentation/dotfiles assume. Recognize screen's basics for the occasional older box where it's the only one already installed and you don't want to bother installing tmux for a two-minute task."
+      }
+     ]
+    },
+    {
+     "id": "practical-workflow-tying-this-into-your-existing",
+     "title": "Practical Workflow — Tying This Into Your Existing Guides",
+     "blocks": [
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Running a long Ansible playbook against your fleet without babysitting the SSH connection:</strong> "
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "tmux new -s ansible-run\nansible-playbook -i inventory.ini site.yml\n# Prefix + d to detach, close your laptop, walk away\n# later, from anywhere:\ntmux attach -t ansible-run"
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Watching a Docker Compose monitoring stack while working on something else:</strong> "
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "tmux new -s monitoring\nPrefix + %                          # split the window\n# left pane:\ndocker compose logs -f\n# Prefix + Right arrow to move to the right pane, then:\ndocker stats"
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>A <code>dd</code> disk copy or large <code>rsync</code> that would otherwise die on disconnect:</strong> "
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "tmux new -s backup\nsudo rsync -avh /home/ /mnt/backup-drive/\n# Prefix + d — this now survives your SSH connection dropping entirely"
+      }
+     ]
+    },
+    {
+     "id": "quick-reference",
+     "title": "Quick Reference",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "START NAMED SESSION      tmux new -s <name>\nLIST SESSIONS               tmux ls\nREATTACH                      tmux attach -t <name>\nDETACH                          Prefix + d          (tmux default prefix: Ctrl+b)\n\nWINDOWS                          Prefix + c (new)   Prefix + n/p (next/prev)   Prefix + , (rename)\nPANES                              Prefix + % (vert split)   Prefix + \" (horiz split)   Prefix + arrow (move)\nZOOM A PANE                          Prefix + z\nCOPY MODE                              Prefix + [   then Space to select, Enter to copy   Prefix + ] to paste\n\nSCREEN EQUIVALENT                        screen -S <name>   /   screen -r <name>   /   Ctrl+a d to detach\n\nRULE OF THUMB: if it's going to run longer than you're willing to babysit an SSH\nconnection for, start it inside a named tmux session first — always."
+      }
+     ]
+    }
+   ]
   }
  ]
 }

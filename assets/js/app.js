@@ -945,11 +945,11 @@ async function getContentLibrary() {
   if (_libraryFetch) return _libraryFetch;
   _libraryFetch = (async () => {
     try {
-      const r = await fetch('assets/data/content-library.json?v=26');
+      const r = await fetch('assets/data/content-library.json?v=27');
       if (r.ok) { _libraryCache = await r.json(); return _libraryCache; }
     } catch (_e) {}
     try {
-      await loadScriptFallback('assets/js/data-library.js?v=26');
+      await loadScriptFallback('assets/js/data-library.js?v=27');
       if (window.DATA_CONTENT_LIBRARY) { _libraryCache = window.DATA_CONTENT_LIBRARY; return _libraryCache; }
     } catch (_e) {}
     return null;
@@ -1441,11 +1441,21 @@ function renderSubNav() {
 
   const tab = TABS.find(t => t.id === state.tab);
   if (!tab) return;
-  nav.innerHTML = tab.views.map(v => {
+  let itemsHtml = tab.views.map(v => {
     const active = v.id === state.view;
     const icon = v.icon && typeof ICONS !== 'undefined' && ICONS[v.icon] ? `<span class="subnav-icon" aria-hidden="true">${ICONS[v.icon]}</span>` : '';
     return `<button class="subnav-item ${active ? 'active' : ''}" data-action="set-view" data-tab="${escapeHtml(tab.id)}" data-view="${escapeHtml(v.id)}" ${active ? 'aria-current="page"' : ''}>${icon}${escapeHtml(v.label)}</button>`;
   }).join('');
+  // Linux101/Content sidebar: list every Content Library guide under the static views
+  if ((tab.id === 'linux101' || tab.id === 'content') && typeof DATA !== 'undefined' && DATA.content && Array.isArray(DATA.content.sections)) {
+    const guides = DATA.content.sections.map(s => {
+      const active = state.tab === 'content' && state.view === s.id;
+      const icon = ICONS[s.icon] || ICONS.file;
+      return `<button class="subnav-item subnav-item--guide ${active ? 'active' : ''}" data-action="open-content-section" data-section="${escapeHtml(s.id)}" ${active ? 'aria-current="page"' : ''}><span class="subnav-icon" aria-hidden="true">${icon}</span>${escapeHtml(s.title)}</button>`;
+    }).join('');
+    itemsHtml += `<div class="nav-group nav-group-guides ${state.collapsedGroups['__guides__'] ? 'collapsed' : ''}"><div class="nav-group-header" role="button" tabindex="0" data-action="toggle-guide-group"><span>Content Library</span><svg class="group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></div><div class="nav-group-items">${guides}</div></div>`;
+  }
+  nav.innerHTML = itemsHtml;
 }
 
 function pushRecent(view) {
@@ -3064,6 +3074,15 @@ document.addEventListener('click', (e) => {
   if (a === 'set-view') { setView(btn.dataset.tab, btn.dataset.view); return; }
   if (a === 'go-view') { goToView(btn.dataset.view); return; }
   if (a === 'open-content-section') { openContentSection(btn.dataset.section); return; }
+  if (a === 'toggle-guide-group') {
+    const grp = btn.closest('.nav-group-guides');
+    if (grp) {
+      grp.classList.toggle('collapsed');
+      state.collapsedGroups['__guides__'] = grp.classList.contains('collapsed');
+      saveState();
+    }
+    return;
+  }
   if (a === 'breadcrumb') { setView(btn.dataset.tab, btn.dataset.view); return; }
   if (a === 'switch-tab') { switchTab(btn.dataset.tab); return; }
   if (a === 'toggle-topic') {
