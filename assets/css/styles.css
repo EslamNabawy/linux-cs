@@ -2819,3 +2819,26 @@ body.cursor-hover .cursor-dot{
   .cmd-secondary{ gap:8px; }
   .cmd-grid.is-list .cmd-card{ flex-direction:column; align-items:stretch; }
 }
+
+
+/* ===== Command Bank — Equal Height Cards (user request: all boxes same size) ===== */
+.cmd-grid { grid-auto-rows: 380px; align-items: stretch; }
+.cmd-card { height: 100%; min-height: 0; display:flex; flex-direction:column; overflow:hidden; }
+.cmd-card-desc { min-height: 44px; flex: 0 0 auto; }
+.cmd-card-example { flex: 0 0 auto; min-height: 56px; }
+.cmd-card-flags { min-height: 26px; flex: 0 0 auto; align-content:flex-start; }
+.cmd-card-pit { min-height: 0; flex: 0 0 auto; overflow:hidden; }
+.cmd-card-related { min-height: 0; flex: 0 0 auto; }
+.cmd-card-foot { margin-top: auto; padding-top: 8px; border-top: 1px dashed var(--border-muted); flex: 0 0 auto; }
+.cmd-card-meta { min-height: 22px; }
+.cmd-grid.is-list { grid-auto-rows: auto; }
+.cmd-grid.is-list .cmd-card { height: auto; min-height: 0; flex-direction: row; align-items: center; }
+.cmd-grid.is-list .cmd-card-desc { min-height: 0; flex:1; }
+@media (max-width: 860px) {
+  .cmd-grid { grid-auto-rows: auto; }
+  .cmd-card { height: auto; min-height: 320px; }
+}
+@media (max-width: 640px) {
+  .cmd-grid { grid-auto-rows: 360px; }
+  .cmd-grid.is-list { grid-auto-rows: auto; }
+}
