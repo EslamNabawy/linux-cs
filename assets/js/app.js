@@ -968,17 +968,50 @@ async function getContentLibrary() {
   if (_libraryFetch) return _libraryFetch;
   _libraryFetch = (async () => {
     try {
-      const r = await fetch('assets/data/content-library.json?v=31');
+      const r = await fetch('assets/data/content-library.json?v=32');
       if (r.ok) { _libraryCache = await r.json(); return _libraryCache; }
     } catch (_e) {}
     try {
-      await loadScriptFallback('assets/js/data-library.js?v=31');
+      await loadScriptFallback('assets/js/data-library.js?v=32');
       if (window.DATA_CONTENT_LIBRARY) { _libraryCache = window.DATA_CONTENT_LIBRARY; return _libraryCache; }
     } catch (_e) {}
     return null;
   })();
   return _libraryFetch;
 }
+
+// ===== CMD ↔ GUIDE CROSS-LINK (Phase 1 data) =====
+let _cmdGuidesCache = null;
+let _cmdGuidesFetch = null;
+async function getCmdGuides() {
+  if (_cmdGuidesCache) return _cmdGuidesCache;
+  if (typeof window !== 'undefined' && window.DATA_CMD_GUIDES) { _cmdGuidesCache = window.DATA_CMD_GUIDES; return _cmdGuidesCache; }
+  if (_cmdGuidesFetch) return _cmdGuidesFetch;
+  _cmdGuidesFetch = (async () => {
+    try {
+      const r = await fetch('assets/data/cmd-guides.json?v=32');
+      if (r.ok) { _cmdGuidesCache = await r.json(); return _cmdGuidesCache; }
+    } catch (_e) {}
+    try {
+      await loadScriptFallback('assets/js/data-cmd-guides.js?v=32');
+      if (window.DATA_CMD_GUIDES) { _cmdGuidesCache = window.DATA_CMD_GUIDES; return _cmdGuidesCache; }
+    } catch (_e) {}
+    _cmdGuidesCache = {};
+    return _cmdGuidesCache;
+  })();
+  return _cmdGuidesFetch;
+}
+function getGuidesForCommandSync(cmd) {
+  if (!_cmdGuidesCache) return null;
+  return _cmdGuidesCache[String(cmd).toLowerCase()] || [];
+}
+function getGuidesCountSync(cmd) {
+  const arr = getGuidesForCommandSync(cmd);
+  if (arr === null) return 0;
+  return arr.length;
+}
+// fire-and-forget preload so cards can show 📖 counts quickly
+try { getCmdGuides().then(()=>{ if(state.tab==='linux101' && state.view==='cheatsheet') try{ renderCmdResults(); }catch(_e){} }); } catch(_e){}
 
 function librarySectionMeta(id) {
   const lib = (typeof DATA !== 'undefined' && DATA.content && DATA.content.sections) || [];
@@ -1175,6 +1208,10 @@ async function renderContentSection(id) {
   const next = pos >= 0 && pos < all.length - 1 ? all[pos + 1] : null;
 
   // Hero
+  const guideCmds = (meta && Array.isArray(meta.commands) && meta.commands.length) ? meta.commands : (data && Array.isArray(data.commands) ? data.commands : []);
+  const heroCmdsHtml = guideCmds.length
+    ? `<!-- commands-hero-row --><div class="hero-chip-row">${guideCmds.slice(0,10).map(c=>`<button class="hero-chip" data-action="jump-to-cmd" data-cmd="${escapeHtml(c)}" title="Open ${escapeHtml(c)} in command bank">${escapeHtml(c)}</button>`).join('')}${guideCmds.length>10 ? `<span class="chip chip--sm guide-chip">+${guideCmds.length-10}</span>` : ''}</div><!-- /commands-hero-row -->`
+    : '';
   html += `<div class="note-page note-page--enhanced"><div class="note-hero"><div class="note-hero-card">
     <div class="note-hero-avatar" aria-hidden="true">${ICONS[meta?.icon] || ICONS.folder}</div>
     <div class="note-hero-main">
@@ -1186,6 +1223,7 @@ async function renderContentSection(id) {
         <span class="cl-chip">${escapeHtml(trackLabel)}</span>
         ${isRead ? '<span class="cl-chip cl-chip--read">read ✓</span>' : ''}
       </div>
+      ${heroCmdsHtml}
     </div>
     <div class="note-hero-actions">
       <button class="note-hero-print${isRead ? ' is-read' : ''}" data-action="toggle-guide-read" data-id="${escapeHtml(id)}" aria-pressed="${isRead}" aria-label="Mark guide as read">${ICONS.check} ${isRead ? 'Read ✓' : 'Mark as read'}</button>
@@ -2455,13 +2493,26 @@ function toggleFav(cmd, e){
   if(state.cmdFavOnly) renderCmdResults();
   showToast(idx>=0 ? 'Removed from favorites' : 'Added to favorites');
 }
-function openCmdDrawer(cmd){
+async function openCmdDrawer(cmd){
   const all = buildCommandIndex();
   const c = all.find(x=>x.command===cmd);
   if(!c) return;
   const drawer = document.getElementById('cmdDrawer');
   const panel = document.getElementById('cmdDrawerPanel');
   if(!drawer || !panel) return;
+  // try to get guides for this command (async cache)
+  let guideList = [];
+  try {
+    const map = await getCmdGuides();
+    guideList = (map && map[String(cmd).toLowerCase()]) ? map[String(cmd).toLowerCase()] : [];
+  } catch(_e){ guideList = []; }
+  // also try sync cache as fallback if fetch not yet done
+  if (!guideList.length) {
+    const sync = getGuidesForCommandSync(cmd);
+    if (sync && sync.length) guideList = sync;
+  }
+  const guidesHtml = guideList.length ? guideList.map(g=>`<button class="chip chip--sm guide-chip" data-action="open-content-section" data-section="${escapeHtml(g.id)}" title="${escapeHtml(g.title)}">${escapeHtml(g.title)}</button>`).join('') : '<span style="color:var(--text-dim)">No guides yet</span>';
+  const guidesSection = `<!-- drawer-guides-start --><div class="drawer-section" id="drawer-guides"><h4>Guides</h4><div class="guide-chip-group">${guidesHtml}</div></div><!-- drawer-guides-end -->`;
   const flagsHtml = (c.flags||[]).length ? `<div class="drawer-section"><h4>Flags</h4><div class="table-wrap"><table class="comparison-table"><thead><tr><th>Flag</th><th>Description</th></tr></thead><tbody>${c.flags.map(f=>`<tr><td><code>${f.flag}</code></td><td>${f.desc||'—'}</td></tr>`).join('')}</tbody></table></div></div>` : '';
   const examplesHtml = (c.examples||[]).map((ex,i)=>`<div class="drawer-example"><div class="drawer-example-head"><span class="drawer-example-num">#${i+1}</span><span class="drawer-example-desc">${escapeHtml(ex.desc||'Example')}</span><button class="copy-btn" data-action="explain-cmd" data-cmd="${escapeCopyAttr(ex.code)}" title="Explain with explainshell.com" aria-label="Explain this command with explainshell">${EXTLINK_SVG}</button><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(ex.code)}" aria-label="Copy">${ICONS.copy}</button></div><div class="cmd-example"><span class="code-label">bash</span><code>${highlightCode(ex.code)}</code></div></div>`).join('');
   const relatedHtml = (c.related||[]).length ? `<div class="drawer-related">${c.related.map(r=>`<button class="chip chip--sm" data-action="open-cmd" data-cmd="${escapeHtml(r)}">${escapeHtml(r)}</button>`).join('')}</div>` : '<span style="color:var(--text-dim)">No related</span>';
@@ -2485,6 +2536,7 @@ function openCmdDrawer(cmd){
     <div class="drawer-body">
       <div class="drawer-section"><h4>Examples</h4>${examplesHtml || '<p style="color:var(--text-dim)">No examples yet</p>'}</div>
       ${flagsHtml}
+      ${guidesSection}
       <div class="drawer-section"><h4>Related</h4>${relatedHtml}</div>
       <div class="drawer-section"><h4>Keywords</h4><div class="drawer-keywords">${(c.keywords||[]).map(k=>`<span class="flag-chip">${escapeHtml(k)}</span>`).join(' ')||'<span style="color:var(--text-dim)">—</span>'}</div></div>
     </div>
@@ -2496,6 +2548,20 @@ function openCmdDrawer(cmd){
   drawer.classList.add('open');
   drawer.setAttribute('aria-hidden','false');
   document.body.style.overflow='hidden';
+  // if guides were not yet loaded, try to refresh once loaded
+  if (!guideList.length && !_cmdGuidesCache) {
+    try {
+      const map2 = await getCmdGuides();
+      const list2 = (map2 && map2[String(cmd).toLowerCase()]) ? map2[String(cmd).toLowerCase()] : [];
+      if (list2.length) {
+        const box = document.getElementById('drawer-guides');
+        if (box) {
+          const inner = box.querySelector('.guide-chip-group');
+          if (inner) inner.innerHTML = list2.map(g=>`<button class="chip chip--sm guide-chip" data-action="open-content-section" data-section="${escapeHtml(g.id)}" title="${escapeHtml(g.title)}">${escapeHtml(g.title)}</button>`).join('');
+        }
+      }
+    } catch(_e){}
+  }
 }
 function closeCmdDrawer(){
   const d=document.getElementById('cmdDrawer');
@@ -2510,6 +2576,18 @@ function cmdCard(c) {
   const firstEx = (c.examples && c.examples[0]) ? c.examples[0] : (c.example ? {code:c.example, desc:''} : null);
   const pit = c.pitfall ? `<div class="cmd-card-pit">${ICONS.alert}<span>${escapeHtml(c.pitfall.slice(0,90))}${c.pitfall.length>90?'…':''}</span></div>` : '';
   const rel = (c.related||[]).length ? `<div class="cmd-card-related"><span class="cmd-card-related-label">Related:</span> ${(c.related||[]).slice(0,2).map(r=>`<span class="related-chip">${escapeHtml(r)}</span>`).join('')}${c.related.length>2?`<span class="related-more">+${c.related.length-2}</span>`:''}</div>` : '';
+  // guide chip: 📖 badge if this command appears in any guide
+  const guides = getGuidesForCommandSync(c.command) || [];
+  const guideCount = guides.length;
+  let guideChip = '';
+  if (guideCount) {
+    if (guideCount === 1) {
+      guideChip = `<button class="chip chip--sm guide-chip" data-action="open-content-section" data-section="${escapeHtml(guides[0].id)}" title="Open guide: ${escapeHtml(guides[0].title)}" onclick="event.stopPropagation()">📖 ${escapeHtml(guides[0].title.slice(0,16))}</button>`;
+    } else {
+      // show count + first guide as representative
+      guideChip = `<span class="cmd-guide-chip" onclick="event.stopPropagation()"><button class="chip chip--sm guide-chip" data-action="open-content-section" data-section="${escapeHtml(guides[0].id)}" title="${escapeHtml(guides.map(g=>g.title).join(', '))}">📖 ${guideCount}</button><span class="guide-chip-label">${escapeHtml(guides[0].title.slice(0,12))} +${guideCount-1}</span></span>`;
+    }
+  }
   return `
     <div class="cmd-card ${catClass} ${fav?'is-fav':''}" data-cmd="${escapeHtml(c.command)}" data-action="open-cmd" data-cmd="${escapeHtml(c.command)}" role="button" tabindex="0" aria-label="Open ${escapeHtml(c.command)} details">
       <div class="cmd-card-head">
@@ -2526,6 +2604,7 @@ function cmdCard(c) {
       ${(c.flags||[]).length ? `<div class="cmd-card-flags">${flagChips}${moreFlags}</div>` : ''}
       ${pit}
       ${rel}
+      ${guideCount ? `<div class="cmd-card-guides">${guideChip}</div>` : ''}
       <div class="cmd-card-foot"><span class="cmd-card-more">Details →</span><span class="cmd-card-kbd" aria-hidden="true">↵</span></div>
     </div>`;
 }
@@ -3372,7 +3451,7 @@ function openExplainShell(cmd, triggerEl){
 }
 
 // ===== DELEGATED ACTIONS (central, replaces inline onclick/escapeAttr) =====
-document.addEventListener('click', (e) => {
+document.addEventListener('click', async (e) => {
   const btn = e.target.closest('[data-action]');
   if (!btn) return;
   const a = btn.dataset.action;
@@ -3420,6 +3499,18 @@ document.addEventListener('click', (e) => {
   if (a === 'set-view') { setView(btn.dataset.tab, btn.dataset.view); return; }
   if (a === 'go-view') { goToView(btn.dataset.view); return; }
   if (a === 'open-content-section') { openContentSection(btn.dataset.section); return; }
+  if (a === 'jump-to-cmd') {
+    const cmd = btn.dataset.cmd;
+    if (!cmd) return;
+    e.preventDefault();
+    // switch to bank view then open drawer for that command
+    // close any existing drawer first
+    try { closeCmdDrawer(); } catch(_e){}
+    await setView('linux101', 'cheatsheet');
+    // micro-task to ensure DOM ready
+    setTimeout(()=> { openCmdDrawer(cmd); }, 90);
+    return;
+  }
   if (a === 'cl-set-level') { setClLevel(btn.dataset.level); return; }
   if (a === 'toggle-guide-read') { toggleGuideRead(btn.dataset.id); return; }
   if (a === 'toggle-guide-group') {

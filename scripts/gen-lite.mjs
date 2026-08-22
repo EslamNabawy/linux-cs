@@ -11,9 +11,36 @@ const {DATA, ICONS} = sandbox.result;
 let content = DATA.content;
 try {
   const meta = JSON.parse(fs.readFileSync('assets/data/content-meta.json', 'utf8'));
-  content = meta; // { tracks, sections:[{id,title,icon,category,track,level,order,preview,words,parts}] }
+  content = meta; // { tracks, sections:[{id,title,icon,category,track,level,order,preview,words,parts,commands}] }
 } catch (_e) {
   console.warn('gen-lite: content-meta.json missing — falling back to stale DATA.content from data.js');
+}
+// Phase 1.5: ensure per-guide commands are present via cmd-guides.json fallback/inversion
+try {
+  if (content && Array.isArray(content.sections)) {
+    const hasCmds = content.sections.some(s => Array.isArray(s.commands) && s.commands.length);
+    if (!hasCmds) {
+      const raw = JSON.parse(fs.readFileSync('assets/data/cmd-guides.json', 'utf8'));
+      const guideToCmds = {};
+      for (const [cmd, guides] of Object.entries(raw)) {
+        for (const g of guides) {
+          if (!guideToCmds[g.id]) guideToCmds[g.id] = [];
+          guideToCmds[g.id].push(cmd);
+        }
+      }
+      for (const sec of content.sections) {
+        sec.commands = (guideToCmds[sec.id] || []).sort();
+      }
+    } else {
+      // normalize: sort existing commands
+      for (const sec of content.sections) {
+        if (Array.isArray(sec.commands)) sec.commands = [...sec.commands].sort();
+        else sec.commands = [];
+      }
+    }
+  }
+} catch (_e) {
+  // ignore — build-content may not have emitted cmd-guides yet
 }
 const lite = {
   categories: DATA.categories,

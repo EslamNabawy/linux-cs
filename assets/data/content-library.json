@@ -866,6 +866,26 @@
       }
      ]
     }
+   ],
+   "commands": [
+    "apt",
+    "chgrp",
+    "chmod",
+    "chown",
+    "echo",
+    "find",
+    "groups",
+    "id",
+    "ifconfig",
+    "ip",
+    "journalctl",
+    "kill",
+    "pkill",
+    "ps",
+    "su",
+    "systemctl",
+    "which",
+    "whoami"
    ]
   },
   {
@@ -1284,6 +1304,10 @@
       }
      ]
     }
+   ],
+   "commands": [
+    "alias",
+    "export"
    ]
   },
   {
@@ -2502,6 +2526,12 @@
       }
      ]
     }
+   ],
+   "commands": [
+    "nano",
+    "nano/vim",
+    "type",
+    "vim"
    ]
   },
   {
@@ -2932,6 +2962,14 @@
       }
      ]
     }
+   ],
+   "commands": [
+    "cat",
+    "chmod",
+    "echo",
+    "env",
+    "grep",
+    "rm"
    ]
   },
   {
@@ -3525,6 +3563,22 @@
       }
      ]
     }
+   ],
+   "commands": [
+    "blkid",
+    "chmod",
+    "df",
+    "du",
+    "fdisk",
+    "lsblk",
+    "mkdir",
+    "mkfs.ext4",
+    "mount",
+    "nano",
+    "nano/vim",
+    "ncdu",
+    "parted",
+    "umount"
    ]
   },
   {
@@ -3948,6 +4002,16 @@
       }
      ]
     }
+   ],
+   "commands": [
+    "cat",
+    "journalctl",
+    "ls",
+    "lsblk",
+    "mount",
+    "nano",
+    "nano/vim",
+    "systemctl"
    ]
   },
   {
@@ -4507,6 +4571,11 @@
       }
      ]
     }
+   ],
+   "commands": [
+    "env",
+    "journalctl",
+    "systemctl"
    ]
   },
   {
@@ -5104,6 +5173,17 @@
       }
      ]
     }
+   ],
+   "commands": [
+    "apt",
+    "dmesg",
+    "htop",
+    "iostat",
+    "journalctl",
+    "systemctl",
+    "top",
+    "top/htop",
+    "vmstat"
    ]
   },
   {
@@ -5569,6 +5649,17 @@
       }
      ]
     }
+   ],
+   "commands": [
+    "apt",
+    "chmod",
+    "chown",
+    "dd",
+    "echo",
+    "rm",
+    "sed",
+    "sort",
+    "umount"
    ]
   },
   {
@@ -5961,6 +6052,14 @@
       }
      ]
     }
+   ],
+   "commands": [
+    "cat",
+    "find",
+    "journalctl",
+    "ls",
+    "mkdir",
+    "systemctl"
    ]
   },
   {
@@ -6298,6 +6397,18 @@
       }
      ]
     }
+   ],
+   "commands": [
+    "apt",
+    "cat",
+    "curl",
+    "dig",
+    "mtr",
+    "nc",
+    "nslookup",
+    "ping",
+    "ss",
+    "traceroute"
    ]
   },
   {
@@ -6871,6 +6982,19 @@
       }
      ]
     }
+   ],
+   "commands": [
+    "apt",
+    "curl",
+    "ip",
+    "journalctl",
+    "passwd",
+    "ssh",
+    "ssh-copy-id",
+    "ssh-keygen",
+    "systemctl",
+    "ufw",
+    "whoami"
    ]
   },
   {
@@ -7461,6 +7585,19 @@
       }
      ]
     }
+   ],
+   "commands": [
+    "apt",
+    "dmesg",
+    "head/tail",
+    "ip",
+    "iptables",
+    "nano",
+    "nano/vim",
+    "systemctl",
+    "tail",
+    "type",
+    "ufw"
    ]
   },
   {
@@ -7829,6 +7966,14 @@
       }
      ]
     }
+   ],
+   "commands": [
+    "apt",
+    "cat",
+    "nano",
+    "nano/vim",
+    "ss",
+    "systemctl"
    ]
   },
   {
@@ -8301,6 +8446,15 @@
       }
      ]
     }
+   ],
+   "commands": [
+    "curl",
+    "docker",
+    "docker build",
+    "docker compose",
+    "docker ps",
+    "docker run",
+    "usermod"
    ]
   },
   {
@@ -8736,6 +8890,10 @@
       }
      ]
     }
+   ],
+   "commands": [
+    "apt",
+    "ufw"
    ]
   },
   {
@@ -9066,6 +9224,21 @@
       }
      ]
     }
+   ],
+   "commands": [
+    "apt",
+    "cd",
+    "chown",
+    "cp",
+    "curl",
+    "docker",
+    "docker compose",
+    "groups",
+    "journalctl",
+    "mkdir",
+    "systemctl",
+    "tar",
+    "useradd"
    ]
   },
   {
@@ -9456,6 +9629,14 @@
       }
      ]
     }
+   ],
+   "commands": [
+    "apt",
+    "docker",
+    "docker compose",
+    "rsync",
+    "screen",
+    "tmux"
    ]
   },
   {
@@ -9603,7 +9784,8 @@
       }
      ]
     }
-   ]
+   ],
+   "commands": []
   },
   {
    "id": "user-group-management",
@@ -10177,6 +10359,23 @@
       }
      ]
     }
+   ],
+   "commands": [
+    "chage",
+    "chgrp",
+    "chmod",
+    "chown",
+    "getfacl",
+    "groupadd",
+    "groupdel",
+    "id",
+    "mkdir",
+    "passwd",
+    "setfacl",
+    "su",
+    "useradd",
+    "userdel",
+    "usermod"
    ]
   },
   {
@@ -10512,6 +10711,16 @@
       }
      ]
     }
+   ],
+   "commands": [
+    "cd",
+    "chgrp",
+    "chmod",
+    "find",
+    "ls",
+    "mkdir",
+    "stat",
+    "umask"
    ]
   },
   {
@@ -10893,6 +11102,17 @@
       }
      ]
     }
+   ],
+   "commands": [
+    "cat",
+    "echo",
+    "id",
+    "last",
+    "lastlog",
+    "ls",
+    "mkdir",
+    "mount",
+    "systemctl"
    ]
   }
  ]

@@ -4136,6 +4136,26 @@ const DATA = {
         "order": 1,
         "preview": "The mental model behind Linux — everything is a file, one tree, plain-text config. Read this first.",
         "words": 2385,
+        "commands": [
+          "apt",
+          "chgrp",
+          "chmod",
+          "chown",
+          "echo",
+          "find",
+          "groups",
+          "id",
+          "ifconfig",
+          "ip",
+          "journalctl",
+          "kill",
+          "pkill",
+          "ps",
+          "su",
+          "systemctl",
+          "which",
+          "whoami"
+        ],
         "parts": 15
       },
       {
@@ -4148,6 +4168,10 @@ const DATA = {
         "order": 2,
         "preview": "/etc, /var, /proc — the key files every admin reads and maintains, and what breaks when they vanish.",
         "words": 754,
+        "commands": [
+          "alias",
+          "export"
+        ],
         "parts": 11
       },
       {
@@ -4160,6 +4184,12 @@ const DATA = {
         "order": 3,
         "preview": "Survive and then thrive in vim and nano — the editors you will find on every server you ever SSH into.",
         "words": 2151,
+        "commands": [
+          "nano",
+          "nano/vim",
+          "type",
+          "vim"
+        ],
         "parts": 27
       },
       {
@@ -4172,6 +4202,14 @@ const DATA = {
         "order": 4,
         "preview": "Functions, arrays, loops, and error handling for writing robust bash scripts that fail loudly.",
         "words": 1856,
+        "commands": [
+          "cat",
+          "chmod",
+          "echo",
+          "env",
+          "grep",
+          "rm"
+        ],
         "parts": 12
       },
       {
@@ -4184,6 +4222,22 @@ const DATA = {
         "order": 5,
         "preview": "Partitions, mounts, LVM and df/du — understand disk layout and never run out of space by surprise.",
         "words": 1970,
+        "commands": [
+          "blkid",
+          "chmod",
+          "df",
+          "du",
+          "fdisk",
+          "lsblk",
+          "mkdir",
+          "mkfs.ext4",
+          "mount",
+          "nano",
+          "nano/vim",
+          "ncdu",
+          "parted",
+          "umount"
+        ],
         "parts": 12
       },
       {
@@ -4196,6 +4250,16 @@ const DATA = {
         "order": 6,
         "preview": "From BIOS/UEFI to login prompt — every stage of boot, and how to diagnose a machine that won’t come up.",
         "words": 1915,
+        "commands": [
+          "cat",
+          "journalctl",
+          "ls",
+          "lsblk",
+          "mount",
+          "nano",
+          "nano/vim",
+          "systemctl"
+        ],
         "parts": 9
       },
       {
@@ -4208,6 +4272,11 @@ const DATA = {
         "order": 7,
         "preview": "Units, targets, journalctl and timers — run services properly on any modern distro.",
         "words": 1758,
+        "commands": [
+          "env",
+          "journalctl",
+          "systemctl"
+        ],
         "parts": 12
       },
       {
@@ -4220,6 +4289,17 @@ const DATA = {
         "order": 8,
         "preview": "ps, top, htop and load averages — find the process eating your CPU and read performance signals with confidence.",
         "words": 1844,
+        "commands": [
+          "apt",
+          "dmesg",
+          "htop",
+          "iostat",
+          "journalctl",
+          "systemctl",
+          "top",
+          "top/htop",
+          "vmstat"
+        ],
         "parts": 10
       },
       {
@@ -4232,6 +4312,17 @@ const DATA = {
         "order": 9,
         "preview": "Disk full at 3am? Server unresponsive? Walk through common failure scenarios and their rescue playbooks.",
         "words": 1746,
+        "commands": [
+          "apt",
+          "chmod",
+          "chown",
+          "dd",
+          "echo",
+          "rm",
+          "sed",
+          "sort",
+          "umount"
+        ],
         "parts": 12
       },
       {
@@ -4244,6 +4335,14 @@ const DATA = {
         "order": 10,
         "preview": "journald, rsyslog and log rotation — find the signal in /var/log before the noise buries it.",
         "words": 1320,
+        "commands": [
+          "cat",
+          "find",
+          "journalctl",
+          "ls",
+          "mkdir",
+          "systemctl"
+        ],
         "parts": 6
       },
       {
@@ -4256,6 +4355,18 @@ const DATA = {
         "order": 11,
         "preview": "ping to tcpdump — a layered toolkit for diagnosing “the network is down”, from cable to DNS.",
         "words": 1622,
+        "commands": [
+          "apt",
+          "cat",
+          "curl",
+          "dig",
+          "mtr",
+          "nc",
+          "nslookup",
+          "ping",
+          "ss",
+          "traceroute"
+        ],
         "parts": 10
       },
       {
@@ -4268,6 +4379,19 @@ const DATA = {
         "order": 12,
         "preview": "Keys, agents, tunnels and ssh_config — remote access done securely without password fatigue.",
         "words": 1705,
+        "commands": [
+          "apt",
+          "curl",
+          "ip",
+          "journalctl",
+          "passwd",
+          "ssh",
+          "ssh-copy-id",
+          "ssh-keygen",
+          "systemctl",
+          "ufw",
+          "whoami"
+        ],
         "parts": 13
       },
       {
@@ -4280,6 +4404,19 @@ const DATA = {
         "order": 13,
         "preview": "firewalld and nftables in depth — zones, rules and the exact commands that open (or close) a port safely.",
         "words": 1755,
+        "commands": [
+          "apt",
+          "dmesg",
+          "head/tail",
+          "ip",
+          "iptables",
+          "nano",
+          "nano/vim",
+          "systemctl",
+          "tail",
+          "type",
+          "ufw"
+        ],
         "parts": 8
       },
       {
@@ -4292,6 +4429,14 @@ const DATA = {
         "order": 14,
         "preview": "A practical hardening checklist — users, sudo, SSH, updates and auditing for internet-facing servers.",
         "words": 1436,
+        "commands": [
+          "apt",
+          "cat",
+          "nano",
+          "nano/vim",
+          "ss",
+          "systemctl"
+        ],
         "parts": 7
       },
       {
@@ -4304,6 +4449,15 @@ const DATA = {
         "order": 15,
         "preview": "Images, containers, volumes and networking — run services in Docker without cargo-culting Dockerfiles.",
         "words": 2146,
+        "commands": [
+          "curl",
+          "docker",
+          "docker build",
+          "docker compose",
+          "docker ps",
+          "docker run",
+          "usermod"
+        ],
         "parts": 12
       },
       {
@@ -4316,6 +4470,10 @@ const DATA = {
         "order": 16,
         "preview": "Playbooks, inventories and idempotency — automate ten servers as easily as one.",
         "words": 1763,
+        "commands": [
+          "apt",
+          "ufw"
+        ],
         "parts": 16
       },
       {
@@ -4328,6 +4486,21 @@ const DATA = {
         "order": 17,
         "preview": "Prometheus + Grafana + alerting rules — see server health before your users do.",
         "words": 1416,
+        "commands": [
+          "apt",
+          "cd",
+          "chown",
+          "cp",
+          "curl",
+          "docker",
+          "docker compose",
+          "groups",
+          "journalctl",
+          "mkdir",
+          "systemctl",
+          "tar",
+          "useradd"
+        ],
         "parts": 11
       },
       {
@@ -4340,6 +4513,14 @@ const DATA = {
         "order": 18,
         "preview": "Sessions that survive disconnects — tmux basics that pay off the first time your SSH drops mid-task.",
         "words": 1324,
+        "commands": [
+          "apt",
+          "docker",
+          "docker compose",
+          "rsync",
+          "screen",
+          "tmux"
+        ],
         "parts": 7
       },
       {
@@ -4352,6 +4533,7 @@ const DATA = {
         "order": 19,
         "preview": "The Linux concepts data pipelines actually touch — filesystems, processes, cron and resource limits.",
         "words": 777,
+        "commands": [],
         "parts": 6
       },
       {
@@ -4364,6 +4546,23 @@ const DATA = {
         "order": 20,
         "preview": "Users, groups, permissions, sudo and ACLs — create accounts safely, avoid the usermod -G trap, and control access properly.",
         "words": 2057,
+        "commands": [
+          "chage",
+          "chgrp",
+          "chmod",
+          "chown",
+          "getfacl",
+          "groupadd",
+          "groupdel",
+          "id",
+          "mkdir",
+          "passwd",
+          "setfacl",
+          "su",
+          "useradd",
+          "userdel",
+          "usermod"
+        ],
         "parts": 8
       },
       {
@@ -4376,6 +4575,16 @@ const DATA = {
         "order": 21,
         "preview": "What rwx really means on directories, SGID + sticky bits, umask, and namei -l for tracing permission denied up the path.",
         "words": 1237,
+        "commands": [
+          "cd",
+          "chgrp",
+          "chmod",
+          "find",
+          "ls",
+          "mkdir",
+          "stat",
+          "umask"
+        ],
         "parts": 7
       },
       {
@@ -4388,6 +4597,17 @@ const DATA = {
         "order": 22,
         "preview": "PAM, LDAP/AD via SSSD, /etc/skel, disk quotas, newgrp and login auditing — identity management at scale.",
         "words": 1422,
+        "commands": [
+          "cat",
+          "echo",
+          "id",
+          "last",
+          "lastlog",
+          "ls",
+          "mkdir",
+          "mount",
+          "systemctl"
+        ],
         "parts": 8
       }
     ]
