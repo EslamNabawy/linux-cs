@@ -71,8 +71,12 @@ const state = {
   completedLab: savedState.completedLab || {},
   completedModules: savedState.completedModules || {},
   expandedModules: savedState.expandedModules || {},
-  quizScores: savedState.quizScores || {}
+  quizScores: savedState.quizScores || {},
+  readGuides: savedState.readGuides || {}
 };
+// Hub filter state (session-only, not persisted)
+let _clLevelFilter = 'all';
+let _clTerm = '';
 
 function saveState() {
   const persist = {
@@ -97,7 +101,8 @@ function saveState() {
     completedLab: state.completedLab,
     completedModules: state.completedModules,
     expandedModules: state.expandedModules,
-    quizScores: state.quizScores
+    quizScores: state.quizScores,
+    readGuides: state.readGuides
   };
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(persist)); } catch (e) { /* ignore */ }
 }
@@ -963,11 +968,11 @@ async function getContentLibrary() {
   if (_libraryFetch) return _libraryFetch;
   _libraryFetch = (async () => {
     try {
-      const r = await fetch('assets/data/content-library.json?v=27');
+      const r = await fetch('assets/data/content-library.json?v=30');
       if (r.ok) { _libraryCache = await r.json(); return _libraryCache; }
     } catch (_e) {}
     try {
-      await loadScriptFallback('assets/js/data-library.js?v=27');
+      await loadScriptFallback('assets/js/data-library.js?v=30');
       if (window.DATA_CONTENT_LIBRARY) { _libraryCache = window.DATA_CONTENT_LIBRARY; return _libraryCache; }
     } catch (_e) {}
     return null;
@@ -980,28 +985,151 @@ function librarySectionMeta(id) {
   return lib.find(s => s.id === id) || null;
 }
 
+const LIB_TRACKS = [
+  { id: 'foundations',      label: 'Start Here — Foundations' },
+  { id: 'system-ops',       label: 'System Operations' },
+  { id: 'network-security', label: 'Networking & Security' },
+  { id: 'ops-automation',   label: 'Servers & Automation' }
+];
+const LIB_LEVELS = [
+  { id: 'all',          label: 'All levels' },
+  { id: 'beginner',     label: 'Beginner' },
+  { id: 'intermediate', label: 'Intermediate' },
+  { id: 'advanced',     label: 'Advanced' }
+];
+function libGuideMeta() {
+  return (typeof DATA !== 'undefined' && DATA.content && Array.isArray(DATA.content.sections)) ? DATA.content.sections : [];
+}
+function libMin(words) { return Math.max(1, Math.round((words || 0) / 180)); }
+
+function clCard(s, opts) {
+  const o = opts || {};
+  const read = !!state.readGuides[s.id];
+  const icon = ICONS[s.icon] || ICONS.folder;
+  const lvlClass = 'cl-level--' + (s.level || 'beginner');
+  return `
+    <button class="cl-card${read ? ' is-read' : ''}" data-action="open-content-section" data-section="${escapeHtml(s.id)}" aria-label="Open guide: ${escapeHtml(s.title)}">
+      <div class="cl-card-top">
+        <div class="cl-card-icon" aria-hidden="true">${icon}</div>
+        ${o.num ? `<span class="cl-card-num">#${s.order}</span>` : ''}
+        ${read ? `<span class="cl-card-read" title="Marked as read">${ICONS.check}</span>` : ''}
+      </div>
+      <div class="cl-card-title">${escapeHtml(s.title)}</div>
+      <div class="cl-card-preview">${escapeHtml(s.preview || '')}</div>
+      <div class="cl-card-foot">
+        <span class="cl-chip cl-chip--lvl ${lvlClass}">${escapeHtml(s.level || 'beginner')}</span>
+        <span class="cl-chip">~${libMin(s.words)} min</span>
+        <span class="cl-chip">${s.parts} parts</span>
+      </div>
+    </button>`;
+}
+
 function renderContentLibrary() {
-  const contentData = DATA.content || {};
-  let html = breadcrumbs([{label:'Linux101', tab:'content'}, {label:'Linux 101 Content'}]);
-  html += `<h1 class="view-title">Linux 101 Content Library</h1>`;
-  html += `<p class="view-subtitle">Deep-dive guides — click any topic to read it here on the site.</p>`;
-  html += `<div class="content-library-grid">`;
-  contentData.sections.forEach(section => {
-    html += `
-      <button class="content-library-card" data-action="open-content-section" data-section="${escapeHtml(section.id)}" aria-label="Open ${escapeHtml(section.title)}">
-        <div class="content-library-icon">${ICONS[section.icon] || ICONS.folder}</div>
-        <div class="content-library-info">
-          <div class="content-library-title">${section.title}</div>
-          <div class="content-library-preview">${section.preview}</div>
-        </div>
-        <div class="content-library-arrow">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-        </div>
-      </button>
-    `;
+  const sections = libGuideMeta().slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+  let html = breadcrumbs([{label:'Linux101', tab:'content'}, {label:'Guides'}]);
+  const totalWords = sections.reduce((a, s) => a + (s.words || 0), 0);
+  const readCount = sections.filter(s => state.readGuides[s.id]).length;
+  html += `<h1 class="view-title">Linux Guides</h1>`;
+  html += `<p class="view-subtitle">${sections.length} deep-dive guides — from first principles to production ops. Follow a track top-to-bottom, or jump to what you need.</p>`;
+  html += `<div class="cl-statsbar">
+    <span class="cl-stat"><strong>${sections.length}</strong> guides</span>
+    <span class="cl-stat"><strong>~${Math.round(totalWords / 180)}</strong> min total reading</span>
+    <span class="cl-stat"><strong>${LIB_TRACKS.length}</strong> tracks</span>
+    <span class="cl-stat"><strong>${readCount}/${sections.length}</strong> read</span>
+  </div>`;
+
+  // Start-here strip: the first three foundations beginner guides
+  const starters = sections.filter(s => s.track === 'foundations' && s.level === 'beginner').slice(0, 3);
+  if (starters.length === 3 && !_clTerm && _clLevelFilter === 'all') {
+    html += `<div class="cl-start">
+      <div class="cl-start-head"><span class="cl-start-badge">START HERE</span><span class="cl-start-sub">New to Linux? Read these three in order.</span></div>
+      <div class="cl-start-strip">`;
+    starters.forEach((s, i) => {
+      const read = !!state.readGuides[s.id];
+      html += `
+        <button class="cl-step${read ? ' is-read' : ''}" data-action="open-content-section" data-section="${escapeHtml(s.id)}" aria-label="Start with ${escapeHtml(s.title)}">
+          <span class="cl-step-num">${i + 1}</span>
+          <span class="cl-step-body">
+            <span class="cl-step-title">${escapeHtml(s.title)}</span>
+            <span class="cl-step-meta">~${libMin(s.words)} min${read ? ' · read ✓' : ''}</span>
+          </span>
+          <span class="cl-step-arrow" aria-hidden="true">${i < 2 ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>' : ''}</span>
+        </button>`;
+    });
+    html += `</div></div>`;
+  }
+
+  // Filter row
+  html += `<div class="cl-filterrow">
+    <div class="cl-filter-chips" role="group" aria-label="Filter by level">
+      ${LIB_LEVELS.map(l => `<button class="cl-fchip${_clLevelFilter === l.id ? ' is-active' : ''}" data-action="cl-set-level" data-level="${l.id}">${l.label}</button>`).join('')}
+    </div>
+    <input type="text" class="cl-filter-input" id="clFilterInput" placeholder="Filter guides…" value="${escapeHtml(_clTerm)}" aria-label="Filter guides" autocomplete="off" spellcheck="false">
+  </div>`;
+
+  // Tracks
+  const term = _clTerm.toLowerCase();
+  const visible = sections.filter(s =>
+    (_clLevelFilter === 'all' || s.level === _clLevelFilter) &&
+    (!term || `${s.title} ${s.preview || ''} ${s.category || ''}`.toLowerCase().includes(term)));
+  html += `<div id="clTracks">`;
+  if (!visible.length) {
+    html += `<div class="no-results"><h3>No guides match “${escapeHtml(_clTerm)}”</h3><p>Try a broader term or clear the level filter.</p></div>`;
+  }
+  LIB_TRACKS.forEach(track => {
+    const list = visible.filter(s => s.track === track.id).sort((a, b) => (a.order || 0) - (b.order || 0));
+    if (!list.length) return;
+    const doneInTrack = list.filter(s => state.readGuides[s.id]).length;
+    const trackWords = list.reduce((a, s) => a + (s.words || 0), 0);
+    html += `<section class="cl-track">
+      <div class="cl-track-head">
+        <h2 class="cl-track-title">${escapeHtml(track.label)}</h2>
+        <span class="cl-track-meta">${list.length} guides · ~${Math.round(trackWords / 180)} min${doneInTrack ? ` · ${doneInTrack} read` : ''}</span>
+      </div>
+      <div class="cl-grid">${list.map(s => clCard(s, {})).join('')}</div>
+    </section>`;
   });
   html += `</div>`;
   return html;
+}
+
+function setClLevel(level) {
+  _clLevelFilter = level || 'all';
+  render();
+}
+function setClTerm(term) {
+  _clTerm = term || '';
+  const box = document.getElementById('clTracks');
+  if (!box) { render(); return; }
+  // re-render just the track area to keep the input focused
+  const sections = libGuideMeta().slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+  const t = _clTerm.toLowerCase();
+  const visible = sections.filter(s =>
+    (_clLevelFilter === 'all' || s.level === _clLevelFilter) &&
+    (!t || `${s.title} ${s.preview || ''} ${s.category || ''}`.toLowerCase().includes(t)));
+  let html = '';
+  if (!visible.length) {
+    html += `<div class="no-results"><h3>No guides match “${escapeHtml(_clTerm)}”</h3><p>Try a broader term or clear the level filter.</p></div>`;
+  }
+  LIB_TRACKS.forEach(track => {
+    const list = visible.filter(s => s.track === track.id).sort((a, b) => (a.order || 0) - (b.order || 0));
+    if (!list.length) return;
+    html += `<section class="cl-track">
+      <div class="cl-track-head">
+        <h2 class="cl-track-title">${escapeHtml(track.label)}</h2>
+        <span class="cl-track-meta">${list.length} guides</span>
+      </div>
+      <div class="cl-grid">${list.map(s => clCard(s, {})).join('')}</div>
+    </section>`;
+  });
+  box.innerHTML = html;
+}
+
+function toggleGuideRead(id) {
+  if (!id) return;
+  state.readGuides[id] = !state.readGuides[id];
+  saveState();
+  render();
 }
 
 async function openContentSection(id) {
@@ -1013,9 +1141,10 @@ async function renderContentSection(id) {
   const lib = await getContentLibrary();
   const data = lib && Array.isArray(lib.sections) ? lib.sections.find(s => s.id === id) : null;
 
+  const trackLabel = (LIB_TRACKS.find(t => t.id === meta?.track) || {}).label || 'Guides';
   let html = breadcrumbs([
     {label:'Linux101', tab:'content'},
-    {label:'Linux 101 Content', tab:'content', view:'library'},
+    {label:trackLabel, tab:'content', view:'library'},
     {label: meta ? meta.title : id}
   ]);
   if (!data || !data.parts || !data.parts.length) {
@@ -1027,20 +1156,39 @@ async function renderContentSection(id) {
   const readingTime = Math.max(1, Math.round(totalWords / 180));
   const partCount = data.parts.length;
   const secId = p => `lib-${id}-${p.id}`;
+  const isRead = !!state.readGuides[id];
+  // per-part reading estimates
+  const partMin = p => {
+    const w = p.blocks.reduce((a, b) => {
+      if (b.t === 'text' || b.t === 'callout') return a + stripHtml(b.html || '').split(/\s+/).filter(Boolean).length;
+      if (b.t === 'list' || b.t === 'steps') return a + (b.items || []).join(' ').split(/\s+/).filter(Boolean).length;
+      if (b.t === 'code') return a + (b.code || '').split('\n').length;
+      if (b.t === 'table') return a + ((b.head || []).join(' ') + ' ' + (b.rows || []).flat().join(' ')).split(/\s+/).filter(Boolean).length;
+      return a;
+    }, 0);
+    return Math.max(1, Math.round(w / 180));
+  };
+  // prev/next in learning order
+  const all = libGuideMeta().slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+  const pos = all.findIndex(s => s.id === id);
+  const prev = pos > 0 ? all[pos - 1] : null;
+  const next = pos >= 0 && pos < all.length - 1 ? all[pos + 1] : null;
 
   // Hero
   html += `<div class="note-page note-page--enhanced"><div class="note-hero"><div class="note-hero-card">
     <div class="note-hero-avatar" aria-hidden="true">${ICONS[meta?.icon] || ICONS.folder}</div>
     <div class="note-hero-main">
-      <div class="note-hero-eyebrow"><span class="note-hero-day">Guide</span> <span aria-hidden="true">·</span> ${partCount} parts <span aria-hidden="true">·</span> ~${readingTime} min read</div>
+      <div class="note-hero-eyebrow"><span class="note-hero-day">Guide ${meta?.order ? '#' + meta.order : ''}</span> <span aria-hidden="true">·</span> ${partCount} parts <span aria-hidden="true">·</span> ~${readingTime} min read</div>
       <h1 class="note-hero-title">${escapeHtml(meta ? meta.title : data.title || id)}</h1>
       <p class="note-hero-subtitle">${escapeHtml(meta ? meta.preview : '')}</p>
       <div class="note-hero-meta">
-        <span class="note-meta-chip"><span class="note-meta-dot" aria-hidden="true"></span> Linux 101 Content</span>
-        <span class="note-meta-chip note-meta-chip--muted">${escapeHtml(data.source || '')}</span>
+        <span class="cl-chip cl-chip--lvl cl-level--${meta?.level || 'beginner'}">${escapeHtml(meta?.level || 'beginner')}</span>
+        <span class="cl-chip">${escapeHtml(trackLabel)}</span>
+        ${isRead ? '<span class="cl-chip cl-chip--read">read ✓</span>' : ''}
       </div>
     </div>
     <div class="note-hero-actions">
+      <button class="note-hero-print${isRead ? ' is-read' : ''}" data-action="toggle-guide-read" data-id="${escapeHtml(id)}" aria-pressed="${isRead}" aria-label="Mark guide as read">${ICONS.check} ${isRead ? 'Read ✓' : 'Mark as read'}</button>
       <button class="note-hero-print" data-action="print-note" aria-label="Print guide">${ICONS.file} Print</button>
     </div>
   </div>
@@ -1051,7 +1199,7 @@ async function renderContentSection(id) {
     <div class="note-toolbar-left">
       <div class="mini-avatar">${ICONS[meta?.icon] || ICONS.folder}</div>
       <div class="mini-name">Guide</div>
-      <span class="note-toolbar-count">${partCount} parts</span>
+      <span class="note-toolbar-count">${partCount} parts · ~${readingTime} min</span>
     </div>
     <div class="note-toolbar-right">
       <select class="note-jump" data-action="jump-lib-part" aria-label="Jump to part">
@@ -1063,20 +1211,18 @@ async function renderContentSection(id) {
   // TOC + body
   html += `<div class="note-layout note-layout--enhanced"><aside class="note-toc" aria-label="Table of contents">`;
   html += `<div class="note-toc-header"><span class="note-toc-title">On this page</span><span class="note-toc-count">${partCount}</span></div><nav class="note-toc-list">`;
-  data.parts.forEach(p => {
-    const icon = ICONS[meta?.icon] || ICONS.file;
-    html += `<a href="#${secId(p)}" data-action="jump-note-link" data-author="__lib__" data-sec="${escapeHtml(p.id)}"><span class="note-toc-icon" aria-hidden="true">${icon}</span><span class="note-toc-text">${escapeHtml(p.title)}</span></a>`;
+  data.parts.forEach((p, idx) => {
+    html += `<a href="#${secId(p)}" data-action="jump-note-link" data-author="__lib__" data-sec="${escapeHtml(p.id)}"><span class="note-toc-num" aria-hidden="true">${idx + 1}</span><span class="note-toc-text">${escapeHtml(p.title)}</span><span class="note-toc-time">~${partMin(p)}m</span></a>`;
   });
   html += `</nav></aside><div class="note-content">`;
   data.parts.forEach((p, idx) => {
-    const icon = ICONS[meta?.icon] || ICONS.file;
     const body = p.blocks.map(renderBlock).join('');
     html += `<section class="note-section note-section--enhanced" id="${secId(p)}">
       <div class="note-section-header">
-        <div class="note-section-icon" aria-hidden="true">${icon}</div>
+        <div class="note-section-num" aria-hidden="true">${String(idx + 1).padStart(2, '0')}</div>
         <div class="note-section-head">
           <h2 class="note-section-title">${escapeHtml(p.title)}</h2>
-          <div class="note-section-meta"><span>#${idx+1}</span> <span aria-hidden="true">·</span> ${p.blocks.length} blocks</div>
+          <div class="note-section-meta">~${partMin(p)} min</div>
         </div>
         <button class="note-anchor" data-action="copy" data-copy="${escapeCopyAttr(location.origin + location.pathname + '#' + secId(p))}" title="Copy link to section" aria-label="Copy link to section">${ICONS.link}</button>
       </div>
@@ -1084,7 +1230,16 @@ async function renderContentSection(id) {
     </section>`;
   });
   html += `</div></div></div>`;
-  html += `<div class="note-crossnav"><button class="chip" data-action="set-view" data-tab="content" data-view="library">← Back to Library</button><button class="toggle-complete" data-action="print-note">${ICONS.file} Print guide</button></div>`;
+  // Prev / All / Next footer — follows the learning order across tracks
+  html += `<div class="cl-pn">`;
+  html += prev
+    ? `<button class="cl-pn-btn cl-pn-prev" data-action="open-content-section" data-section="${escapeHtml(prev.id)}"><span class="cl-pn-dir">← Previous</span><span class="cl-pn-title">${escapeHtml(prev.title)}</span></button>`
+    : `<span class="cl-pn-spacer" aria-hidden="true"></span>`;
+  html += `<button class="chip" data-action="set-view" data-tab="content" data-view="library">All guides</button>`;
+  html += next
+    ? `<button class="cl-pn-btn cl-pn-next" data-action="open-content-section" data-section="${escapeHtml(next.id)}"><span class="cl-pn-dir">Next →</span><span class="cl-pn-title">${escapeHtml(next.title)}</span></button>`
+    : `<span class="cl-pn-spacer" aria-hidden="true"></span>`;
+  html += `</div>`;
   return html;
 }
 
@@ -1147,8 +1302,8 @@ const TABS = [
     { id: 'day5', label: 'Day 5', icon: 'file' }
   ]},
   { id: 'quiz', label: 'Practice Lab', views: [ { id: 'quiz', label: 'Drill & Quiz', icon: 'zap' } ] },
-  { id: 'content', label: 'Linux 101 Content', icon: 'folder', views: [
-    { id: 'library', label: 'Library', icon: 'folder' }
+  { id: 'content', label: 'Guides', icon: 'folder', views: [
+    { id: 'library', label: 'All Guides', icon: 'folder' }
   ]}
 ];
 const LEGACY_TABS = ['general', 'links'];
@@ -1243,7 +1398,7 @@ function titleForView(tab, view) {
     'day2-notes-tarek': "Tarek's Notes",
     'day2-lab': 'Lab 2',
     'day3-content': 'Day 3 — Coming Soon',
-    'library': 'Linux 101 Content',
+    'library': 'Guides',
     'quiz': 'Practice Lab — Drill & Quiz',
     'links': 'Resources'
   };
@@ -1464,14 +1619,26 @@ function renderSubNav() {
     const icon = v.icon && typeof ICONS !== 'undefined' && ICONS[v.icon] ? `<span class="subnav-icon" aria-hidden="true">${ICONS[v.icon]}</span>` : '';
     return `<button class="subnav-item ${active ? 'active' : ''}" data-action="set-view" data-tab="${escapeHtml(tab.id)}" data-view="${escapeHtml(v.id)}" ${active ? 'aria-current="page"' : ''}>${icon}${escapeHtml(v.label)}</button>`;
   }).join('');
-  // Linux101/Content sidebar: list every Content Library guide under the static views
+  // Linux101/Content sidebar: guides grouped by track (collapsible per track)
   if ((tab.id === 'linux101' || tab.id === 'content') && typeof DATA !== 'undefined' && DATA.content && Array.isArray(DATA.content.sections)) {
-    const guides = DATA.content.sections.map(s => {
-      const active = state.tab === 'content' && state.view === s.id;
-      const icon = ICONS[s.icon] || ICONS.file;
-      return `<button class="subnav-item subnav-item--guide ${active ? 'active' : ''}" data-action="open-content-section" data-section="${escapeHtml(s.id)}" ${active ? 'aria-current="page"' : ''}><span class="subnav-icon" aria-hidden="true">${icon}</span>${escapeHtml(s.title)}</button>`;
-    }).join('');
-    itemsHtml += `<div class="nav-group nav-group-guides ${state.collapsedGroups['__guides__'] ? 'collapsed' : ''}"><div class="nav-group-header" role="button" tabindex="0" data-action="toggle-guide-group"><span>Content Library</span><svg class="group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></div><div class="nav-group-items">${guides}</div></div>`;
+    const sections = DATA.content.sections.slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+    const activeGuide = state.tab === 'content' ? state.view : null;
+    LIB_TRACKS.forEach(track => {
+      const list = sections.filter(s => s.track === track.id);
+      if (!list.length) return;
+      const trackActive = list.some(s => s.id === activeGuide);
+      // collapse every track except the one holding the active guide
+      const collapsed = state.collapsedGroups['__track__' + track.id] !== undefined
+        ? state.collapsedGroups['__track__' + track.id]
+        : !trackActive;
+      const items = list.map(s => {
+        const active = s.id === activeGuide;
+        const icon = ICONS[s.icon] || ICONS.file;
+        const read = state.readGuides[s.id];
+        return `<button class="subnav-item subnav-item--guide ${active ? 'active' : ''}" data-action="open-content-section" data-section="${escapeHtml(s.id)}" ${active ? 'aria-current="page"' : ''}><span class="subnav-icon" aria-hidden="true">${icon}</span><span class="subnav-guide-label">${escapeHtml(s.title)}</span>${read ? '<span class="subnav-guide-read" title="Read">✓</span>' : ''}</button>`;
+      }).join('');
+      itemsHtml += `<div class="nav-group nav-group-guides ${collapsed ? 'collapsed' : ''}${trackActive ? ' is-active-track' : ''}"><div class="nav-group-header" role="button" tabindex="0" data-action="toggle-guide-group" data-track="${escapeHtml(track.id)}"><span>${escapeHtml(track.label)}</span><svg class="group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg></div><div class="nav-group-items">${items}</div></div>`;
+    });
   }
   nav.innerHTML = itemsHtml;
 }
@@ -1929,6 +2096,10 @@ function openSpotlight(){
   document.body.style.overflow = 'hidden';
   _spotlightOpen = true;
   _spotlightIndex = -1;
+  // fire-and-forget: warm the guide index so spotlight can match guide parts
+  getContentLibrary().then(lib => {
+    if(_spotlightOpen && lib && (input.value || '').trim()) renderSpotlight(input.value);
+  }).catch(()=>{});
   setTimeout(()=> input.focus(), 30);
   renderSpotlight(input.value || '');
 }
@@ -2004,6 +2175,20 @@ function spotlightCollect(term){
       if(tp.title.toLowerCase().includes(t) || tp.desc.toLowerCase().includes(t)) add('Topic', tp.title, tp.desc.slice(0,80), 'topicindex', 'linux101', null);
     });
   }
+  // guides (Linux 101 Content Library) — metadata from DATA.content, part titles from lazy library data
+  try{
+    const libMeta = (typeof DATA !== 'undefined' && DATA.content && DATA.content.sections) || [];
+    const libData = (_libraryCache && _libraryCache.sections) || [];
+    libMeta.forEach(s=>{
+      const body = libData.find(x => x.id === s.id);
+      let matchedPart = null;
+      if(body && Array.isArray(body.parts)){
+        matchedPart = body.parts.find(p => p.title.toLowerCase().includes(t)) || null;
+      }
+      const hay = `${s.title} ${s.preview || ''} ${s.category || ''} ${matchedPart ? matchedPart.title : ''}`.toLowerCase();
+      if(hay.includes(t)) add('Guide', s.title, matchedPart ? 'Part: ' + matchedPart.title : (s.preview || '').slice(0, 90), s.id, 'content', null);
+    });
+  }catch(_e){}
   return results.slice(0, 18);
 }
 function renderSpotlight(term){
@@ -2882,6 +3067,11 @@ document.getElementById('searchInput').addEventListener('input', (e) => {
   render();
 });
 
+// Guides hub: live filter (delegated — the input re-renders with the view)
+document.addEventListener('input', (e) => {
+  if (e.target && e.target.id === 'clFilterInput') setClTerm(e.target.value);
+});
+
 // Mobile: tap the minimized search icon to expand it; collapse when empty and blurred.
 (function setupMobileSearch() {
   const box = document.querySelector('.search-box');
@@ -3230,11 +3420,14 @@ document.addEventListener('click', (e) => {
   if (a === 'set-view') { setView(btn.dataset.tab, btn.dataset.view); return; }
   if (a === 'go-view') { goToView(btn.dataset.view); return; }
   if (a === 'open-content-section') { openContentSection(btn.dataset.section); return; }
+  if (a === 'cl-set-level') { setClLevel(btn.dataset.level); return; }
+  if (a === 'toggle-guide-read') { toggleGuideRead(btn.dataset.id); return; }
   if (a === 'toggle-guide-group') {
     const grp = btn.closest('.nav-group-guides');
     if (grp) {
       grp.classList.toggle('collapsed');
-      state.collapsedGroups['__guides__'] = grp.classList.contains('collapsed');
+      const key = btn.dataset.track ? '__track__' + btn.dataset.track : '__guides__';
+      state.collapsedGroups[key] = grp.classList.contains('collapsed');
       saveState();
     }
     return;
