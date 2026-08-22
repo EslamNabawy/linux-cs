@@ -1,0 +1,250 @@
+{
+  "tracks": [
+    {
+      "id": "foundations",
+      "label": "Start Here — Foundations"
+    },
+    {
+      "id": "system-ops",
+      "label": "System Operations"
+    },
+    {
+      "id": "network-security",
+      "label": "Networking & Security"
+    },
+    {
+      "id": "ops-automation",
+      "label": "Servers & Automation"
+    }
+  ],
+  "sections": [
+    {
+      "id": "linux-rules",
+      "title": "Linux System & Command Rules — Reference Guide",
+      "icon": "book",
+      "category": "reference",
+      "track": "foundations",
+      "level": "beginner",
+      "order": 1,
+      "preview": "The mental model behind Linux — everything is a file, one tree, plain-text config. Read this first.",
+      "words": 2385,
+      "parts": 15
+    },
+    {
+      "id": "important-files",
+      "title": "Important Files Worth Generating on a Linux / Dev System",
+      "icon": "file",
+      "category": "system",
+      "track": "foundations",
+      "level": "beginner",
+      "order": 2,
+      "preview": "/etc, /var, /proc — the key files every admin reads and maintains, and what breaks when they vanish.",
+      "words": 754,
+      "parts": 11
+    },
+    {
+      "id": "vim-nano",
+      "title": "Vim / Vi & Nano — The Complete Guide",
+      "icon": "file",
+      "category": "editing",
+      "track": "foundations",
+      "level": "beginner",
+      "order": 3,
+      "preview": "Survive and then thrive in vim and nano — the editors you will find on every server you ever SSH into.",
+      "words": 2151,
+      "parts": 27
+    },
+    {
+      "id": "bash-scripting",
+      "title": "Bash Scripting Deep Dive",
+      "icon": "terminal",
+      "category": "development",
+      "track": "foundations",
+      "level": "intermediate",
+      "order": 4,
+      "preview": "Functions, arrays, loops, and error handling for writing robust bash scripts that fail loudly.",
+      "words": 1856,
+      "parts": 12
+    },
+    {
+      "id": "disk-storage",
+      "title": "Disk & Storage Management — Partitions, LVM, Mounting & fstab",
+      "icon": "database",
+      "category": "storage",
+      "track": "system-ops",
+      "level": "intermediate",
+      "order": 5,
+      "preview": "Partitions, mounts, LVM and df/du — understand disk layout and never run out of space by surprise.",
+      "words": 1970,
+      "parts": 12
+    },
+    {
+      "id": "linux-boot",
+      "title": "The Linux Boot Process — BIOS/UEFI → GRUB → systemd",
+      "icon": "zap",
+      "category": "system",
+      "track": "system-ops",
+      "level": "intermediate",
+      "order": 6,
+      "preview": "From BIOS/UEFI to login prompt — every stage of boot, and how to diagnose a machine that won’t come up.",
+      "words": 1915,
+      "parts": 9
+    },
+    {
+      "id": "systemd-deep-dive",
+      "title": "systemd Deep Dive — Unit Files & Timers (The Modern Cron Replacement)",
+      "icon": "cpu",
+      "category": "system",
+      "track": "system-ops",
+      "level": "intermediate",
+      "order": 7,
+      "preview": "Units, targets, journalctl and timers — run services properly on any modern distro.",
+      "words": 1758,
+      "parts": 12
+    },
+    {
+      "id": "process-monitoring",
+      "title": "Process & Performance Monitoring — Diagnosing Slow or Crashing Services",
+      "icon": "activity",
+      "category": "monitoring",
+      "track": "system-ops",
+      "level": "intermediate",
+      "order": 8,
+      "preview": "ps, top, htop and load averages — find the process eating your CPU and read performance signals with confidence.",
+      "words": 1844,
+      "parts": 10
+    },
+    {
+      "id": "failure-scenarios",
+      "title": "Linux Failure Scenarios — What Actually Causes Errors & File Corruption",
+      "icon": "alert",
+      "category": "troubleshooting",
+      "track": "system-ops",
+      "level": "advanced",
+      "order": 9,
+      "preview": "Disk full at 3am? Server unresponsive? Walk through common failure scenarios and their rescue playbooks.",
+      "words": 1746,
+      "parts": 12
+    },
+    {
+      "id": "log-management",
+      "title": "Log Management — syslog vs journald, logrotate & Where Logs Actually Live",
+      "icon": "eye",
+      "category": "logging",
+      "track": "system-ops",
+      "level": "intermediate",
+      "order": 10,
+      "preview": "journald, rsyslog and log rotation — find the signal in /var/log before the noise buries it.",
+      "words": 1320,
+      "parts": 6
+    },
+    {
+      "id": "network-troubleshooting",
+      "title": "Networking Troubleshooting Toolkit — \"Why Can't This Reach That?\"",
+      "icon": "network",
+      "category": "networking",
+      "track": "network-security",
+      "level": "intermediate",
+      "order": 11,
+      "preview": "ping to tcpdump — a layered toolkit for diagnosing “the network is down”, from cable to DNS.",
+      "words": 1622,
+      "parts": 10
+    },
+    {
+      "id": "ssh-guide",
+      "title": "SSH Remote Access From Outside Your Network — Complete Guide",
+      "icon": "network",
+      "category": "networking",
+      "track": "network-security",
+      "level": "intermediate",
+      "order": 12,
+      "preview": "Keys, agents, tunnels and ssh_config — remote access done securely without password fatigue.",
+      "words": 1705,
+      "parts": 13
+    },
+    {
+      "id": "firewall",
+      "title": "Firewall Deep Dive — ufw vs iptables vs nftables",
+      "icon": "check",
+      "category": "security",
+      "track": "network-security",
+      "level": "advanced",
+      "order": 13,
+      "preview": "firewalld and nftables in depth — zones, rules and the exact commands that open (or close) a port safely.",
+      "words": 1755,
+      "parts": 8
+    },
+    {
+      "id": "server-hardening",
+      "title": "General Server Hardening — Beyond SSH",
+      "icon": "check",
+      "category": "security",
+      "track": "network-security",
+      "level": "advanced",
+      "order": 14,
+      "preview": "A practical hardening checklist — users, sudo, SSH, updates and auditing for internet-facing servers.",
+      "words": 1436,
+      "parts": 7
+    },
+    {
+      "id": "docker-containers",
+      "title": "Docker & Containers — Full Guide",
+      "icon": "layers",
+      "category": "containers",
+      "track": "ops-automation",
+      "level": "intermediate",
+      "order": 15,
+      "preview": "Images, containers, volumes and networking — run services in Docker without cargo-culting Dockerfiles.",
+      "words": 2146,
+      "parts": 12
+    },
+    {
+      "id": "ansible-basics",
+      "title": "Ansible Basics — Write Once, Apply to Every Server",
+      "icon": "clipboard",
+      "category": "automation",
+      "track": "ops-automation",
+      "level": "intermediate",
+      "order": 16,
+      "preview": "Playbooks, inventories and idempotency — automate ten servers as easily as one.",
+      "words": 1763,
+      "parts": 16
+    },
+    {
+      "id": "monitoring-stack",
+      "title": "Monitoring Stack Setup — Prometheus + Grafana From Zero",
+      "icon": "eye",
+      "category": "monitoring",
+      "track": "ops-automation",
+      "level": "advanced",
+      "order": 17,
+      "preview": "Prometheus + Grafana + alerting rules — see server health before your users do.",
+      "words": 1416,
+      "parts": 11
+    },
+    {
+      "id": "tmux-screen",
+      "title": "tmux & screen — Sessions That Survive a Disconnect",
+      "icon": "terminal",
+      "category": "terminal",
+      "track": "ops-automation",
+      "level": "beginner",
+      "order": 18,
+      "preview": "Sessions that survive disconnects — tmux basics that pay off the first time your SSH drops mid-task.",
+      "words": 1324,
+      "parts": 7
+    },
+    {
+      "id": "data-engineers",
+      "title": "📖 التفريغ الشامل والمفصل: Linux for Data Engineers",
+      "icon": "cpu",
+      "category": "data",
+      "track": "ops-automation",
+      "level": "intermediate",
+      "order": 19,
+      "preview": "The Linux concepts data pipelines actually touch — filesystems, processes, cron and resource limits.",
+      "words": 777,
+      "parts": 6
+    }
+  ]
+}

@@ -5,6 +5,16 @@ const sandbox = {};
 vm.createContext(sandbox);
 vm.runInContext(src + '\nresult={DATA,ICONS};', sandbox);
 const {DATA, ICONS} = sandbox.result;
+// Authoritative guide metadata: content-meta.json is emitted by build-content.mjs
+// (runs first in `npm run build:data`). Injecting it here guarantees DATA.content.sections
+// always matches the real built guides — no more hand-synced drift with data.js.
+let content = DATA.content;
+try {
+  const meta = JSON.parse(fs.readFileSync('assets/data/content-meta.json', 'utf8'));
+  content = meta; // { tracks, sections:[{id,title,icon,category,track,level,order,preview,words,parts}] }
+} catch (_e) {
+  console.warn('gen-lite: content-meta.json missing — falling back to stale DATA.content from data.js');
+}
 const lite = {
   categories: DATA.categories,
   commandsBank: DATA.commandsBank,
@@ -13,7 +23,7 @@ const lite = {
   helpfulLinks: DATA.helpfulLinks,
   course: DATA.course,
   topicIndex: DATA.topicIndex,
-  content: DATA.content
+  content
 };
 // Build lite file by stringifying then fixing ICONS manually from original source
 let iconsSrc = src.slice(src.indexOf('const ICONS'));

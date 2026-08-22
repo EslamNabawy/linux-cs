@@ -1477,6 +1477,10 @@ const DATA = {
     {q:"What does `chmod 644` mean and how does `umask 022` affect new files?", a:"`644` = `rw-r--r--` (owner rw, group r, other r). `umask 022` subtracts `w` for group/other, so `touch` creates `644` and `mkdir` `755`. Never `777` on web roots."},
     {q:"How does `grep -F` differ from `grep -E` and which is faster?", a:"`grep -F` treats pattern as fixed string (no regex) and is ~10× faster; use `-F` for literals like `error.log`. `grep -E` enables extended regex (`^`, `+`, `|`)."}
 ],
+  // FALLBACK ONLY — stale-safe copy of guide metadata. gen-lite.mjs overwrites
+  // DATA.content at build time from assets/data/content-meta.json (emitted by
+  // build-content.mjs, the single source of truth). Do not hand-edit this list;
+  // edit scripts/build-content.mjs SECTIONS instead.
   content: {
     sections: [
       {

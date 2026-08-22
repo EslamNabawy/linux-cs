@@ -9,27 +9,34 @@ import path from 'path';
 const SRC_DIR = 'Linux 101 Content';
 const OUT = 'assets/data/content-library.json';
 
-// id -> source file (ids MUST match DATA.content.sections in assets/js/data.js)
+// id -> source file (authoritative metadata; gen-lite injects this into DATA.content)
+// track: foundations | system-ops | network-security | ops-automation
+const TRACKS = [
+  { id: 'foundations',       label: 'Start Here — Foundations' },
+  { id: 'system-ops',        label: 'System Operations' },
+  { id: 'network-security',  label: 'Networking & Security' },
+  { id: 'ops-automation',    label: 'Servers & Automation' },
+];
 const SECTIONS = [
-  { id: 'bash-scripting',         file: 'bash-scripting-deep-dive.md',            icon: 'terminal', category: 'development' },
-  { id: 'disk-storage',           file: 'disk-storage-management.md',             icon: 'database', category: 'storage' },
-  { id: 'firewall',               file: 'firewall-deep-dive.md',                  icon: 'shield',   category: 'networking' },
-  { id: 'important-files',        file: 'important-files-to-generate.md',         icon: 'file',     category: 'system' },
-  { id: 'linux-boot',             file: 'linux-boot-process.md',                  icon: 'zap',      category: 'system' },
-  { id: 'failure-scenarios',      file: 'linux-failure-scenarios.md',             icon: 'alert',    category: 'troubleshooting' },
-  { id: 'linux-rules',            file: 'linux-rules-reference.md',               icon: 'book',     category: 'reference' },
-  { id: 'log-management',         file: 'Log Management.md',                      icon: 'file',     category: 'logging' },
-  { id: 'network-troubleshooting',file: 'Networking Troubleshooting Toolkit .md', icon: 'zap',      category: 'networking' },
-  { id: 'data-engineers',         file: 'overview_Linux_for_Data_Engineers.md',   icon: 'book',     category: 'overview' },
-  { id: 'process-monitoring',     file: 'process-performance-monitoring.md',      icon: 'activity', category: 'monitoring' },
-  { id: 'ssh-guide',              file: 'ssh-remote-access-guide.md',             icon: 'terminal', category: 'networking' },
-  { id: 'vim-nano',               file: 'vim-nano-complete-guide.md',             icon: 'edit',     category: 'editing' },
-  { id: 'ansible-basics',         file: 'ansible-basics-guide.md',                icon: 'clipboard',category: 'automation' },
-  { id: 'docker-containers',      file: 'docker-containers-guide.md',             icon: 'layers',   category: 'containers' },
-  { id: 'monitoring-stack',       file: 'prometheus-grafana-monitoring-stack.md', icon: 'eye',      category: 'monitoring' },
-  { id: 'server-hardening',       file: 'server-hardening-guide.md',              icon: 'check',    category: 'security' },
-  { id: 'systemd-deep-dive',      file: 'systemd-deep-dive.md',                   icon: 'cpu',      category: 'system' },
-  { id: 'tmux-screen',            file: 'tmux-screen-guide.md',                   icon: 'terminal', category: 'terminal' },
+  { id: 'linux-rules',            file: 'linux-rules-reference.md',               icon: 'book',      category: 'reference',       track: 'foundations',      level: 'beginner',     preview: 'The mental model behind Linux — everything is a file, one tree, plain-text config. Read this first.' },
+  { id: 'important-files',        file: 'important-files-to-generate.md',         icon: 'file',      category: 'system',          track: 'foundations',      level: 'beginner',     preview: '/etc, /var, /proc — the key files every admin reads and maintains, and what breaks when they vanish.' },
+  { id: 'vim-nano',               file: 'vim-nano-complete-guide.md',             icon: 'file',      category: 'editing',         track: 'foundations',      level: 'beginner',     preview: 'Survive and then thrive in vim and nano — the editors you will find on every server you ever SSH into.' },
+  { id: 'bash-scripting',         file: 'bash-scripting-deep-dive.md',            icon: 'terminal',  category: 'development',     track: 'foundations',      level: 'intermediate', preview: 'Functions, arrays, loops, and error handling for writing robust bash scripts that fail loudly.' },
+  { id: 'disk-storage',           file: 'disk-storage-management.md',             icon: 'database',  category: 'storage',         track: 'system-ops',       level: 'intermediate', preview: 'Partitions, mounts, LVM and df/du — understand disk layout and never run out of space by surprise.' },
+  { id: 'linux-boot',             file: 'linux-boot-process.md',                  icon: 'zap',       category: 'system',          track: 'system-ops',       level: 'intermediate', preview: 'From BIOS/UEFI to login prompt — every stage of boot, and how to diagnose a machine that won\u2019t come up.' },
+  { id: 'systemd-deep-dive',      file: 'systemd-deep-dive.md',                   icon: 'cpu',       category: 'system',          track: 'system-ops',       level: 'intermediate', preview: 'Units, targets, journalctl and timers — run services properly on any modern distro.' },
+  { id: 'process-monitoring',     file: 'process-performance-monitoring.md',      icon: 'activity',  category: 'monitoring',      track: 'system-ops',       level: 'intermediate', preview: 'ps, top, htop and load averages — find the process eating your CPU and read performance signals with confidence.' },
+  { id: 'failure-scenarios',      file: 'linux-failure-scenarios.md',             icon: 'alert',     category: 'troubleshooting', track: 'system-ops',       level: 'advanced',     preview: 'Disk full at 3am? Server unresponsive? Walk through common failure scenarios and their rescue playbooks.' },
+  { id: 'log-management',         file: 'Log Management.md',                      icon: 'eye',       category: 'logging',         track: 'system-ops',       level: 'intermediate', preview: 'journald, rsyslog and log rotation — find the signal in /var/log before the noise buries it.' },
+  { id: 'network-troubleshooting',file: 'Networking Troubleshooting Toolkit .md', icon: 'network',   category: 'networking',      track: 'network-security', level: 'intermediate', preview: 'ping to tcpdump — a layered toolkit for diagnosing \u201cthe network is down\u201d, from cable to DNS.' },
+  { id: 'ssh-guide',              file: 'ssh-remote-access-guide.md',             icon: 'network',   category: 'networking',      track: 'network-security', level: 'intermediate', preview: 'Keys, agents, tunnels and ssh_config — remote access done securely without password fatigue.' },
+  { id: 'firewall',               file: 'firewall-deep-dive.md',                  icon: 'check',     category: 'security',        track: 'network-security', level: 'advanced',     preview: 'firewalld and nftables in depth — zones, rules and the exact commands that open (or close) a port safely.' },
+  { id: 'server-hardening',       file: 'server-hardening-guide.md',              icon: 'check',     category: 'security',        track: 'network-security', level: 'advanced',     preview: 'A practical hardening checklist — users, sudo, SSH, updates and auditing for internet-facing servers.' },
+  { id: 'docker-containers',      file: 'docker-containers-guide.md',             icon: 'layers',    category: 'containers',      track: 'ops-automation',   level: 'intermediate', preview: 'Images, containers, volumes and networking — run services in Docker without cargo-culting Dockerfiles.' },
+  { id: 'ansible-basics',         file: 'ansible-basics-guide.md',                icon: 'clipboard', category: 'automation',      track: 'ops-automation',   level: 'intermediate', preview: 'Playbooks, inventories and idempotency — automate ten servers as easily as one.' },
+  { id: 'monitoring-stack',       file: 'prometheus-grafana-monitoring-stack.md', icon: 'eye',       category: 'monitoring',      track: 'ops-automation',   level: 'advanced',     preview: 'Prometheus + Grafana + alerting rules — see server health before your users do.' },
+  { id: 'tmux-screen',            file: 'tmux-screen-guide.md',                   icon: 'terminal',  category: 'terminal',        track: 'ops-automation',   level: 'beginner',     preview: 'Sessions that survive disconnects — tmux basics that pay off the first time your SSH drops mid-task.' },
+  { id: 'data-engineers',         file: 'overview_Linux_for_Data_Engineers.md',   icon: 'cpu',       category: 'data',            track: 'ops-automation',   level: 'intermediate', preview: 'The Linux concepts data pipelines actually touch — filesystems, processes, cron and resource limits.' },
 ];
 
 function escHtml(s) {
@@ -161,13 +168,16 @@ const wordCount = (sec) => sec.parts.reduce((a, p) => a + p.blocks.reduce((b, bl
 }, 0), 0);
 
 const out = [];
-for (const meta of SECTIONS) {
+for (let i = 0; i < SECTIONS.length; i++) {
+  const meta = SECTIONS[i];
   const fp = path.join(SRC_DIR, meta.file);
   if (!fs.existsSync(fp)) { console.error('MISSING SOURCE:', fp); process.exit(1); }
   const { title, parts } = parseMd(fs.readFileSync(fp, 'utf8'));
   out.push({
     id: meta.id, title, icon: meta.icon, category: meta.category,
-    preview: '', source: meta.file, words: wordCount({ parts }), parts,
+    track: meta.track, level: meta.level, order: i + 1,
+    preview: meta.preview, source: meta.file,
+    words: wordCount({ parts }), parts,
   });
 }
 
@@ -176,6 +186,15 @@ const payload = { sections: out };
 fs.writeFileSync(OUT, JSON.stringify(payload, null, 1));
 // Script fallback for file:// (fetch/XHR blocked) — loaded by app.js last resort
 fs.writeFileSync('assets/js/data-library.js', 'window.DATA_CONTENT_LIBRARY = ' + JSON.stringify(payload) + ';\n');
+// Small metadata manifest (no body text) consumed by gen-lite.mjs -> DATA.content.sections
+const metaOut = {
+  tracks: TRACKS,
+  sections: out.map(({ id, title, icon, category, track, level, order, preview, words }) =>
+    ({ id, title, icon, category, track, level, order, preview, words, parts: undefined })),
+};
+// recompute part counts without pulling bodies into the manifest
+out.forEach((s, i) => { metaOut.sections[i].parts = s.parts.length; });
+fs.writeFileSync('assets/data/content-meta.json', JSON.stringify(metaOut, null, 2));
 const kb = (Buffer.byteLength(JSON.stringify(payload))/1024).toFixed(1);
-console.log(`content-library.json (+ data-library.js): ${out.length} sections, ${out.reduce((a,s)=>a+s.parts.length,0)} parts, ${kb} KB`);
-for (const s of out) console.log(`  - ${s.id}: ${s.parts.length} parts, ~${s.words} words`);
+console.log(`content-library.json (+ data-library.js, content-meta.json): ${out.length} sections, ${out.reduce((a,s)=>a+s.parts.length,0)} parts, ${kb} KB`);
+for (const s of out) console.log(`  - ${s.order}. [${s.track}/${s.level}] ${s.id}: ${s.parts.length} parts, ~${s.words} words`);
