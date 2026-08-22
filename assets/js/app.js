@@ -255,6 +255,9 @@ function renderCheatSheet() {
               <div class="cmd-desc">${highlightMatch(escapeHtml(cmd.description), state.searchTerm)}</div>
               <div class="cmd-example">
                 <code>${highlightMatch(highlightCode(cmd.example), state.searchTerm)}</code>
+                <button class="copy-btn" data-action="explain-cmd" data-cmd="${escapeCopyAttr(cmd.example)}" title="Explain with explainshell.com" aria-label="Explain this command with explainshell">
+                  ${EXTLINK_SVG}
+                </button>
                 <button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(cmd.example)}" title="Copy" aria-label="Copy code">
                   ${ICONS.copy}
                 </button>
@@ -348,6 +351,9 @@ function renderCommandsBank() {
                 <div class="cmd-desc">${highlightMatch(escapeHtml(cmd.briefDescription), state.searchTerm)}</div>
                 <div class="cmd-example">
                   <code>${highlightMatch(highlightCode(example), state.searchTerm)}</code>
+                  <button class="copy-btn" data-action="explain-cmd" data-cmd="${escapeCopyAttr(example)}" title="Explain with explainshell.com" aria-label="Explain this command with explainshell">
+                    ${EXTLINK_SVG}
+                  </button>
                   <button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(example)}" title="Copy" aria-label="Copy code">
                     ${ICONS.copy}
                   </button>
@@ -1633,7 +1639,7 @@ function renderSearchResults() {
     const pops = popular.map(p => {
       const c = DATA.commandsBank.find(x => x.command === p);
       if (!c) return '';
-      return `<div class="cmd-row"><div class="cmd-grid"><div class="cmd-name">${escapeHtml(c.command)}</div><div><div class="cmd-desc">${escapeHtml(c.briefDescription)}</div><div class="cmd-example"><code>${highlightCode(c.command)}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(c.command)}">${ICONS.copy}</button></div></div></div></div>`;
+      return `<div class="cmd-row"><div class="cmd-grid"><div class="cmd-name">${escapeHtml(c.command)}</div><div><div class="cmd-desc">${escapeHtml(c.briefDescription)}</div><div class="cmd-example"><code>${highlightCode(c.command)}</code><button class="copy-btn" data-action="explain-cmd" data-cmd="${escapeCopyAttr(c.command)}" title="Explain with explainshell.com" aria-label="Explain this command with explainshell">${EXTLINK_SVG}</button><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(c.command)}">${ICONS.copy}</button></div></div></div></div>`;
     }).join('');
     const recent = state.recentViews.length
       ? `<div class="links-section"><h3>Recently viewed</h3><div class="topic-links">${state.recentViews.slice(0, 5).map(v => `<button class="topic-link" data-action="go-view" data-view="${escapeHtml(v)}">${escapeHtml(v.replace('notes-', ''))}</button>`).join('')}</div></div>`
@@ -1666,7 +1672,7 @@ function renderSearchResults() {
 }
 
 function searchRow(r, t) {
-  return `<div class="cmd-row"><div class="cmd-grid"><div class="cmd-name">${highlightMatch(escapeHtml(r.title), t)}</div><div>${r.desc ? `<div class="cmd-desc">${highlightMatch(escapeHtml(r.desc), t)}</div>` : ''}${r.example ? `<div class="cmd-example"><code>${highlightMatch(highlightCode(r.example), t)}</code><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(r.example)}" aria-label="Copy code">${ICONS.copy}</button></div>` : ''}</div></div><span class="source-badge search-badge">${escapeHtml(r.section)}</span></div>`;
+  return `<div class="cmd-row"><div class="cmd-grid"><div class="cmd-name">${highlightMatch(escapeHtml(r.title), t)}</div><div>${r.desc ? `<div class="cmd-desc">${highlightMatch(escapeHtml(r.desc), t)}</div>` : ''}${r.example ? `<div class="cmd-example"><code>${highlightMatch(highlightCode(r.example), t)}</code><button class="copy-btn" data-action="explain-cmd" data-cmd="${escapeCopyAttr(r.example)}" title="Explain with explainshell.com" aria-label="Explain this command with explainshell">${EXTLINK_SVG}</button><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(r.example)}" aria-label="Copy code">${ICONS.copy}</button></div>` : ''}</div></div><span class="source-badge search-badge">${escapeHtml(r.section)}</span></div>`;
 }
 
 function escId(s) { return String(s).replace(/[^a-zA-Z0-9_-]/g, '_'); }
