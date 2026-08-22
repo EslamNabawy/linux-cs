@@ -698,7 +698,7 @@ function renderLinksBody() {
       <div class="table-wrap"><table class="comparison-table">
         <thead><tr><th>Feature</th><th>Soft Link (ln -s)</th><th>Hard Link (ln)</th></tr></thead>
         <tbody>
-          ${DATA.links.comparison.map(row => `<tr><td>${row.feature}</td><td>${escapeHtml(row.soft)}</td><td>${escapeHtml(row.hard)}</td></tr>`).join('')}
+          ${DATA.links.comparison.map(row => `<tr><td>${row.feature}</td><td>${row.soft}</td><td>${row.hard}</td></tr>`).join('')}
         </tbody>
       </table></div>
     </div>
@@ -811,7 +811,7 @@ function renderBlock(b) {
     case 'steps':
       return `<ul class="note-list">${b.items.map(i => `<li>${i}</li>`).join('')}</ul>`;
     case 'table':
-      return `<div class="table-wrap"><table class="comparison-table"><thead><tr>${b.head.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>${b.rows.map(r => `<tr>${r.map(c => `<td>${escapeHtml(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+      return `<div class="table-wrap"><table class="comparison-table"><thead><tr>${b.head.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${b.rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
     case 'code': {
       const code = b.code;
       const lang = b.lang || 'bash';
@@ -2462,7 +2462,7 @@ function openCmdDrawer(cmd){
   const drawer = document.getElementById('cmdDrawer');
   const panel = document.getElementById('cmdDrawerPanel');
   if(!drawer || !panel) return;
-  const flagsHtml = (c.flags||[]).length ? `<div class="drawer-section"><h4>Flags</h4><div class="table-wrap"><table class="comparison-table"><thead><tr><th>Flag</th><th>Description</th></tr></thead><tbody>${c.flags.map(f=>`<tr><td><code>${escapeHtml(f.flag)}</code></td><td>${escapeHtml(f.desc||'—')}</td></tr>`).join('')}</tbody></table></div></div>` : '';
+  const flagsHtml = (c.flags||[]).length ? `<div class="drawer-section"><h4>Flags</h4><div class="table-wrap"><table class="comparison-table"><thead><tr><th>Flag</th><th>Description</th></tr></thead><tbody>${c.flags.map(f=>`<tr><td><code>${f.flag}</code></td><td>${f.desc||'—'}</td></tr>`).join('')}</tbody></table></div></div>` : '';
   const examplesHtml = (c.examples||[]).map((ex,i)=>`<div class="drawer-example"><div class="drawer-example-head"><span class="drawer-example-num">#${i+1}</span><span class="drawer-example-desc">${escapeHtml(ex.desc||'Example')}</span><button class="copy-btn" data-action="explain-cmd" data-cmd="${escapeCopyAttr(ex.code)}" title="Explain with explainshell.com" aria-label="Explain this command with explainshell">${EXTLINK_SVG}</button><button class="copy-btn" data-action="copy" data-copy="${escapeCopyAttr(ex.code)}" aria-label="Copy">${ICONS.copy}</button></div><div class="cmd-example"><span class="code-label">bash</span><code>${highlightCode(ex.code)}</code></div></div>`).join('');
   const relatedHtml = (c.related||[]).length ? `<div class="drawer-related">${c.related.map(r=>`<button class="chip chip--sm" data-action="open-cmd" data-cmd="${escapeHtml(r)}">${escapeHtml(r)}</button>`).join('')}</div>` : '<span style="color:var(--text-dim)">No related</span>';
   panel.innerHTML = `
