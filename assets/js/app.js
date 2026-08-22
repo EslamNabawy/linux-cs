@@ -968,11 +968,11 @@ async function getContentLibrary() {
   if (_libraryFetch) return _libraryFetch;
   _libraryFetch = (async () => {
     try {
-      const r = await fetch('assets/data/content-library.json?v=30');
+      const r = await fetch('assets/data/content-library.json?v=31');
       if (r.ok) { _libraryCache = await r.json(); return _libraryCache; }
     } catch (_e) {}
     try {
-      await loadScriptFallback('assets/js/data-library.js?v=30');
+      await loadScriptFallback('assets/js/data-library.js?v=31');
       if (window.DATA_CONTENT_LIBRARY) { _libraryCache = window.DATA_CONTENT_LIBRARY; return _libraryCache; }
     } catch (_e) {}
     return null;

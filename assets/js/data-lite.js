@@ -4353,6 +4353,42 @@ const DATA = {
         "preview": "The Linux concepts data pipelines actually touch — filesystems, processes, cron and resource limits.",
         "words": 777,
         "parts": 6
+      },
+      {
+        "id": "user-group-management",
+        "title": "👤 Linux User & Group Management — Complete Guide",
+        "icon": "clipboard",
+        "category": "security",
+        "track": "network-security",
+        "level": "beginner",
+        "order": 20,
+        "preview": "Users, groups, permissions, sudo and ACLs — create accounts safely, avoid the usermod -G trap, and control access properly.",
+        "words": 2057,
+        "parts": 8
+      },
+      {
+        "id": "directory-permissions",
+        "title": "📁 Linux Directory Permissions — Complete Guide",
+        "icon": "check",
+        "category": "security",
+        "track": "network-security",
+        "level": "intermediate",
+        "order": 21,
+        "preview": "What rwx really means on directories, SGID + sticky bits, umask, and namei -l for tracing permission denied up the path.",
+        "words": 1237,
+        "parts": 7
+      },
+      {
+        "id": "user-group-extended",
+        "title": "👤 Linux User & Group Management — Extended Topics",
+        "icon": "eye",
+        "category": "security",
+        "track": "ops-automation",
+        "level": "advanced",
+        "order": 22,
+        "preview": "PAM, LDAP/AD via SSSD, /etc/skel, disk quotas, newgrp and login auditing — identity management at scale.",
+        "words": 1422,
+        "parts": 8
       }
     ]
   }

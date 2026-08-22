@@ -37,6 +37,9 @@ const SECTIONS = [
   { id: 'monitoring-stack',       file: 'prometheus-grafana-monitoring-stack.md', icon: 'eye',       category: 'monitoring',      track: 'ops-automation',   level: 'advanced',     preview: 'Prometheus + Grafana + alerting rules — see server health before your users do.' },
   { id: 'tmux-screen',            file: 'tmux-screen-guide.md',                   icon: 'terminal',  category: 'terminal',        track: 'ops-automation',   level: 'beginner',     preview: 'Sessions that survive disconnects — tmux basics that pay off the first time your SSH drops mid-task.' },
   { id: 'data-engineers',         file: 'overview_Linux_for_Data_Engineers.md',   icon: 'cpu',       category: 'data',            track: 'ops-automation',   level: 'intermediate', preview: 'The Linux concepts data pipelines actually touch — filesystems, processes, cron and resource limits.' },
+  { id: 'user-group-management',  file: 'linux-user-group-management.md',         icon: 'clipboard', category: 'security',        track: 'network-security', level: 'beginner',     preview: 'Users, groups, permissions, sudo and ACLs — create accounts safely, avoid the usermod -G trap, and control access properly.' },
+  { id: 'directory-permissions',  file: 'linux-directory-permissions.md',         icon: 'check',     category: 'security',        track: 'network-security', level: 'intermediate', preview: 'What rwx really means on directories, SGID + sticky bits, umask, and namei -l for tracing permission denied up the path.' },
+  { id: 'user-group-extended',    file: 'linux-user-group-extended.md',           icon: 'eye',       category: 'security',        track: 'ops-automation',   level: 'advanced',     preview: 'PAM, LDAP/AD via SSSD, /etc/skel, disk quotas, newgrp and login auditing — identity management at scale.' },
 ];
 
 function escHtml(s) {
@@ -133,6 +136,19 @@ function parseMd(raw) {
     }
 
     if (/^---\s*$/.test(line)) { flushAll(); i++; continue; }
+
+    // Blockquotes: '> text' — rendered as callouts. A leading ⚠️ marks it as a warning.
+    if (/^>\s?/.test(line)) {
+      flushPara();
+      const buf = [];
+      while (i < lines.length && /^>\s?/.test(lines[i])) { buf.push(lines[i].replace(/^>\s?/, '')); i++; }
+      if (cur && buf.length) {
+        const inner = buf.join(' ').replace(/^⚠️\s*/, '').trim();
+        const isWarn = /^\s*⚠️/.test(buf[0]);
+        cur.blocks.push({ t: 'callout', kind: isWarn ? 'warn' : 'tip', html: inlineMd(inner) });
+      }
+      continue;
+    }
 
     if (/^\s*[-*]\s+/.test(line)) {
       flushPara();

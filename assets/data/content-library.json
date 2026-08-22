@@ -9604,6 +9604,1296 @@
      ]
     }
    ]
+  },
+  {
+   "id": "user-group-management",
+   "title": "👤 Linux User & Group Management — Complete Guide",
+   "icon": "clipboard",
+   "category": "security",
+   "track": "network-security",
+   "level": "beginner",
+   "order": 20,
+   "preview": "Users, groups, permissions, sudo and ACLs — create accounts safely, avoid the usermod -G trap, and control access properly.",
+   "source": "linux-user-group-management.md",
+   "words": 2057,
+   "parts": [
+    {
+     "id": "introduction",
+     "title": "Introduction",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>Everything about creating, modifying, and managing users, groups, and the permissions tied to them. Structured to pair with the RHCSA-aligned course roadmap (Module 3: User &amp; Group Administration, Module 4: File Permissions &amp; Access Control).</p>"
+      }
+     ]
+    },
+    {
+     "id": "part-1-core-concepts",
+     "title": "PART 1: Core Concepts",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<h6>How Linux Tracks Users</h6>"
+      },
+      {
+       "t": "text",
+       "html": "<p>Every user has a <strong>UID</strong> (User ID) and belongs to at least one <strong>GID</strong> (Group ID). Linux stores this in plain text system files:</p>"
+      },
+      {
+       "t": "table",
+       "head": [
+        "File",
+        "Purpose",
+        "Notes / Gotchas"
+       ],
+       "rows": [
+        [
+         "<code>/etc/passwd</code>",
+         "User account info (username, UID, GID, home dir, shell)",
+         "Password field here is just <code>x</code> — real hash lives in <code>/etc/shadow</code>. World-readable by design."
+        ],
+        [
+         "<code>/etc/shadow</code>",
+         "Encrypted passwords + password aging info",
+         "Only root can read this. Never world-readable — a common security misconfig is loosening its permissions."
+        ],
+        [
+         "<code>/etc/group</code>",
+         "Group names, GIDs, and member lists",
+         "Supplementary group memberships are listed here."
+        ],
+        [
+         "<code>/etc/gshadow</code>",
+         "Group passwords (rarely used)",
+         "Mostly legacy; group admin/password features are uncommon in modern setups."
+        ],
+        [
+         "<code>/etc/login.defs</code>",
+         "Default policies (UID ranges, password aging defaults)",
+         "Where <code>useradd</code> gets its defaults from if you don't specify flags."
+        ]
+       ]
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Reading a <code>/etc/passwd</code> line:</strong> "
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "maradona:x:1001:1001:Maradona Dev:/home/maradona:/bin/bash"
+      },
+      {
+       "t": "text",
+       "html": "<p><code>username : password-placeholder : UID : GID : comment/full-name : home-dir : login-shell</code></p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>User Types</h6>"
+      },
+      {
+       "t": "table",
+       "head": [
+        "Type",
+        "UID Range (typical)",
+        "Example"
+       ],
+       "rows": [
+        [
+         "Root",
+         "0",
+         "<code>root</code>"
+        ],
+        [
+         "System users",
+         "1–999 (RHEL) / 1–999 or 1–99 (Debian varies)",
+         "<code>nginx</code>, <code>sshd</code> — used by services, not humans"
+        ],
+        [
+         "Regular users",
+         "1000+",
+         "Your actual login accounts"
+        ]
+       ]
+      },
+      {
+       "t": "text",
+       "html": "<h6>Primary vs. Supplementary Groups</h6>"
+      },
+      {
+       "t": "list",
+       "items": [
+        "<strong>Primary group</strong> — every user has exactly one; owns files the user creates by default. Stored in <code>/etc/passwd</code> (GID field).",
+        "<strong>Supplementary (secondary) groups</strong> — a user can belong to many; used to grant extra access (e.g. <code>sudo</code>, <code>docker</code>, <code>wheel</code>). Stored in <code>/etc/group</code>."
+       ]
+      }
+     ]
+    },
+    {
+     "id": "part-2-user-commands",
+     "title": "PART 2: User Commands",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<h6>Viewing User Info</h6>"
+      },
+      {
+       "t": "table",
+       "head": [
+        "Command",
+        "Description",
+        "Example",
+        "⚠️ Notes / Gotchas"
+       ],
+       "rows": [
+        [
+         "<code>whoami</code>",
+         "Print current username",
+         "<code>whoami</code>",
+         "Simplest identity check."
+        ],
+        [
+         "<code>id</code>",
+         "Show UID, GID, and all group memberships",
+         "<code>id maradona</code>",
+         "Best single command to confirm exactly what groups a user is really in."
+        ],
+        [
+         "<code>groups</code>",
+         "List groups a user belongs to",
+         "<code>groups maradona</code>",
+         "Shorter output than <code>id</code>, names only."
+        ],
+        [
+         "<code>finger</code>",
+         "Detailed user info (if installed)",
+         "<code>finger maradona</code>",
+         "Not installed by default on most modern distros."
+        ],
+        [
+         "<code>getent passwd</code>",
+         "Query user database (works with LDAP/AD too)",
+         "<code>getent passwd maradona</code>",
+         "Preferred over <code>grep</code>-ing <code>/etc/passwd</code> directly — works with any configured user backend, not just local files."
+        ],
+        [
+         "<code>last</code>",
+         "Show login history",
+         "<code>last maradona</code>",
+         "Reads <code>/var/log/wtmp</code>; useful for auditing."
+        ]
+       ]
+      },
+      {
+       "t": "text",
+       "html": "<h6>Creating Users</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "useradd username                        # create user with defaults from /etc/login.defs\nuseradd -m username                      # create with a home directory (needed on some distros — RHEL does this by default, Debian does not)\nuseradd -m -s /bin/bash username          # set login shell explicitly\nuseradd -m -c \"Full Name\" username         # add a comment/full name\nuseradd -m -u 1050 username                 # set a specific UID\nuseradd -m -g developers username            # set primary group\nuseradd -m -G sudo,docker username            # set supplementary groups (comma-separated, no spaces)\nuseradd -e 2026-12-31 username                  # set account expiration date"
+      },
+      {
+       "t": "table",
+       "head": [
+        "Flag",
+        "Meaning",
+        "⚠️ Notes"
+       ],
+       "rows": [
+        [
+         "<code>-m</code>",
+         "Create home directory",
+         "Debian/Ubuntu: <strong>required</strong> if you want a home dir. RHEL/CentOS: created by default even without <code>-m</code>. Always safest to include it explicitly."
+        ],
+        [
+         "<code>-s</code>",
+         "Login shell",
+         "Omitting this often defaults to <code>/bin/sh</code> or no shell — set it explicitly for interactive accounts."
+        ],
+        [
+         "<code>-g</code>",
+         "<strong>Primary</strong> group (singular)",
+         "Must already exist, or <code>useradd</code> fails."
+        ],
+        [
+         "<code>-G</code>",
+         "<strong>Supplementary</strong> groups (plural)",
+         "Comma-separated. This is the flag people reach for to add someone to <code>sudo</code>/<code>wheel</code>."
+        ],
+        [
+         "<code>-u</code>",
+         "Specific UID",
+         "Useful for keeping UIDs consistent across servers (e.g. for NFS)."
+        ],
+        [
+         "<code>-e</code>",
+         "Expiration date (<code>YYYY-MM-DD</code>)",
+         "Account is disabled automatically after this date — good for contractor/temp accounts."
+        ]
+       ]
+      },
+      {
+       "t": "text",
+       "html": "<p>After creating, always set a password:</p>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "passwd username        # prompts to set the password interactively"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Modifying Users — `usermod` (Deep Dive)</h6>"
+      },
+      {
+       "t": "text",
+       "html": "<p><code>usermod</code> changes an <strong>existing</strong> account's settings. This is the command you'll use most often after initial account creation.</p>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "usermod -aG groupname username        # ADD to a supplementary group (see warning below)\nusermod -g groupname username          # CHANGE primary group\nusermod -s /bin/zsh username             # change login shell\nusermod -c \"New Full Name\" username       # change comment/full name\nusermod -d /new/home -m username            # change home dir and MOVE existing contents\nusermod -l newusername oldusername            # rename the login (username itself)\nusermod -L username                             # lock the account (disable password login)\nusermod -U username                              # unlock the account\nusermod -e 2027-01-01 username                    # change expiration date\nusermod -e \"\" username                              # remove expiration date"
+      },
+      {
+       "t": "callout",
+       "kind": "warn",
+       "html": "<strong>The single most common <code>usermod</code> mistake:</strong> ``<code>bash usermod -G sudo username     # ❌ WRONG — this REPLACES all supplementary groups with just \"sudo\" usermod -aG sudo username    # ✅ CORRECT — the -a (append) flag ADDS to existing groups </code>`<code> Forgetting </code>-a<code> silently <strong>removes</strong> the user from every other supplementary group they were in (Docker, developers, etc.) — a classic \"why did their access break\" incident. Always pair </code>-G<code> with </code>-a` unless you deliberately want to overwrite the group list."
+      },
+      {
+       "t": "table",
+       "head": [
+        "Flag",
+        "Meaning",
+        "⚠️ Notes"
+       ],
+       "rows": [
+        [
+         "<code>-aG</code>",
+         "Append to supplementary groups",
+         "Always use <code>-a</code> together with <code>-G</code>."
+        ],
+        [
+         "<code>-g</code>",
+         "Set primary group",
+         "Group must exist first."
+        ],
+        [
+         "<code>-L</code> / <code>-U</code>",
+         "Lock / unlock account",
+         "Locks by putting <code>!</code> in front of the password hash in <code>/etc/shadow</code> — doesn't delete the password, just disables it."
+        ],
+        [
+         "<code>-l</code>",
+         "Rename username",
+         "Does <strong>not</strong> rename the home directory — use <code>-d</code> with <code>-m</code> separately if you want that too."
+        ],
+        [
+         "<code>-e</code>",
+         "Expiration date",
+         "Empty string clears it."
+        ]
+       ]
+      },
+      {
+       "t": "text",
+       "html": "<h6>Deleting Users</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "userdel username           # delete user, LEAVE home directory intact\nuserdel -r username         # delete user AND remove home directory + mail spool"
+      },
+      {
+       "t": "callout",
+       "kind": "warn",
+       "html": "<code>-r</code> is permanent — the home directory and its contents are gone, same as <code>rm -rf</code>. Back up first if there's any doubt."
+      },
+      {
+       "t": "text",
+       "html": "<h6>Password &amp; Account Aging</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "passwd username                  # set/change password\npasswd -l username                # lock password (same effect as usermod -L)\npasswd -u username                 # unlock password\npasswd -e username                  # force password change at next login\nchage -l username                    # list current aging settings\nchage -M 90 username                  # max password age: 90 days\nchage -m 7 username                    # min days between password changes\nchage -W 14 username                    # warn user 14 days before expiration\nchage -E 2026-12-31 username             # set account expiration via chage instead of usermod"
+      }
+     ]
+    },
+    {
+     "id": "part-3-group-commands",
+     "title": "PART 3: Group Commands",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<h6>Creating &amp; Managing Groups</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "groupadd groupname                # create a new group\ngroupadd -g 2050 groupname         # create with a specific GID\ngroupmod -n newname oldname          # rename a group\ngroupmod -g 2100 groupname            # change a group's GID\ngroupdel groupname                     # delete a group"
+      },
+      {
+       "t": "callout",
+       "kind": "warn",
+       "html": "You can't delete a group that's still set as any user's <strong>primary</strong> group — reassign those users first, or you'll get an error."
+      },
+      {
+       "t": "text",
+       "html": "<h6>Managing Group Membership</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "gpasswd -a username groupname     # add a user to a group (alternative to usermod -aG)\ngpasswd -d username groupname      # remove a user from a group\ngpasswd -M user1,user2 groupname    # set the entire member list at once (overwrites existing members)"
+      },
+      {
+       "t": "table",
+       "head": [
+        "Task",
+        "Best Command",
+        "Why"
+       ],
+       "rows": [
+        [
+         "Add one user to a group",
+         "<code>usermod -aG group user</code> or <code>gpasswd -a user group</code>",
+         "Either works; <code>usermod -aG</code> is more commonly taught/used."
+        ],
+        [
+         "Remove one user from a group",
+         "<code>gpasswd -d user group</code>",
+         "<code>usermod</code> has no clean single-user \"remove from group\" flag — <code>gpasswd -d</code> is the direct tool."
+        ],
+        [
+         "See who's in a group",
+         "<code>getent group groupname</code>",
+         "Shows the member list straight from the group database."
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "id": "part-4-file-permissions-tied-to-users-groups",
+     "title": "PART 4: File Permissions Tied to Users & Groups",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>This is where user/group setup actually pays off — permissions are enforced based on <strong>owning user</strong>, <strong>owning group</strong>, and <strong>everyone else</strong>.</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>The Permission Triad</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "-rwxr-xr--  1 maradona developers  1234 Aug 22 file.sh\n │└┬┘└┬┘└┬┘    │         │\n │ │  │  │     │         └─ group owner\n │ │  │  │     └─ user owner\n │ │  │  └─ others (rwx → r--)\n │ │  └─ group (rwx → r-x)\n │ └─ owner (rwx → rwx)\n └─ file type (- = file, d = directory, l = symlink)"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "chmod u+x file.sh          # owner: add execute\nchmod g-w file.sh           # group: remove write\nchmod o=r file.sh            # others: set to read-only exactly\nchmod 750 file.sh             # numeric: owner=rwx(7), group=rx(5), other=none(0)\nchown maradona file.sh          # change owning user\nchown maradona:developers file.sh # change owning user AND group in one command\nchgrp developers file.sh          # change owning group only\nchown -R maradona:developers dir/  # recursive — apply to a whole directory tree"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Special Permissions (Beyond rwx)</h6>"
+      },
+      {
+       "t": "table",
+       "head": [
+        "Permission",
+        "Symbol",
+        "Numeric",
+        "What it does",
+        "Typical use"
+       ],
+       "rows": [
+        [
+         "<strong>SUID</strong>",
+         "<code>s</code> in owner's execute slot",
+         "<code>4xxx</code>",
+         "Program runs with the <strong>file owner's</strong> privileges, not the caller's",
+         "<code>passwd</code> runs as root so any user can update their own shadow entry"
+        ],
+        [
+         "<strong>SGID</strong>",
+         "<code>s</code> in group's execute slot",
+         "<code>2xxx</code>",
+         "On a file: runs with the group's privileges. On a <strong>directory</strong>: new files inherit the directory's group automatically",
+         "Shared team directories — everyone's files land in the same group"
+        ],
+        [
+         "<strong>Sticky bit</strong>",
+         "<code>t</code> in others' execute slot",
+         "<code>1xxx</code>",
+         "In a shared directory, users can only delete/rename <strong>their own</strong> files, even with write access to the dir",
+         "<code>/tmp</code> uses this by default"
+        ]
+       ]
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "chmod u+s file            # set SUID\nchmod g+s directory/        # set SGID on a directory\nchmod +t directory/          # set sticky bit\nchmod 2775 directory/          # SGID + rwxrwxr-x, numeric form"
+      },
+      {
+       "t": "callout",
+       "kind": "warn",
+       "html": "SUID on a script (not a compiled binary) is ignored by the Linux kernel for security reasons — if you need \"run as another user,\" use <code>sudo</code> rules instead of trying to SUID a shell script."
+      },
+      {
+       "t": "text",
+       "html": "<h6>Access Control Lists (ACLs) — Beyond Owner/Group/Other</h6>"
+      },
+      {
+       "t": "text",
+       "html": "<p>When the basic owner/group/other model isn't granular enough (e.g. \"give this one specific extra user access without changing group ownership\"):</p>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "getfacl file.txt                       # view current ACLs\nsetfacl -m u:someuser:rwx file.txt       # grant a specific user rwx, without changing normal ownership\nsetfacl -m g:someteam:rx file.txt         # grant a specific group access\nsetfacl -x u:someuser file.txt              # remove that user's specific ACL entry\nsetfacl -b file.txt                          # remove ALL ACL entries, back to basic permissions\nsetfacl -R -m u:someuser:rwx directory/         # apply recursively\nsetfacl -d -m u:someuser:rwx directory/           # DEFAULT ACL — new files created inside inherit this automatically"
+      },
+      {
+       "t": "callout",
+       "kind": "warn",
+       "html": "A file with ACLs set shows a <code>+</code> after its permission string in <code>ls -l</code> (e.g. <code>-rwxr-x---+</code>) — that <code>+</code> is your visual cue to run <code>getfacl</code> and check what's really going on, since <code>ls -l</code> alone won't show the extra entries."
+      }
+     ]
+    },
+    {
+     "id": "part-5-sudo-privileged-access-without-full-root",
+     "title": "PART 5: `sudo` — Privileged Access Without Full Root",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "visudo                        # ALWAYS use this to edit sudoers — validates syntax before saving, prevents lockout"
+      },
+      {
+       "t": "text",
+       "html": "<p>Typical sudoers entries:</p>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "username    ALL=(ALL:ALL) ALL          # full sudo access for one user\n%wheel      ALL=(ALL)     ALL          # anyone in the \"wheel\" group gets full sudo (common on RHEL)\nusername    ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart nginx   # passwordless, but ONLY for this one command"
+      },
+      {
+       "t": "callout",
+       "kind": "warn",
+       "html": "<strong>Never edit <code>/etc/sudoers</code> directly with a text editor.</strong> A syntax error can lock out <code>sudo</code> entirely, and without another root session open, recovery means booting into single-user/rescue mode. <code>visudo</code> checks syntax before writing the file — there's no good reason to skip it."
+      },
+      {
+       "t": "table",
+       "head": [
+        "Command",
+        "Description",
+        "⚠️ Notes"
+       ],
+       "rows": [
+        [
+         "<code>sudo command</code>",
+         "Run one command as root",
+         "Prompts for <strong>your own</strong> password, not root's."
+        ],
+        [
+         "<code>sudo -l</code>",
+         "List what commands you're allowed to run",
+         "Good first check when troubleshooting permission denials."
+        ],
+        [
+         "<code>sudo -u otheruser command</code>",
+         "Run as a specific user (not just root)",
+         "Useful for service accounts."
+        ],
+        [
+         "<code>su - username</code>",
+         "Fully switch to another user's shell/environment",
+         "The <code>-</code> matters — it loads that user's full environment (PATH, home dir), a plain <code>su username</code> doesn't."
+        ],
+        [
+         "<code>su -</code>",
+         "Switch to root, full environment",
+         "Requires the <strong>root</strong> password, unlike <code>sudo</code>."
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "id": "part-6-practical-walkthrough-common-scenarios",
+     "title": "PART 6: Practical Walkthrough — Common Scenarios",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<h6>Scenario 1: Onboard a new developer with sudo + Docker access</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "useradd -m -s /bin/bash -c \"New Developer\" jdoe\npasswd jdoe\nusermod -aG sudo,docker jdoe      # -a is critical here — see Part 2 warning\nid jdoe                            # verify group membership immediately"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Scenario 2: Shared team directory where everyone's files land in the same group automatically</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "groupadd devteam\nmkdir /srv/shared\nchown :devteam /srv/shared\nchmod 2775 /srv/shared              # SGID so new files inherit \"devteam\" group\nusermod -aG devteam alice\nusermod -aG devteam bob"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Scenario 3: Give one extra user read access to a file without changing its group</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "setfacl -m u:contractor:r-- report.pdf\ngetfacl report.pdf                    # confirm"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Scenario 4: Temporarily disable a departing employee's account without deleting anything</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "usermod -L jdoe             # lock password login\nusermod -e 2026-08-22 jdoe   # also set expiration to today, belt-and-suspenders\n# later, once fully offboarded:\nuserdel -r jdoe"
+      }
+     ]
+    },
+    {
+     "id": "quick-reference-card",
+     "title": "Quick Reference Card",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "# Users\nuseradd -m -s /bin/bash -G group1,group2 username\nusermod -aG groupname username     # ADD to group (never forget -a)\nusermod -L / -U username             # lock / unlock\nuserdel -r username                    # delete + home dir\n\n# Groups\ngroupadd groupname\ngpasswd -a user group    # add member\ngpasswd -d user group     # remove member\ngetent group groupname      # list members\n\n# Permissions\nchmod 750 file    |   chmod u+x,g-w file\nchown user:group file\nsetfacl -m u:user:rwx file\ngetfacl file\n\n# Privilege\nvisudo\nsudo -l\nsu - username"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "directory-permissions",
+   "title": "📁 Linux Directory Permissions — Complete Guide",
+   "icon": "check",
+   "category": "security",
+   "track": "network-security",
+   "level": "intermediate",
+   "order": 21,
+   "preview": "What rwx really means on directories, SGID + sticky bits, umask, and namei -l for tracing permission denied up the path.",
+   "source": "linux-directory-permissions.md",
+   "words": 1237,
+   "parts": [
+    {
+     "id": "introduction",
+     "title": "Introduction",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>Directories are files too, but <code>rwx</code> means something different on them than on regular files — this is the #1 source of \"why can't I <code>cd</code> into this even though I have read access\" confusion. This guide is directory-specific; pair it with <code>linux-user-group-management.md</code> for the general permission model.</p>"
+      }
+     ]
+    },
+    {
+     "id": "part-1-what-rwx-actually-means-on-a-directory",
+     "title": "PART 1: What `rwx` Actually Means on a Directory",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>This is the single most important table in this guide — the meaning shifts entirely from what it means on a file.</p>"
+      },
+      {
+       "t": "table",
+       "head": [
+        "Permission",
+        "On a file",
+        "On a directory"
+       ],
+       "rows": [
+        [
+         "<strong>r</strong> (read)",
+         "View the file's contents",
+         "<strong>List</strong> the directory's contents (<code>ls</code> works)"
+        ],
+        [
+         "<strong>w</strong> (write)",
+         "Modify the file's contents",
+         "<strong>Create, delete, or rename</strong> entries inside the directory (even files you don't own!)"
+        ],
+        [
+         "<strong>x</strong> (execute)",
+         "Run the file as a program/script",
+         "<strong>Enter/traverse</strong> the directory (<code>cd</code> works, and you can access files inside by exact path)"
+        ]
+       ]
+      },
+      {
+       "t": "text",
+       "html": "<h6>The classic gotcha</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "chmod 644 mydir/     # r + w, no x\ncd mydir/            # ❌ \"Permission denied\" — even though you can technically \"read\" it\nls mydir/             # ❌ Also fails — ls needs to traverse to stat each entry"
+      },
+      {
+       "t": "callout",
+       "kind": "warn",
+       "html": "<strong>Read without execute on a directory is nearly useless.</strong> You need <strong>execute</strong> to enter/traverse a directory at all — without it, <code>cd</code>, <code>ls</code>, and any attempt to access a file inside by path (<code>cat mydir/file.txt</code>) fails, regardless of read permission. Read alone only lets tools list filenames in very limited cases and is not something to rely on."
+      },
+      {
+       "t": "text",
+       "html": "<h6>The other classic gotcha — write on a directory is powerful</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "chmod 777 shared/     # anyone can write here"
+      },
+      {
+       "t": "text",
+       "html": "<p>Anyone with <strong>write</strong> on the directory can delete or rename files inside it — <strong>even files they don't own</strong> — unless the sticky bit is set (see Part 3). This surprises people who think file permissions alone protect their files; the directory's write permission matters just as much.</p>"
+      }
+     ]
+    },
+    {
+     "id": "part-2-directory-permission-recipes",
+     "title": "PART 2: Directory Permission Recipes",
+     "blocks": [
+      {
+       "t": "table",
+       "head": [
+        "Numeric",
+        "Symbolic",
+        "Meaning",
+        "Typical use"
+       ],
+       "rows": [
+        [
+         "<code>755</code>",
+         "<code>rwxr-xr-x</code>",
+         "Owner full control, everyone else can enter/list but not modify",
+         "Most personal/project directories"
+        ],
+        [
+         "<code>750</code>",
+         "<code>rwxr-x---</code>",
+         "Owner full control, group can enter/list, others nothing",
+         "Directories restricted to a team"
+        ],
+        [
+         "<code>700</code>",
+         "<code>rwx------</code>",
+         "Owner-only, no one else can even enter",
+         "Private directories (e.g. <code>~/.ssh</code>)"
+        ],
+        [
+         "<code>775</code>",
+         "<code>rwxrwxr-x</code>",
+         "Owner + group full read/write/enter, others read-only entry",
+         "Collaborative directories (often paired with SGID, see Part 3)"
+        ],
+        [
+         "<code>770</code>",
+         "<code>rwxrwx---</code>",
+         "Owner + group full access, others completely locked out",
+         "Team-only working directories"
+        ],
+        [
+         "<code>1777</code>",
+         "<code>rwxrwxrwt</code>",
+         "Everyone can create files, but only delete their <strong>own</strong> (sticky bit)",
+         "<code>/tmp</code>-style shared drop directories"
+        ],
+        [
+         "<code>2775</code>",
+         "<code>rwxrwsr-x</code>",
+         "Group full access + new files auto-inherit the directory's group (SGID)",
+         "Shared project directories with consistent group ownership"
+        ]
+       ]
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "chmod 755 mydir/\nchmod -R 750 project/          # recursive — apply to every file AND subdirectory inside\nfind project/ -type d -exec chmod 750 {} \\;    # apply ONLY to directories, leave file permissions alone\nfind project/ -type f -exec chmod 640 {} \\;    # apply ONLY to files, separately"
+      },
+      {
+       "t": "callout",
+       "kind": "warn",
+       "html": "<strong><code>chmod -R</code> applies the exact same numeric mode to files and directories alike</strong> — which usually isn't what you want, since files rarely need the execute bit but directories almost always do (to be enterred). The two-step <code>find -type d</code> / <code>find -type f</code> pattern above is the safer approach for mixed trees."
+      }
+     ]
+    },
+    {
+     "id": "part-3-special-bits-on-directories",
+     "title": "PART 3: Special Bits on Directories",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>These behave differently on directories than the general special-permissions summary you'd see for files.</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>SGID on a Directory — Group Inheritance</h6>"
+      },
+      {
+       "t": "text",
+       "html": "<p>Normally, a new file's group ownership comes from the <strong>creating user's</strong> primary group. SGID on a directory overrides that: new files/subdirectories inside automatically inherit <strong>the directory's group</strong>, not the creator's.</p>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "mkdir /srv/teamshare\nchgrp devteam /srv/teamshare\nchmod g+s /srv/teamshare          # or: chmod 2775 /srv/teamshare"
+      },
+      {
+       "t": "text",
+       "html": "<p>Now, no matter who creates a file inside <code>/srv/teamshare</code>, it's automatically owned by group <code>devteam</code> — solving the classic \"shared folder where everyone's uploads end up with the wrong group\" problem.</p>"
+      },
+      {
+       "t": "callout",
+       "kind": "warn",
+       "html": "SGID is <strong>inherited recursively by subdirectories that get created afterward</strong> — a new subfolder made inside an SGID directory is itself SGID automatically, continuing the inheritance chain. But this only applies going forward; it doesn't retroactively fix subdirectories that already existed before you set SGID on the parent."
+      },
+      {
+       "t": "text",
+       "html": "<h6>Sticky Bit on a Directory — Restricted Deletion</h6>"
+      },
+      {
+       "t": "text",
+       "html": "<p>Normally, anyone with <strong>write</strong> access to a directory can delete or rename any file inside it (Part 1). The sticky bit changes this: users can only delete/rename files <strong>they personally own</strong>, even in a directory that's otherwise world-writable.</p>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "chmod +t /srv/dropbox          # or: chmod 1777 /srv/dropbox\nls -ld /srv/dropbox\n# drwxrwxrwt ... /srv/dropbox"
+      },
+      {
+       "t": "text",
+       "html": "<p>This is exactly how <code>/tmp</code> works system-wide: everyone can create files there, but you can't delete someone else's temp file just because the directory is world-writable.</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Combining Both</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "chmod 3775 /srv/teamshare     # SGID (2000) + sticky bit (1000) = 3000, plus rwxrwxr-x"
+      },
+      {
+       "t": "text",
+       "html": "<p>Group-consistent ownership <strong>and</strong> \"you can only delete your own stuff\" in the same shared directory.</p>"
+      }
+     ]
+    },
+    {
+     "id": "part-4-umask-default-permissions-for-new-directo",
+     "title": "PART 4: `umask` — Default Permissions for New Directories & Files",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p><code>umask</code> doesn't set permissions directly — it <strong>subtracts</strong> from the maximum defaults whenever something new is created.</p>"
+      },
+      {
+       "t": "table",
+       "head": [
+        "Item type",
+        "Maximum default before umask",
+        "Typical umask",
+        "Resulting permission"
+       ],
+       "rows": [
+        [
+         "New directory",
+         "<code>777</code> (rwxrwxrwx)",
+         "<code>022</code>",
+         "<code>755</code> (rwxr-xr-x)"
+        ],
+        [
+         "New file",
+         "<code>666</code> (rw-rw-rw-, <strong>no execute by default</strong>)",
+         "<code>022</code>",
+         "<code>644</code> (rw-r--r--)"
+        ]
+       ]
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "umask                  # view current umask\numask 027                # set: group loses write, others get nothing\numask -S                  # view umask in symbolic form instead of octal"
+      },
+      {
+       "t": "callout",
+       "kind": "warn",
+       "html": "Note the asymmetry: directories start from a max of <code>777</code> but files start from <code>666</code> — new files never get execute permission automatically from <code>umask</code> alone, even with <code>umask 000</code>. That's deliberate; you have to <code>chmod +x</code> a new file explicitly (or it needs to already be a compiled/scripted executable you intend to run)."
+      },
+      {
+       "t": "text",
+       "html": "<p><code>umask</code> is usually set per-session in <code>~/.bashrc</code> / <code>/etc/profile</code> (per-user) or <code>/etc/login.defs</code> (system default for new accounts).</p>"
+      }
+     ]
+    },
+    {
+     "id": "part-5-auditing-troubleshooting-directory-permis",
+     "title": "PART 5: Auditing & Troubleshooting Directory Permissions",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "ls -ld directory/                     # view a directory's OWN permissions (note the -d — without it, ls lists its CONTENTS instead)\nnamei -l /path/to/deep/directory       # show permissions of EVERY component in a path — great for tracing a \"permission denied\" up the chain\nfind / -type d -perm -002 2>/dev/null    # find world-writable directories (a common security audit check)\nfind /home -type d -perm 777 2>/dev/null  # find suspiciously wide-open directories\nstat directory/                             # detailed metadata including octal permission mode"
+      },
+      {
+       "t": "callout",
+       "kind": "warn",
+       "html": "<strong>A \"permission denied\" error doesn't always mean the target directory itself is misconfigured</strong> — it can be any parent directory in the path missing execute permission. <code>namei -l</code> is the fastest way to check every level at once instead of manually <code>ls -ld</code>-ing each parent directory one by one."
+      },
+      {
+       "t": "text",
+       "html": "<h6>Common real-world directory permissions (for reference)</h6>"
+      },
+      {
+       "t": "table",
+       "head": [
+        "Directory",
+        "Typical permissions",
+        "Why"
+       ],
+       "rows": [
+        [
+         "<code>/tmp</code>",
+         "<code>1777</code>",
+         "World-writable, sticky bit prevents cross-user deletion"
+        ],
+        [
+         "<code>/root</code>",
+         "<code>700</code>",
+         "Only root can even enter"
+        ],
+        [
+         "<code>/home/username</code>",
+         "<code>700</code> or <code>750</code>",
+         "Private by default on most modern distros"
+        ],
+        [
+         "<code>~/.ssh</code>",
+         "<code>700</code> (dir), keys inside <code>600</code>",
+         "SSH refuses to work at all if these are too open"
+        ],
+        [
+         "<code>/var/log</code>",
+         "<code>755</code> (dir), individual logs often <code>640</code>",
+         "World-readable directory listing, but log contents often restricted"
+        ],
+        [
+         "<code>/etc</code>",
+         "<code>755</code>",
+         "World-readable/traversable (most configs aren't secret), but only root can write"
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "id": "quick-reference-card",
+     "title": "Quick Reference Card",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "# What rwx means on a directory\nr = list contents   w = create/delete/rename entries   x = enter/traverse\n\n# Recipes\n755   rwxr-xr-x    normal shared-read directory\n750   rwxr-x---    team-restricted\n700   rwx------    private\n2775  rwxrwsr-x    SGID — group inheritance\n1777  rwxrwxrwt    sticky — /tmp style\n3775  rwxrwsr-t    SGID + sticky combined\n\n# Special bits\nchmod g+s dir/     # SGID: new files inherit dir's group\nchmod +t dir/       # sticky: users can only delete their own files\n\n# umask\numask               # view\numask 022             # set (dirs→755, files→644)\n\n# Troubleshooting\nls -ld dir/          # the directory's OWN permissions (not its contents)\nnamei -l /a/b/c        # check every parent in a path at once\nfind / -perm -002 -type d 2>/dev/null   # audit world-writable dirs"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "user-group-extended",
+   "title": "👤 Linux User & Group Management — Extended Topics",
+   "icon": "eye",
+   "category": "security",
+   "track": "ops-automation",
+   "level": "advanced",
+   "order": 22,
+   "preview": "PAM, LDAP/AD via SSSD, /etc/skel, disk quotas, newgrp and login auditing — identity management at scale.",
+   "source": "linux-user-group-extended.md",
+   "words": 1422,
+   "parts": [
+    {
+     "id": "introduction",
+     "title": "Introduction",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>Companion to <code>linux-user-group-management.md</code>. Covers the deeper topics that sit beneath and around everyday user/group administration: how authentication actually gets enforced (PAM), how accounts scale across many machines (centralized auth), how new accounts get their starter files (<code>/etc/skel</code>), per-user/group disk limits (quotas), switching active groups mid-session (<code>newgrp</code>), and tracking login activity (auditing).</p>"
+      }
+     ]
+    },
+    {
+     "id": "part-1-pam-pluggable-authentication-modules",
+     "title": "PART 1: PAM — Pluggable Authentication Modules",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>PAM is the layer that actually decides \"is this login allowed?\" — <code>passwd</code>, <code>sudo</code>, <code>su</code>, <code>sshd</code>, and login managers don't implement authentication themselves; they all call into PAM and follow whatever policy is configured there.</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>How it fits together</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "User runs `sudo` ──▶ sudo consults PAM config (/etc/pam.d/sudo) ──▶ PAM runs a stack of modules ──▶ allow / deny"
+      },
+      {
+       "t": "table",
+       "head": [
+        "Concept",
+        "What it means"
+       ],
+       "rows": [
+        [
+         "<strong>Service</strong>",
+         "The application asking for auth (<code>sudo</code>, <code>sshd</code>, <code>login</code>, <code>passwd</code>) — each has its own config file in <code>/etc/pam.d/</code>"
+        ],
+        [
+         "<strong>Module type</strong>",
+         "<code>auth</code> (who are you), <code>account</code> (is the account valid — expired? locked?), <code>password</code> (how passwords are set/changed), <code>session</code> (setup/teardown when a session starts/ends)"
+        ],
+        [
+         "<strong>Control flag</strong>",
+         "<code>required</code>, <code>requisite</code>, <code>sufficient</code>, <code>optional</code> — determines how a module's pass/fail affects the overall stack result"
+        ],
+        [
+         "<strong>Module path</strong>",
+         "The actual <code>.so</code> file doing the work, e.g. <code>pam_unix.so</code>, <code>pam_faillock.so</code>"
+        ]
+       ]
+      },
+      {
+       "t": "text",
+       "html": "<h6>Common Files &amp; Commands</h6>"
+      },
+      {
+       "t": "table",
+       "head": [
+        "File / Command",
+        "Purpose",
+        "⚠️ Notes / Gotchas"
+       ],
+       "rows": [
+        [
+         "<code>/etc/pam.d/system-auth</code> (or <code>common-auth</code> on Debian)",
+         "Shared baseline policy most services include",
+         "This is usually the file you actually want to edit, rather than every individual service file."
+        ],
+        [
+         "<code>/etc/pam.d/sudo</code>",
+         "PAM policy specifically for <code>sudo</code>",
+         "Broken syntax here can lock out <code>sudo</code> — always keep a root shell open while testing changes."
+        ],
+        [
+         "<code>pam_faillock.so</code>",
+         "Locks accounts after N failed login attempts",
+         "Configured via <code>/etc/security/faillock.conf</code> on modern RHEL."
+        ],
+        [
+         "<code>pam_pwquality.so</code>",
+         "Enforces password complexity rules",
+         "Configured via <code>/etc/security/pwquality.conf</code> (min length, character classes, etc.)."
+        ],
+        [
+         "<code>faillock --user username</code>",
+         "View failed login attempts for a user",
+         "Replaces the older <code>pam_tally2</code> on modern RHEL."
+        ],
+        [
+         "<code>faillock --user username --reset</code>",
+         "Clear failed attempt count / unlock",
+         "Use after legitimately unlocking someone who mistyped a password too many times."
+        ]
+       ]
+      },
+      {
+       "t": "callout",
+       "kind": "warn",
+       "html": "PAM configs are read top-to-bottom, and order matters. A misplaced <code>sufficient</code> line can accidentally let a stack \"pass\" earlier than intended, and a syntax mistake in a core file can lock out <strong>all</strong> authentication on the system — test in a non-production environment first, and never edit these over a session you can't recover if it breaks."
+      }
+     ]
+    },
+    {
+     "id": "part-2-centralized-authentication-ldap-ad-sssd",
+     "title": "PART 2: Centralized Authentication (LDAP / AD / SSSD)",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>For more than a handful of machines, managing local <code>/etc/passwd</code> entries on every box doesn't scale — centralized auth lets many machines share one user directory.</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>The Pieces</h6>"
+      },
+      {
+       "t": "table",
+       "head": [
+        "Component",
+        "Role"
+       ],
+       "rows": [
+        [
+         "<strong>LDAP</strong> (e.g. FreeIPA, OpenLDAP)",
+         "A directory server holding user/group records, queried over the network"
+        ],
+        [
+         "<strong>Active Directory (AD)</strong>",
+         "Microsoft's directory service — common in mixed Windows/Linux environments"
+        ],
+        [
+         "<strong>SSSD</strong> (System Security Services Daemon)",
+         "The client-side service on each Linux machine that talks to LDAP/AD/FreeIPA/Kerberos and caches results locally"
+        ],
+        [
+         "<strong>Kerberos</strong>",
+         "Ticket-based authentication protocol, often paired with LDAP/AD for actual credential verification"
+        ]
+       ]
+      },
+      {
+       "t": "text",
+       "html": "<h6>Why This Matters for Commands You Already Know</h6>"
+      },
+      {
+       "t": "text",
+       "html": "<p>Commands like <code>id</code>, <code>getent passwd</code>, and <code>getent group</code> don't just read local files — they query <strong>whatever's configured in <code>/etc/nsswitch.conf</code></strong>, which can point to SSSD (and therefore LDAP/AD) instead of, or in addition to, local files.</p>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "cat /etc/nsswitch.conf | grep passwd     # shows lookup order, e.g. \"files sss\"\ngetent passwd someuser                    # works whether the user is local OR in LDAP/AD, transparently\nid someuser                                # same — works across both\nsystemctl status sssd                       # check if the SSSD client is running\nsssctl user-checks someuser                  # (FreeIPA/SSSD) diagnose why a lookup for a user is succeeding/failing"
+      },
+      {
+       "t": "callout",
+       "kind": "warn",
+       "html": "If a user \"exists in AD/LDAP\" but <code>id username</code> fails locally, the problem is almost always SSSD (not running, misconfigured, or can't reach the directory server) — not the directory itself. Check <code>systemctl status sssd</code> and <code>journalctl -u sssd</code> before assuming the account itself is broken."
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Where this typically shows up on the RHCSA track:</strong> FreeIPA/IdM integration and <code>realmd</code>/<code>sssd</code> join commands (<code>realm join domain.example.com</code>) are common Red Hat Academy / real-world topics, though not always core RHCSA exam objectives — worth knowing conceptually even if your exam version doesn't test it directly."
+      }
+     ]
+    },
+    {
+     "id": "part-3-etc-skel-default-home-directory-contents",
+     "title": "PART 3: `/etc/skel` — Default Home Directory Contents",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>When you create a user with <code>useradd -m</code>, the new home directory isn't empty — it's a <strong>copy of <code>/etc/skel</code></strong>.</p>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "ls -la /etc/skel/          # see what every new user currently gets by default\n# typically: .bashrc  .bash_profile  .bash_logout"
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>Customizing what new users get:</strong> "
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "echo 'export EDITOR=vim' >> /etc/skel/.bashrc     # every NEW user created from now on inherits this\nmkdir /etc/skel/Projects                            # every new user gets a starter \"Projects\" folder"
+      },
+      {
+       "t": "callout",
+       "kind": "warn",
+       "html": "<code>/etc/skel</code> only affects <strong>future</strong> account creation — editing it does nothing for users who already exist. To retroactively apply a change to existing users, you'd need to copy the relevant file into each existing home directory yourself."
+      }
+     ]
+    },
+    {
+     "id": "part-4-disk-quotas-limiting-usage-per-user-group",
+     "title": "PART 4: Disk Quotas — Limiting Usage Per User/Group",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>Prevents one user or group from filling an entire filesystem.</p>"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Setup Overview</h6>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "# 1. Filesystem must be mounted with quota support (in /etc/fstab):\n#    /dev/sdb1  /home  xfs  defaults,uquota,gquota  0 0\n\nmount -o remount /home              # apply after editing fstab\nquotacheck -cug /home                # create initial quota files (u=user, g=group)\nquotaon /home                         # turn quota enforcement on"
+      },
+      {
+       "t": "text",
+       "html": "<h6>Setting &amp; Viewing Limits</h6>"
+      },
+      {
+       "t": "table",
+       "head": [
+        "Command",
+        "Description",
+        "⚠️ Notes"
+       ],
+       "rows": [
+        [
+         "<code>edquota -u username</code>",
+         "Edit a user's quota limits interactively (opens <code>$EDITOR</code>)",
+         "Sets both a <strong>soft</strong> limit (warning) and <strong>hard</strong> limit (hard stop)."
+        ],
+        [
+         "<code>edquota -g groupname</code>",
+         "Edit a group's quota limits",
+         "Same soft/hard concept, applied to the group total."
+        ],
+        [
+         "<code>quota -u username</code>",
+         "View a user's current usage vs. limits",
+         "Run as the user themselves, or root to check anyone."
+        ],
+        [
+         "<code>repquota /home</code>",
+         "Summary report of everyone's usage on a filesystem",
+         "Good for an at-a-glance audit of a shared volume."
+        ],
+        [
+         "<code>edquota -t</code>",
+         "Set the <strong>grace period</strong> — how long a soft limit can be exceeded before it's enforced as hard",
+         "E.g. \"7 days over soft limit before writes are blocked.\""
+        ]
+       ]
+      },
+      {
+       "t": "callout",
+       "kind": "warn",
+       "html": "<strong>Soft vs. hard limit, the distinction that actually matters:</strong> soft limits can be exceeded temporarily (user gets a warning, has a grace period to clean up); hard limits cannot be exceeded at all — further writes simply fail once hit. Setting only a hard limit with no soft limit/grace period gives users no warning before things start failing."
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>RHEL note:</strong> on XFS (the RHEL default filesystem), quotas are managed slightly differently at mount time (<code>uquota</code>/<code>gquota</code>/<code>pquota</code> mount options) compared to the traditional <code>quotacheck</code>-based ext4 workflow — check which filesystem you're on before following older ext-focused tutorials verbatim."
+      }
+     ]
+    },
+    {
+     "id": "part-5-newgrp-switching-active-primary-group-mid",
+     "title": "PART 5: `newgrp` — Switching Active Primary Group Mid-Session",
+     "blocks": [
+      {
+       "t": "text",
+       "html": "<p>If a user belongs to multiple groups but wants files they create right now to be owned by a different group than their default primary — without logging out and back in.</p>"
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "newgrp developers        # starts a new shell with \"developers\" as the active primary group\n# ... create files here, they'll be group-owned by \"developers\" ...\nexit                       # return to the previous shell/group context"
+      },
+      {
+       "t": "table",
+       "head": [
+        "vs.",
+        "Behavior"
+       ],
+       "rows": [
+        [
+         "<code>newgrp groupname</code>",
+         "Temporary, only affects the current shell session, reverts on <code>exit</code>"
+        ],
+        [
+         "<code>usermod -g groupname user</code>",
+         "Permanent change to the account's actual primary group"
+        ]
+       ]
+      },
+      {
+       "t": "callout",
+       "kind": "warn",
+       "html": "<code>newgrp</code> only works for groups the user is <strong>already a member of</strong> (primary or supplementary) — it doesn't grant new access, it just changes which existing group is \"active\" for newly created files in that session."
+      }
+     ]
+    },
+    {
+     "id": "part-6-auditing-tracking-logins-failures",
+     "title": "PART 6: Auditing — Tracking Logins & Failures",
+     "blocks": [
+      {
+       "t": "table",
+       "head": [
+        "Command",
+        "Description",
+        "⚠️ Notes / Gotchas"
+       ],
+       "rows": [
+        [
+         "<code>last</code>",
+         "Successful login history (who, when, from where)",
+         "Reads <code>/var/log/wtmp</code>. Add a username to filter: <code>last jdoe</code>."
+        ],
+        [
+         "<code>lastb</code>",
+         "<strong>Failed</strong> login attempts",
+         "Reads <code>/var/log/btmp</code> — requires root to read. Good first stop when investigating brute-force attempts."
+        ],
+        [
+         "<code>lastlog</code>",
+         "Most recent login per user (all accounts, one line each)",
+         "Shows \"Never logged in\" for unused/system accounts — useful for spotting dormant accounts."
+        ],
+        [
+         "<code>faillock --user username</code>",
+         "PAM-based failed attempt count (modern RHEL)",
+         "Pairs with <code>pam_faillock.so</code> from Part 1 — this is what actually triggers auto-lockouts."
+        ],
+        [
+         "<code>journalctl -u sshd</code>",
+         "Full systemd journal for the SSH service",
+         "More verbose than <code>last</code>/<code>lastb</code> — useful for seeing the reason a login failed, not just that it failed."
+        ],
+        [
+         "<code>who</code> / <code>w</code>",
+         "Who's logged in <strong>right now</strong>",
+         "<code>w</code> additionally shows what each session is currently doing."
+        ]
+       ]
+      },
+      {
+       "t": "callout",
+       "kind": "tip",
+       "html": "<strong>A basic audit routine:</strong> "
+      },
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "lastlog | grep -v \"Never logged in\"    # who's actually used their account recently\nlastb -n 20                              # last 20 failed login attempts\nfaillock --user jdoe                      # check if a specific account is close to auto-lockout"
+      }
+     ]
+    },
+    {
+     "id": "quick-reference-card",
+     "title": "Quick Reference Card",
+     "blocks": [
+      {
+       "t": "code",
+       "lang": "bash",
+       "code": "# PAM\nfaillock --user NAME              # check failed attempts\nfaillock --user NAME --reset       # clear/unlock\n\n# Centralized auth\ngetent passwd NAME                 # works for local or LDAP/AD users\nsystemctl status sssd               # check the client daemon\n\n# Skeleton files\nls -la /etc/skel/                    # what new users inherit\n\n# Quotas\nedquota -u NAME     |   edquota -g NAME\nquota -u NAME         |   repquota /home\n\n# Active group switch\nnewgrp GROUPNAME     # temporary, this session only\n\n# Auditing\nlast NAME   |   lastb   |   lastlog   |   w"
+      }
+     ]
+    }
+   ]
   }
  ]
 }

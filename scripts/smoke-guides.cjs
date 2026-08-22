@@ -75,7 +75,7 @@ const check = (label, ok) => { console.log((ok ? 'PASS' : 'FAIL') + '  ' + label
 console.log('== Guides hub ==');
 const html = renderContentLibrary();
 const c = re => (html.match(re) || []).length;
-check('19 guide cards rendered', c(/class="cl-card(?:"| )/g) === 19);
+check('22 guide cards rendered', c(/class="cl-card(?:"| )/g) === 22);
 check('4 track sections rendered', c(/class="cl-track"/g) === 4);
 check('3 start-here steps', c(/class="cl-step"/g) === 3);
 check('level filter chips (4)', c(/class="cl-fchip/g) === 4);
@@ -84,7 +84,7 @@ check('title is "Linux Guides"', html.includes('Linux Guides'));
 const ids = DATA.content.sections.map(s => s.id);
 const linked = [...html.matchAll(/data-section="([^"]+)"/g)].map(m => m[1]);
 check('zero dead card links (' + linked.length + ' links)', linked.every(x => ids.includes(x)));
-check('every card has level chip', c(/cl-chip--lvl/g) === 19);
+check('every card has level chip', c(/cl-chip--lvl/g) === 22);
 check('every card has min-read chip', c(/min<\/span>/g) >= 19);
 
 console.log('\n== Read progress ==');
@@ -113,10 +113,10 @@ check('toggle off removes badge', !renderContentLibrary().match(/class="cl-card 
   check('TOC shows per-part times', rh.includes('note-toc-time'));
   check('sections numbered (01, 02...)', rh.includes('>01<'));
 
-  console.log('\n== Boundary guide (#19 data-engineers) ==');
-  const h19 = await renderContentSection(ids[18]);
-  check('no next -> spacer shown', h19.includes('cl-pn-spacer'));
-  check('prev still shown', h19.includes('cl-pn-prev'));
+  console.log('\n== Boundary guide (#' + DATA.content.sections.length + ' ' + ids[ids.length-1] + ') ==');
+  const hLast = await renderContentSection(ids[ids.length - 1]);
+  check('no next -> spacer shown', hLast.includes('cl-pn-spacer'));
+  check('prev still shown', hLast.includes('cl-pn-prev'));
 
   console.log('\n== Spotlight search ==');
   win.DATA_CONTENT_LIBRARY = JSON.parse(fs.readFileSync('assets/data/content-library.json', 'utf8'));
